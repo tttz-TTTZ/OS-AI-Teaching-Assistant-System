@@ -41,9 +41,19 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await s.goto(base + "/teacher/dashboard");
     await s.getByRole("heading", { name: "无权访问" }).waitFor();
     await s.goto(base + "/student/dashboard");
+    async function apiCall(p, method, url, options = {}) {
+      const context = await p.evaluate(() =>
+        sessionStorage.getItem("os:session-context"),
+      );
+      return p.request[method](url, {
+        ...options,
+        headers: { ...options.headers, "X-Session-Context": context },
+      });
+    }
     const csrf = async (p) =>
-      (await (await p.request.get(base + "/api/auth/me")).json()).csrf_token;
-    const deny = await s.request.post(base + "/api/teacher/chapters", {
+      (await (await apiCall(p, "get", base + "/api/auth/me")).json())
+        .csrf_token;
+    const deny = await apiCall(s, "post", base + "/api/teacher/chapters", {
       headers: { "X-CSRF-Token": await csrf(s) },
       data: { title: "forbidden" },
     });
@@ -58,11 +68,11 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByRole("button", { name: "保存章节", exact: true }).click();
     await t.getByRole("status").filter({ hasText: "章节已保存" }).waitFor();
     const chapters = await (
-      await t.request.get(base + "/api/teacher/chapters")
+      await apiCall(t, "get", base + "/api/teacher/chapters")
     ).json();
     const cid = chapters.find((c) => c.title === chapterTitle).id;
     if (
-      (await (await s.request.get(base + "/api/chapters")).json()).some(
+      (await (await apiCall(s, "get", base + "/api/chapters")).json()).some(
         (c) => c.id === cid,
       )
     )
@@ -80,36 +90,36 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByRole("button", { name: "保存知识点", exact: true }).click();
     await t.getByRole("status").filter({ hasText: "知识点已保存" }).waitFor();
     const points = await (
-      await t.request.get(base + "/api/teacher/knowledge")
+      await apiCall(t, "get", base + "/api/teacher/knowledge")
     ).json();
     const kid = points.find((k) => k.title === pointTitle).id;
-    if ((await s.request.get(base + `/api/knowledge/${kid}`)).status() !== 404)
+    if (
+      (await apiCall(s, "get", base + `/api/knowledge/${kid}`)).status() !== 404
+    )
       throw Error("unpublished parent exposed");
     await t.getByRole("link", { name: "公共资料", exact: true }).click();
+    await t.getByLabel("公共资料文件").setInputFiles({
+      name: `public-${suffix}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from("公共资料正文"),
+    });
     await t
-      .getByLabel("公共资料文件")
-      .setInputFiles({
-        name: `public-${suffix}.txt`,
-        mimeType: "text/plain",
-        buffer: Buffer.from("公共资料正文"),
-      });
-    await t
-      .getByLabel("所属章节", { exact: true })
-      .first()
+      .getByLabel("上传所属章节", { exact: true })
       .selectOption(String(cid));
     await t.getByRole("button", { name: "上传公共资料", exact: true }).click();
-    await t.getByRole("status").filter({ hasText: "上传完成" }).waitFor();
+    await t.getByRole("status").filter({ hasText: "上传已保存" }).waitFor();
     await t.getByLabel(pointTitle, { exact: true }).check();
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存资料设置" }).click();
     await t.getByRole("status").filter({ hasText: "资料设置已保存" }).waitFor();
     const docs = await (
-      await t.request.get(base + "/api/teacher/documents")
+      await apiCall(t, "get", base + "/api/teacher/documents")
     ).json();
     const did = docs.find((d) => d.title === `public-${suffix}.txt`).id;
     if (
-      (await s.request.get(base + `/api/materials/${did}/file`)).status() !==
-      404
+      (
+        await apiCall(s, "get", base + `/api/materials/${did}/file`)
+      ).status() !== 404
     )
       throw Error("file parent visibility");
     await t.getByRole("link", { name: "章节管理", exact: true }).click();
@@ -126,7 +136,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       throw Error("code rendering");
     if (
       (await (
-        await s.request.get(base + `/api/materials/${did}/file`)
+        await apiCall(s, "get", base + `/api/materials/${did}/file`)
       ).text()) !== "公共资料正文"
     )
       throw Error("public download");
@@ -136,13 +146,11 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await s
       .getByRole("heading", { name: `public-${suffix}.txt`, exact: true })
       .waitFor();
-    await s
-      .getByLabel("上传资料")
-      .setInputFiles({
-        name: `private-${suffix}.txt`,
-        mimeType: "text/plain",
-        buffer: Buffer.from("学生私人正文"),
-      });
+    await s.getByLabel("上传资料").setInputFiles({
+      name: `private-${suffix}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from("学生私人正文"),
+    });
     await s
       .locator("button")
       .filter({ hasText: /^上传资料$/ })
@@ -152,21 +160,24 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .filter({ hasText: `private-${suffix}.txt` });
     await privateRow.waitFor();
     const personal = await (
-      await s.request.get(base + "/api/materials?category=personal")
+      await apiCall(s, "get", base + "/api/materials?category=personal")
     ).json();
     const pid = personal.find((d) => d.title === `private-${suffix}.txt`).id;
     if (
-      (await b.request.get(base + `/api/materials/${pid}/file`)).status() !==
-      404
+      (
+        await apiCall(b, "get", base + `/api/materials/${pid}/file`)
+      ).status() !== 404
     )
       throw Error("other student read");
-    const aiDenied = await b.request.post(base + "/api/chat", {
+    const aiDenied = await apiCall(b, "post", base + "/api/chat", {
       headers: { "X-CSRF-Token": await csrf(b) },
       data: { question: "read", material_id: pid },
     });
     if (aiDenied.status() !== 404) throw Error("AI context access");
     s.once("dialog", (d) => d.accept());
-    await privateRow.getByRole("button", { name: "删除", exact: true }).click();
+    await privateRow
+      .getByRole("button", { name: "移入回收站", exact: true })
+      .click();
     await privateRow.waitFor({ state: "detached" });
     await s.getByRole("link", { name: "算法实验", exact: true }).click();
     await s.getByRole("button", { name: "示例 2（含空闲）" }).click();
@@ -188,10 +199,12 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .waitFor();
     // 取消发布后学生不能通过直链访问已看过的文件。
     const meta = await (
-      await t.request.get(base + "/api/teacher/documents")
+      await apiCall(t, "get", base + "/api/teacher/documents")
     ).json();
     const doc = meta.find((d) => d.id === did);
-    const unpublish = await t.request.put(
+    const unpublish = await apiCall(
+      t,
+      "put",
       base + `/api/teacher/documents/${did}`,
       {
         headers: { "X-CSRF-Token": await csrf(t) },
@@ -205,8 +218,9 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     );
     if (unpublish.status() !== 200) throw Error("unpublish failed");
     if (
-      (await s.request.get(base + `/api/materials/${did}/file`)).status() !==
-      404
+      (
+        await apiCall(s, "get", base + `/api/materials/${did}/file`)
+      ).status() !== 404
     )
       throw Error("unpublish cache exposure");
     await t.getByRole("link", { name: "练习题管理", exact: true }).click();
@@ -237,14 +251,41 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .waitFor();
     await s.getByRole("button", { name: "退出登录", exact: true }).click();
     await s.waitForURL("**/login");
-    if ((await s.request.get(base + "/api/materials")).status() !== 401)
+    if ((await apiCall(s, "get", base + "/api/materials")).status() !== 401)
       throw Error("logout did not revoke");
     await b.setViewportSize({ width: 640, height: 800 });
     await b.goto(base + "/student/dashboard");
     await b.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+    // 同一个浏览器上下文中开第二个普通标签，独立账号并刷新。
+    await t.goto(base + "/teacher/accounts");
+    const createdName = "browser-student-" + suffix;
+    await t.getByLabel("用户名", { exact: true }).fill(createdName);
+    await t.getByLabel("初始密码", { exact: true }).fill("test-only-" + suffix);
+    await t.getByRole("button", { name: "创建账号", exact: true }).click();
+    await t.getByRole("row").filter({ hasText: createdName }).waitFor();
+    const sameBrowserStudent = await contexts[0].newPage();
+    sameBrowserStudent.on("pageerror", (e) => errors.push(e.message));
+    await login(sameBrowserStudent, accounts[1]);
+    await sameBrowserStudent.reload();
+    await sameBrowserStudent
+      .getByRole("heading", { name: "学习首页", exact: true })
+      .waitFor();
+    await t.reload();
+    await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
+    if (
+      (await (await apiCall(t, "get", base + "/api/auth/me")).json()).role !==
+      "teacher"
+    )
+      throw Error("teacher tab switched");
+    await sameBrowserStudent
+      .getByRole("button", { name: "退出登录", exact: true })
+      .click();
+    await sameBrowserStudent.waitForURL("**/login");
+    if ((await apiCall(t, "get", base + "/api/auth/me")).status() !== 200)
+      throw Error("other tab logout revoked teacher");
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "PASS browser V0.2: 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；无JS异常",
+      "PASS browser V0.2: 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
     );
   } finally {
     await browser.close();

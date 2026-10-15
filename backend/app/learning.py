@@ -23,7 +23,7 @@ def chapters(user: dict = Depends(require_user)):
         return [
             dict(r)
             for r in db.execute(
-                "SELECT ch.* FROM chapters ch JOIN courses c ON c.id=ch.course_id WHERE (? OR (ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,ch.id",
+                "SELECT ch.* FROM chapters ch JOIN courses c ON c.id=ch.course_id WHERE ch.archived_at IS NULL AND (? OR (ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,ch.id",
                 (user["role"] == "teacher",),
             )
         ]
@@ -35,7 +35,7 @@ def knowledge(chapter_id: int | None = None, user: dict = Depends(require_user))
         return [
             dict(r)
             for r in db.execute(
-                "SELECT k.* FROM knowledge_points k JOIN chapters ch ON ch.id=k.chapter_id JOIN courses c ON c.id=ch.course_id WHERE (? IS NULL OR k.chapter_id=?) AND (? OR (k.published=1 AND ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,k.id",
+                "SELECT k.* FROM knowledge_points k JOIN chapters ch ON ch.id=k.chapter_id JOIN courses c ON c.id=ch.course_id WHERE (? IS NULL OR k.chapter_id=?) AND ch.archived_at IS NULL AND (? OR (k.published=1 AND ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,k.id",
                 (chapter_id, chapter_id, user["role"] == "teacher"),
             )
         ]

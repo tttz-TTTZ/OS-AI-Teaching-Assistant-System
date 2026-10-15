@@ -1,6 +1,7 @@
+import { fileUrl } from "../api";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
-import { api, courseApi, Material } from "../api";
+import { api, courseApi, Material, documentApi } from "../api";
 import { Page, Notice, useChapters } from "../components";
 export default function Materials() {
   const [params] = useSearchParams();
@@ -12,6 +13,8 @@ export default function Materials() {
         .then(setView)
         .catch((e) => setError(e.message));
   }, [documentId]);
+  const [q, setQ] = useState("");
+  const [trash, setTrash] = useState(false);
   const [items, setItems] = useState<Material[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,14 @@ export default function Materials() {
     setLoading(true);
     try {
       setError("");
-      setItems(await api.materials(offset, category));
+      setItems(
+        await documentApi.list(false, {
+          q,
+          trash,
+          offset,
+          category: category === "all" ? undefined : category,
+        }),
+      );
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -35,7 +45,7 @@ export default function Materials() {
   }
   useEffect(() => {
     void refresh();
-  }, [offset, category]);
+  }, [offset, category, q, trash]);
   async function upload(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!file) return;
@@ -63,7 +73,7 @@ export default function Materials() {
     }
   }
   async function remove(m: Material) {
-    if (!confirm(`删除“${m.title}”？`)) return;
+    if (!confirm(`移入回收站“${m.title}”？原文件保留，可恢复。`)) return;
     setBusy(true);
     try {
       await api.deleteMaterial(m.id);
@@ -112,6 +122,30 @@ export default function Materials() {
       </section>
       <Notice error={error || chapterError} />
       <section className="panel spaced">
+        <div className="filters">
+          <input
+            aria-label="搜索资料"
+            placeholder="按标题搜索"
+            value={q}
+            maxLength={200}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setOffset(0);
+            }}
+          />
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={trash}
+              onChange={(e) => {
+                setTrash(e.target.checked);
+                setOffset(0);
+                setView(undefined);
+              }}
+            />
+            本人的回收站
+          </label>
+        </div>
         <div className="toolbar">
           <h2>资料列表</h2>
           <select
@@ -163,17 +197,36 @@ export default function Materials() {
                             : ""}
                         </td>
                         <td>
+                          {m.deleted_at && (
+                            <button
+                              className="secondary"
+                              onClick={() => {
+                                documentApi
+                                  .restore(m.id)
+                                  .then(() => refresh())
+                                  .catch((e) => setError(e.message));
+                              }}
+                            >
+                              恢复
+                            </button>
+                          )}
                           <button
+                            disabled={!!m.deleted_at}
                             className="secondary"
-                            onClick={() => setView(m)}
+                            onClick={() => {
+                              api
+                                .material(m.id)
+                                .then(setView)
+                                .catch((e) => setError(e.message));
+                            }}
                           >
                             详情
                           </button>{" "}
-                          {m.file_type && (
+                          {m.file_type && !m.deleted_at && (
                             <>
                               <a
                                 className="textlink"
-                                href={`/api/materials/${m.id}/file`}
+                                href={fileUrl(m.id)}
                                 target="_blank"
                                 rel="noreferrer"
                               >
@@ -181,19 +234,19 @@ export default function Materials() {
                               </a>{" "}
                               <a
                                 className="textlink"
-                                href={`/api/materials/${m.id}/file?download=true`}
+                                href={fileUrl(m.id, true)}
                               >
                                 下载
                               </a>
                             </>
                           )}{" "}
-                          {m.category === "personal" && (
+                          {m.category === "personal" && !m.deleted_at && (
                             <button
                               className="danger"
                               disabled={busy}
                               onClick={() => void remove(m)}
                             >
-                              删除
+                              移入回收站
                             </button>
                           )}
                         </td>

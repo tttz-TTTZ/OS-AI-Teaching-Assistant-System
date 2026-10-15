@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-def migrate(path: Path) -> None:
+def _migrate_v2(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     existed = path.exists() and path.stat().st_size > 0
     db = sqlite3.connect(path)
@@ -86,3 +86,49 @@ def migrate(path: Path) -> None:
         raise
     finally:
         db.close()
+
+
+def migrate(path: Path) -> None:
+    # 原有V0.2迁移保持不变。后续按版本顺序追加，不能在version=2前提前返回。
+    was_v2 = False
+    if path.exists() and path.stat().st_size:
+        with sqlite3.connect(path) as db:
+            if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='schema_versions'"
+            ).fetchone():
+                was_v2 = bool(
+                    db.execute(
+                        "SELECT 1 FROM schema_versions WHERE version=2"
+                    ).fetchone()
+                )
+                if db.execute(
+                    "SELECT 1 FROM schema_versions WHERE version=3"
+                ).fetchone():
+                    return
+    if was_v2:
+        from .persistence import backup_data
+
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        backup_data(path, path.parent / "backups" / ("before-v3-" + stamp))
+    _migrate_v2(path)
+    with sqlite3.connect(path) as db:
+        db.execute("BEGIN IMMEDIATE")
+        for statement in [
+            "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE documents ADD COLUMN sha256 TEXT",
+            "ALTER TABLE documents ADD COLUMN summary TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE documents ADD COLUMN source_title TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE documents ADD COLUMN source_url TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE documents ADD COLUMN deleted_at TEXT",
+            "ALTER TABLE documents ADD COLUMN published_at TEXT",
+            "ALTER TABLE chapters ADD COLUMN textbook_number INTEGER",
+            "ALTER TABLE chapters ADD COLUMN pdf_start INTEGER",
+            "ALTER TABLE chapters ADD COLUMN pdf_end INTEGER",
+            "ALTER TABLE chapters ADD COLUMN archived_at TEXT",
+            "CREATE TABLE document_versions(id INTEGER PRIMARY KEY,document_id INTEGER NOT NULL REFERENCES documents(id),stored_name TEXT NOT NULL,original_name TEXT NOT NULL,file_size INTEGER NOT NULL,file_type TEXT NOT NULL,sha256 TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+            "CREATE TABLE account_audit(id INTEGER PRIMARY KEY,actor_id INTEGER REFERENCES users(id),target_id INTEGER REFERENCES users(id),action TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+            "CREATE INDEX documents_visibility ON documents(category,deleted_at,published,chapter_id)",
+            "CREATE INDEX conversations_owner ON conversations(user_id,id)",
+            "INSERT INTO schema_versions VALUES(3)",
+        ]:
+            db.execute(statement)

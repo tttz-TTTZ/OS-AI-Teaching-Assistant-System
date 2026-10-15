@@ -4,7 +4,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from .auth import teacher, require_user
-from .access import visible_chapter
+from .access import visible_chapter, list_documents
 
 router = APIRouter(prefix="/api/teacher", dependencies=[Depends(teacher)])
 
@@ -42,7 +42,10 @@ class ChapterInput(BaseModel):
 def chapters():
     with database() as db:
         return [
-            dict(r) for r in db.execute("SELECT * FROM chapters ORDER BY sort_order,id")
+            dict(r)
+            for r in db.execute(
+                "SELECT * FROM chapters WHERE archived_at IS NULL ORDER BY sort_order,id"
+            )
         ]
 
 
@@ -158,33 +161,31 @@ class DocumentInput(BaseModel):
     chapter_id: int | None = None
     knowledge_ids: list[int] = Field(default_factory=list, max_length=100)
     published: bool = False
+    summary: str = Field(default="", max_length=2000)
+    source_title: str = Field(default="", max_length=500)
+    source_url: str = Field(default="", max_length=1000)
 
 
 @router.get("/documents")
-def documents():
-    with database() as db:
-        rows = [
-            dict(r)
-            for r in db.execute(
-                "SELECT * FROM documents WHERE category='public' ORDER BY id DESC"
-            )
-        ]
-        for row in rows:
-            row["knowledge_ids"] = [
-                r[0]
-                for r in db.execute(
-                    "SELECT knowledge_point_id FROM document_knowledge_points WHERE document_id=?",
-                    (row["id"],),
-                )
-            ]
-        return rows
+def documents(
+    q: str = "",
+    chapter_id: int | None = None,
+    published: bool | None = None,
+    trash: bool = False,
+    limit: int = 50,
+    offset: int = 0,
+    user: dict = Depends(teacher),
+):
+    return list_documents(
+        user, limit, offset, "public", q, chapter_id, trash, published
+    )
 
 
 @router.put("/documents/{item_id}")
 def edit_document(item_id: int, body: DocumentInput):
     with database() as db:
         document = exists(db, "documents", item_id)
-        if document["category"] != "public":
+        if document["category"] != "public" or document["deleted_at"]:
             raise HTTPException(404, "公共资料不存在")
         chapter = (
             exists(db, "chapters", body.chapter_id)
@@ -199,11 +200,15 @@ def edit_document(item_id: int, body: DocumentInput):
             if kchapter["course_id"] != document["course_id"]:
                 raise HTTPException(422, "资料与知识点必须属于同一课程")
         db.execute(
-            "UPDATE documents SET title=?,chapter_id=?,chapter=?,published=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            "UPDATE documents SET title=?,chapter_id=?,chapter=?,published=?,summary=?,source_title=?,source_url=?,published_at=CASE WHEN ?=1 AND published=0 THEN CURRENT_TIMESTAMP ELSE published_at END,updated_at=CURRENT_TIMESTAMP WHERE id=?",
             (
                 body.title,
                 body.chapter_id,
                 chapter["title"] if chapter else "",
+                body.published,
+                body.summary,
+                body.source_title,
+                body.source_url,
                 body.published,
                 item_id,
             ),

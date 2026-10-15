@@ -24,6 +24,8 @@ import TeacherChapters from "./pages/teacher/Chapters";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
 import TeacherQuestions from "./pages/teacher/Questions";
 import TeacherMaterials from "./pages/teacher/Materials";
+import Accounts from "./pages/teacher/Accounts";
+import Profile from "./pages/Profile";
 import { Page, Notice } from "./components";
 const student = [
   ["dashboard", "学习首页"],
@@ -39,6 +41,7 @@ const teacher = [
   ["knowledge", "知识点管理"],
   ["materials", "公共资料"],
   ["questions", "练习题管理"],
+  ["accounts", "账号管理"],
 ];
 function Guard({ role }: { role: "student" | "teacher" }) {
   const { user, loading } = useAuth();
@@ -79,7 +82,15 @@ function Layout({ role }: { role: "student" | "teacher" }) {
           ))}
         </nav>
         <footer>
-          <strong>{user?.username}</strong>
+          <strong>当前标签：{user?.username}</strong>
+          <p>
+            <NavLink to={`/${role}/profile`}>个人账号 / 修改密码</NavLink>
+          </p>
+          <p>
+            <a href="/login?new_session=1" target="_blank" rel="noreferrer">
+              新标签登录其他账号 ↗
+            </a>
+          </p>
           <p>V0.2 · 本地课程平台</p>
           <button
             className="secondary"
@@ -136,6 +147,7 @@ function App() {
         <Route path="experiments" element={<Lab />} />
         <Route path="ai-chat" element={<Chat />} />
         <Route path="practice" element={<Practice />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="/teacher" element={<Guard role="teacher" />}>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -144,6 +156,8 @@ function App() {
         <Route path="knowledge" element={<TeacherKnowledge />} />
         <Route path="questions" element={<TeacherQuestions />} />
         <Route path="materials" element={<TeacherMaterials />} />
+        <Route path="accounts" element={<Accounts />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
       {["/", "/materials", "/knowledge", "/lab", "/chat", "/practice"].map(
         (p) => (

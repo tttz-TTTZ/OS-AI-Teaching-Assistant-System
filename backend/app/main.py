@@ -10,12 +10,17 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
-DB_PATH = Path(os.getenv("DATABASE_PATH", "data/assistant.db"))
+_configured_db = Path(os.getenv("DATABASE_PATH", "data/assistant.db"))
+DB_PATH = (
+    _configured_db
+    if _configured_db.is_absolute()
+    else Path(__file__).resolve().parents[1] / _configured_db
+)
 
 
 @contextmanager
 def database():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     try:
@@ -30,11 +35,19 @@ async def lifespan(app):
     from .migrations import migrate
 
     migrate(DB_PATH)
+    with database() as db:
+        db.execute("PRAGMA journal_mode=WAL")
     yield
 
 
 from .auth import require_user
-from .access import read_document, writable_document, document_visible, visible_chapter
+from .access import (
+    read_document,
+    writable_document,
+    document_visible,
+    visible_chapter,
+    list_documents,
+)
 
 app = FastAPI(
     title="操作系统课程智能助教 · 开发底座",
@@ -87,22 +100,15 @@ def materials(
     offset: int = 0,
     category: str | None = None,
     user: dict = Depends(require_user),
+    q: str = "",
+    chapter_id: int | None = None,
+    trash: bool = False,
 ):
     if not 1 <= limit <= 100 or offset < 0:
         raise HTTPException(422, "limit 应为 1–100，offset 不小于 0")
     if category not in (None, "public", "personal"):
         raise HTTPException(422, "资料类别无效")
-    with database() as db:
-        rows = [
-            dict(row)
-            for row in db.execute(
-                "SELECT * FROM documents WHERE (? IS NULL OR category=?) ORDER BY id DESC",
-                (category, category),
-            )
-        ]
-        return [row for row in rows if document_visible(db, row, user)][
-            offset : offset + limit
-        ]
+    return list_documents(user, limit, offset, category, q, chapter_id, trash)
 
 
 def resolve_legacy_chapter(db, title: str, user: dict):
@@ -165,17 +171,16 @@ def update_material(
 
 @app.delete("/api/materials/{material_id}", status_code=204)
 def delete_material(material_id: int, user: dict = Depends(require_user)):
-    with database() as db:
+    # 回收站保留元数据与原文件，避免数据库成功删除而物理文件失败的不一致。
+    from .persistence import storage_lock
+
+    with storage_lock(DB_PATH), database() as db:
         material = get_material(db, material_id, user)
         writable_document(material, user)
-        db.execute("DELETE FROM documents WHERE id=?", (material_id,))
-    if material["stored_name"]:
-        from .files import storage
-
-        root = storage().resolve()
-        target = (root / material["stored_name"]).resolve()
-        if target.parent == root:
-            target.unlink(missing_ok=True)
+        db.execute(
+            "UPDATE documents SET deleted_at=CURRENT_TIMESTAMP,published=0 WHERE id=?",
+            (material_id,),
+        )
 
 
 async def generate_answer(question: str, context: str):
@@ -273,3 +278,24 @@ async def no_api_cache(request, call_next):
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+@app.get("/api/config")
+def configuration():
+    from .files import PUBLIC_MAX_SIZE, MAX_SIZE
+
+    return {
+        "public_upload_limit_bytes": PUBLIC_MAX_SIZE,
+        "personal_upload_limit_bytes": MAX_SIZE,
+        "storage": "persistent-filesystem",
+        "auth": "tab-context-cookie",
+    }
+
+
+from .accounts import router as accounts_router
+
+app.include_router(accounts_router)
+
+from .textbook import router as textbook_router
+
+app.include_router(textbook_router)

@@ -112,8 +112,10 @@ def test_file_lifecycle(client):
         ]
     )
     assert client.delete(f"/api/materials/{mid}").status_code == 204
-    assert not list((main.DB_PATH.parent / "uploads").glob("*"))
+    assert list((main.DB_PATH.parent / "uploads").glob("*"))  # 回收站保留原文件
     assert client.get(f"/api/materials/{mid}/file").status_code == 404
+    assert client.post(f"/api/materials/{mid}/restore").status_code == 200
+    assert client.get(f"/api/materials/{mid}/file").text == "进程资料"
     public = next(
         i for i in client.get("/api/materials").json() if i["category"] == "public"
     )

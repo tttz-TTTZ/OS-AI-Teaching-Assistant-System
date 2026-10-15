@@ -1,6 +1,8 @@
-# 操作系统课程 AI 助教系统 · V0.2
+# 操作系统课程 AI 助教系统 · V0.2 资料与账号增量版本
 
 一个前端、一个 FastAPI 后端、一套 SQLite 数据库的本地课程平台。**现有实际技术栈为 React 19 + TypeScript + Vite，用户已确认继续沿用 React。** 教师和学生使用独立路由布局，复用组件；没有换框架或引入微服务。
+
+**当前进度与 VS Code 继续开发：先读 [docs/CODEX-HANDOFF.md](docs/CODEX-HANDOFF.md)。账号、独立标签登录、资料回收站与成套备份已增量实现，Windows/阿里云部署仍待实机验收；本页原V0.2细节以交接文档为准。**
 
 需求依据：[docs/requirements.md](docs/requirements.md)。设计与迁移：[docs/V02-DESIGN.md](docs/V02-DESIGN.md)。接口：[docs/API.md](docs/API.md)。测试及逐项验收：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
 
@@ -50,7 +52,7 @@ npm.cmd --prefix frontend run dev -- --strictPort
 
 本机浏览器地址栏输入 `http://127.0.0.1:5173/login`。教师登录后进入 `/teacher/dashboard`，学生进入 `/student/dashboard`。接口文档地址输入 `http://127.0.0.1:8000/docs`。文件上传需登录及 CSRF；Swagger 中可先调用登录和 me 获取 csrf_token，再在需写入的请求中使用 `X-CSRF-Token`（常规操作建议用前端）。
 
-要同时验收教师和学生，使用不同浏览器或隐私窗口；同一浏览器配置里的标签页共享登录 Cookie，切换账号会切换整个浏览器会话。
+要同时验收教师和学生，使用侧栏“新标签登录其他账号”入口。新前端用标签上下文选择不同HttpOnly会话Cookie，刷新保持各自账号，退出一个标签不会退出另一个账号。不要通过复制已登录标签来建立独立身份；文件查看/下载链接会携带非秘密的上下文选择器，真实登录令牌仍不存于JavaScript存储。
 
 ## Linux / macOS
 
@@ -153,7 +155,7 @@ scripts/           安装/启动、接口冒烟、隔离浏览器验收
 - 401：未登录或 8 小时会话过期，重新登录；403：角色不足、CSRF 过期或请求来源错误。
 - 刷新后跳登录：检查后端是否运行，是否禁用 Cookie，是否混用了 localhost 与 127.0.0.1。Cookie 不存于 localStorage。
 - 看不到刚创建的内容：检查课程、章节和内容本身的发布状态；公共文件上传后默认草稿。
-- 上传：仅非空 PDF / UTF-8 TXT，文件 ≤10 MB、整个请求 ≤11 MB；随机存储名、编码/文件头检查、授权文件访问。不是杀毒或完整 PDF 格式审查；PDF 未抽取正文，TXT 最多提取 50000 字。
+- 上传：仅非空 PDF / UTF-8 TXT，教师公共PDF ≤150 MiB，TXT/个人文件 ≤10 MiB；请求解析前限制并磁盘暂存；随机存储名、编码/文件头检查、授权文件访问。不是杀毒或完整 PDF 格式审查；PDF 未抽取正文，TXT 最多提取 50000 字。
 - Vite 端口/代理改变：默认 API 在 8000、前端 5173。可用 `API_PROXY_TARGET` 覆盖代理目标，并同步后端 `APP_ORIGINS`（逗号分隔的准确前端 Origin）；不要添加任意公网来源。
 - 测试浏览器下载失败：本机执行 `npx playwright install chromium`；在云环境可用已有系统 Chromium。Windows 实机和真实 AI 仍需你本机验收。
 - 开发脚本不含密码重置；忘记密码应另做管理员恢复操作，不能直接删库。

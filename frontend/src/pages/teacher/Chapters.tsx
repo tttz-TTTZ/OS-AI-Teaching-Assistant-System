@@ -1,3 +1,4 @@
+import { textbookApi, TextbookPlan } from "../../api";
 import { useState, FormEvent } from "react";
 import { teacherApi, ChapterInput, Chapter } from "../../api";
 import { Page, Notice } from "../../components";
@@ -10,6 +11,7 @@ const empty: ChapterInput = {
   published: false,
 };
 export default function Chapters() {
+  const [plan, setPlan] = useState<TextbookPlan>();
   const { data, error, loading, refresh, setError } = useRemote(
     teacherApi.chapters,
     [] as Chapter[],
@@ -54,6 +56,55 @@ export default function Chapters() {
   }
   return (
     <Page title="章节管理">
+      <section className="panel">
+        <h2>按学院教材对齐七章</h2>
+        <p>
+          先预览；执行前自动备份。保留知识点/资料/题目及所有者，旧拆分目录归档。不会删除自定义章节。
+        </p>
+        <button
+          className="secondary"
+          disabled={busy}
+          onClick={() => {
+            textbookApi
+              .plan()
+              .then(setPlan)
+              .catch((e) => setError(e.message));
+          }}
+        >
+          预览教材章节迁移
+        </button>
+        {plan && (
+          <>
+            <ol>
+              {plan.changes.map((c) => (
+                <li key={c.number}>
+                  第{c.number}章 {c.title}：
+                  {c.source_titles.join("、") || "新增"}；PDF {c.pdf_start}–
+                  {c.pdf_end}
+                </li>
+              ))}
+            </ol>
+            <button
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  const r = await textbookApi.apply(plan.fingerprint);
+                  setPlan(undefined);
+                  await refresh();
+                  setSuccess("教材目录已对齐，备份：" + r.backup);
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              确认备份并对齐教材目录
+            </button>
+          </>
+        )}
+      </section>
       <Notice error={error} />
       {success && (
         <p role="status" className="feedback">

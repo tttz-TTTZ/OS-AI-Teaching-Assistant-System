@@ -235,7 +235,7 @@ def test_public_upload_linking_and_parent_visibility(clients):
                 "SELECT count(*) FROM document_knowledge_points WHERE document_id=?",
                 (did,),
             ).fetchone()[0]
-            == 0
+            == 1
         )
 
 

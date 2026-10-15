@@ -1,3 +1,4 @@
+import { fileUrl } from "../api";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { courseApi, Knowledge as Item } from "../api";
@@ -111,7 +112,7 @@ export default function Knowledge() {
                 {m.file_type && (
                   <a
                     className="textlink"
-                    href={`/api/materials/${m.id}/file`}
+                    href={fileUrl(m.id)}
                     target="_blank"
                     rel="noreferrer"
                   >

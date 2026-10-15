@@ -1,3 +1,27 @@
+const CONTEXT_KEY = "os:session-context";
+const query = new URLSearchParams(window.location.search);
+if (query.get("new_session") === "1") {
+  sessionStorage.removeItem(CONTEXT_KEY);
+  query.delete("new_session");
+  history.replaceState(
+    null,
+    "",
+    window.location.pathname + (query.size ? "?" + query.toString() : ""),
+  );
+}
+export function sessionContext() {
+  let value = sessionStorage.getItem(CONTEXT_KEY);
+  if (!value) {
+    value = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+      b.toString(16).padStart(2, "0"),
+    ).join("");
+    sessionStorage.setItem(CONTEXT_KEY, value);
+  }
+  return value;
+}
+export function fileUrl(id: number, download = false) {
+  return `/api/materials/${id}/file?session_context=${encodeURIComponent(sessionContext())}${download ? "&download=true" : ""}`;
+}
 let csrfToken = "";
 export function setCsrfToken(value: string) {
   csrfToken = value;
@@ -16,6 +40,12 @@ export interface Material {
   course_id: number;
   published: boolean;
   knowledge_ids?: number[];
+  summary: string;
+  source_title: string;
+  source_url: string;
+  deleted_at: string | null;
+  sha256: string | null;
+  published_at: string | null;
 }
 export interface ChatResult {
   id: number;
@@ -31,6 +61,7 @@ export async function request<T>(
     credentials: "same-origin",
     ...options,
     headers: {
+      "X-Session-Context": sessionContext(),
       ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(options.body instanceof FormData
         ? {}
@@ -169,6 +200,7 @@ export interface User {
   username: string;
   role: "teacher" | "student";
   csrf_token: string;
+  is_admin: boolean;
 }
 export const authApi = {
   me: () => request<User>("/auth/me"),
@@ -223,6 +255,9 @@ export const teacherApi = {
       chapter_id: number | null;
       knowledge_ids: number[];
       published: boolean;
+      summary?: string;
+      source_title?: string;
+      source_url?: string;
     },
   ) => save<Material>("/teacher/documents", body, id),
   uploadPublic: (file: File, chapter_id: number | null) => {
@@ -240,3 +275,92 @@ export const teacherApi = {
     save<ManagedQuestion>("/teacher/questions", body, id),
 };
 export const courses = () => request<Course[]>("/courses");
+
+export interface Account {
+  id: number;
+  username: string;
+  role: "teacher" | "student";
+  active: boolean;
+  is_admin: boolean;
+  created_at: string;
+}
+export interface DocumentFilter {
+  q?: string;
+  chapter_id?: number;
+  trash?: boolean;
+  published?: boolean;
+  offset?: number;
+  category?: string;
+}
+function filters(options: DocumentFilter) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  }
+  return params.toString();
+}
+export const documentApi = {
+  list: (teacher: boolean, options: DocumentFilter = {}) =>
+    request<Material[]>(
+      `${teacher ? "/teacher/documents" : "/materials"}?${filters(options)}`,
+    ),
+  restore: (id: number) =>
+    request<Material>(`/materials/${id}/restore`, { method: "POST" }),
+  replace: (id: number, file: File) => {
+    const data = new FormData();
+    data.append("file", file);
+    return request<Material>(`/materials/${id}/replace`, {
+      method: "POST",
+      body: data,
+    });
+  },
+  versions: (id: number) =>
+    request<{ id: number; original_name: string; created_at: string }[]>(
+      `/materials/${id}/versions`,
+    ),
+};
+export const accountApi = {
+  list: (q = "") =>
+    request<Account[]>(
+      `/teacher/accounts?q=${encodeURIComponent(q)}&limit=100`,
+    ),
+  create: (username: string, password: string, role: string) =>
+    request<Account>("/teacher/accounts", {
+      method: "POST",
+      body: JSON.stringify({ username, password, role }),
+    }),
+  active: (id: number, active: boolean) =>
+    request<Account>(`/teacher/accounts/${id}/status`, {
+      method: "PUT",
+      body: JSON.stringify({ active }),
+    }),
+  reset: (id: number, password: string) =>
+    request<void>(`/teacher/accounts/${id}/password`, {
+      method: "POST",
+      body: JSON.stringify({ password }),
+    }),
+  password: (current_password: string, new_password: string) =>
+    request<void>("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({ current_password, new_password }),
+    }),
+};
+export interface TextbookPlan {
+  fingerprint: string;
+  note: string;
+  changes: {
+    number: number;
+    title: string;
+    source_titles: string[];
+    pdf_start: number;
+    pdf_end: number;
+  }[];
+}
+export const textbookApi = {
+  plan: () => request<TextbookPlan>("/teacher/textbook/plan"),
+  apply: (fingerprint: string) =>
+    request<{ backup: string }>("/teacher/textbook/apply", {
+      method: "POST",
+      body: JSON.stringify({ fingerprint }),
+    }),
+};

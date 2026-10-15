@@ -4,6 +4,7 @@ import hashlib
 import os
 import secrets
 import time
+import re
 from typing import Literal
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
@@ -54,19 +55,31 @@ def check_origin(request: Request) -> None:
         raise HTTPException(403, "不允许的请求来源")
 
 
+def session_cookie(request: Request) -> str:
+    # selector不是凭据；真正的随机会话令牌仍然只在HttpOnly Cookie中。
+    context = request.headers.get("x-session-context") or request.query_params.get(
+        "session_context"
+    )
+    if context:
+        if not re.fullmatch(r"[A-Za-z0-9_-]{16,64}", context):
+            raise HTTPException(400, "标签页会话标识无效")
+        return COOKIE + "_" + context
+    return COOKIE  # 兼容原API客户端；新前端始终使用独立标签上下文。
+
+
 def require_user(
     request: Request,
     csrf_header: str | None = Header(default=None, alias="X-CSRF-Token"),
 ) -> dict | None:
     if request.url.path in ("/api/health", "/api/auth/login"):
         return None
-    token = request.cookies.get(COOKIE, "")
+    token = request.cookies.get(session_cookie(request), "")
     if not token:
         raise HTTPException(401, "请先登录")
     digest = hashlib.sha256(token.encode()).hexdigest()
     with database() as db:
         row = db.execute(
-            "SELECT u.id,u.username,u.role,s.csrf_token FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.active=1",
+            "SELECT u.id,u.username,u.role,u.is_admin,s.csrf_token FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.active=1",
             (digest, int(time.time())),
         ).fetchone()
     if not row:
@@ -110,7 +123,7 @@ def login(body: Login, request: Request, response: Response):
                 (password_hasher.hash(body.password), row["id"]),
             )
         # 登录时撤销当前浏览器旧会话，避免切换用户后旧令牌仍有效。
-        old = request.cookies.get(COOKIE)
+        old = request.cookies.get(session_cookie(request))
         if old:
             db.execute(
                 "DELETE FROM sessions WHERE token_hash=?",
@@ -129,7 +142,7 @@ def login(body: Login, request: Request, response: Response):
             ),
         )
     response.set_cookie(
-        COOKIE,
+        session_cookie(request),
         token,
         max_age=8 * 3600,
         httponly=True,
@@ -142,6 +155,7 @@ def login(body: Login, request: Request, response: Response):
         "id": row["id"],
         "username": row["username"],
         "role": row["role"],
+        "is_admin": bool(row["is_admin"]),
         "csrf_token": csrf,
     }
 
@@ -154,7 +168,43 @@ def me(response: Response, user: dict = Depends(require_user)):
 
 @router.post("/logout", status_code=204)
 def logout(request: Request, response: Response, user: dict = Depends(require_user)):
-    digest = hashlib.sha256(request.cookies[COOKIE].encode()).hexdigest()
+    digest = hashlib.sha256(
+        request.cookies[session_cookie(request)].encode()
+    ).hexdigest()
     with database() as db:
         db.execute("DELETE FROM sessions WHERE token_hash=?", (digest,))
-    response.delete_cookie(COOKIE, path="/api")
+    response.delete_cookie(session_cookie(request), path="/api")
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=12, max_length=128)
+
+
+@router.post("/password", status_code=204)
+def change_password(
+    body: PasswordChange, request: Request, user: dict = Depends(require_user)
+):
+    with database() as db:
+        row = db.execute(
+            "SELECT password_hash FROM users WHERE id=?", (user["id"],)
+        ).fetchone()
+        try:
+            password_hasher.verify(row["password_hash"], body.current_password)
+        except VerificationError:
+            raise HTTPException(400, "当前密码不正确") from None
+        db.execute(
+            "UPDATE users SET password_hash=? WHERE id=?",
+            (password_hasher.hash(body.new_password), user["id"]),
+        )
+        token_hash = hashlib.sha256(
+            request.cookies[session_cookie(request)].encode()
+        ).hexdigest()
+        db.execute(
+            "DELETE FROM sessions WHERE user_id=? AND token_hash<>?",
+            (user["id"], token_hash),
+        )
+        db.execute(
+            "INSERT INTO account_audit(actor_id,target_id,action) VALUES (?,?,'self_password_change')",
+            (user["id"], user["id"]),
+        )
