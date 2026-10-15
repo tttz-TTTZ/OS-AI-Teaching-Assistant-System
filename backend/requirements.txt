@@ -13,6 +13,8 @@ pluggy==1.7.0
 pydantic==2.14.1
 pydantic_core==2.50.1
 pytest==8.3.5
+python-dotenv==1.1.0
+python-multipart==0.0.22
 starlette==0.46.2
 typing-inspection==0.4.4
 typing_extensions==4.16.0
