@@ -400,3 +400,240 @@ button:hover {
     gap: 8px;
   }
 }
+
+.login {
+  max-width: 520px;
+  margin: 8vh auto;
+  padding: 20px;
+}
+.login input {
+  display: block;
+  width: 100%;
+  margin: 8px 0 20px;
+}
+.login button {
+  width: 100%;
+}
+.workspacebar {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #dce5e6;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  color: #61797d;
+  font-size: 13px;
+}
+.teacher aside {
+  border-top: 5px solid #8b6743;
+}
+.teacher .brand {
+  color: #805d38;
+}
+.teacher nav a.active {
+  background: #f1ece4;
+  color: #805d38;
+}
+.teacher button:not(.secondary):not(.danger) {
+  background: #805d38;
+}
+
+.management {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.management input:not([type="checkbox"]),
+.management select {
+  display: block;
+  width: 100%;
+  margin: 8px 0 18px;
+}
+.management textarea {
+  margin: 8px 0 18px;
+}
+.management .editor {
+  min-height: 280px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+}
+.state {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.published {
+  background: #e3f1e9;
+  color: #235c44;
+}
+.draft {
+  background: #f5ebdc;
+  color: #8d5e1e;
+}
+.management table td {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1100px) {
+  .management {
+    grid-template-columns: 1fr;
+  }
+}
+
+header {
+  margin-bottom: 22px;
+}
+header h1 {
+  font-size: 26px;
+}
+.coursebrief {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  background: #e4eeea;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+.coursebrief h2 {
+  margin: 5px 0;
+  font-size: 23px;
+}
+.coursebrief p {
+  margin: 5px 0;
+}
+.chapterlist a {
+  display: flex;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0f2;
+}
+.chapterlist a > span {
+  color: #629381;
+}
+.chapterlist small,
+.resource small {
+  display: block;
+  font-size: 12px;
+  color: #718095;
+}
+.chapterlist b {
+  margin-left: auto;
+}
+.resource {
+  padding: 10px 0;
+  border-bottom: 1px solid #eef1f4;
+}
+.reading {
+  display: grid;
+  grid-template-columns: 210px minmax(280px, 1fr) 200px;
+  gap: 16px;
+  align-items: start;
+}
+.reading .chaptertree {
+  width: auto;
+  height: auto;
+  position: static;
+  display: block;
+  padding: 18px;
+}
+.chaptertree h2,
+.readinglinks h2 {
+  font-size: 17px;
+}
+.chapter,
+.point {
+  background: transparent;
+  color: #40596c;
+  width: 100%;
+  text-align: left;
+  padding: 9px;
+  margin: 3px 0;
+}
+.point {
+  font-size: 13px;
+  padding-left: 20px;
+}
+.selected {
+  background: #e5f0eb;
+  color: #205c4e;
+}
+.readingbody {
+  min-height: 420px;
+}
+.prose {
+  line-height: 1.95;
+  overflow-wrap: anywhere;
+  color: #344a5f;
+}
+.prose p {
+  color: inherit;
+}
+.prose h2 {
+  font-size: 22px;
+  border-bottom: 1px solid #e3e9ee;
+  padding-bottom: 8px;
+}
+.prose h3 {
+  font-size: 19px;
+}
+.prose pre {
+  background: #1e303a;
+  color: #edf5f2;
+  overflow: auto;
+  white-space: pre;
+}
+.prose code {
+  font-family: Consolas, monospace;
+  font-size: 0.9em;
+  background: #edf2f4;
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.readinglinks {
+  font-size: 13px;
+}
+.readinglinks .textlink {
+  display: block;
+  margin: 8px 0;
+}
+.readinglinks .button {
+  padding: 9px 12px;
+}
+@media (max-width: 1250px) {
+  .reading {
+    grid-template-columns: 190px minmax(260px, 1fr);
+  }
+  .readinglinks {
+    grid-column: 2;
+  }
+}
+@media (max-width: 760px) {
+  .coursebrief {
+    display: block;
+  }
+  .coursebrief .button {
+    margin-top: 12px;
+  }
+  .reading {
+    display: block;
+  }
+  .reading section {
+    margin-top: 16px;
+  }
+  .reading .chaptertree {
+    width: 100%;
+  }
+  .readinglinks {
+    grid-column: auto;
+  }
+}

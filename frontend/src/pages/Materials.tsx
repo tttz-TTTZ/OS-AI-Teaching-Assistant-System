@@ -1,7 +1,17 @@
+import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
 import { api, courseApi, Material } from "../api";
 import { Page, Notice, useChapters } from "../components";
 export default function Materials() {
+  const [params] = useSearchParams();
+  const documentId = Number(params.get("document"));
+  useEffect(() => {
+    if (documentId)
+      api
+        .material(documentId)
+        .then(setView)
+        .catch((e) => setError(e.message));
+  }, [documentId]);
   const [items, setItems] = useState<Material[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -68,7 +78,7 @@ export default function Materials() {
   return (
     <Page title="课程资料">
       <p className="hint">
-        公共 / 个人仅用于分类，没有账号与权限隔离。文件仅用于可信本地学习。
+        公共资料由教师发布；个人资料仅本人可读取、下载和删除。文件仅用于可信本地学习。
       </p>
       <section className="panel">
         <h2>上传个人资料</h2>
@@ -91,7 +101,9 @@ export default function Materials() {
             >
               <option value="">未分章</option>
               {chapters.map((c) => (
-                <option key={c.id}>{c.title}</option>
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
               ))}
             </select>
           </label>

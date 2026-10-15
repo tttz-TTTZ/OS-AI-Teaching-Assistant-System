@@ -10,6 +10,14 @@ def client(tmp_path, monkeypatch):
     monkeypatch.delenv("LLM_MODE", raising=False)
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     with TestClient(main.app) as c:
+        from app.auth import create_user
+
+        create_user("test_student", "only-for-unit-tests", "student")
+        logged = c.post(
+            "/api/auth/login",
+            json={"username": "test_student", "password": "only-for-unit-tests"},
+        )
+        c.headers["X-CSRF-Token"] = logged.json()["csrf_token"]
         yield c
 
 
@@ -132,6 +140,11 @@ def test_bad_files(client, name, content, status):
 def test_restart_idempotent(client):
     count = len(client.get("/api/materials").json())
     with TestClient(main.app) as again:
+        login = again.post(
+            "/api/auth/login",
+            json={"username": "test_student", "password": "only-for-unit-tests"},
+        )
+        again.headers["X-CSRF-Token"] = login.json()["csrf_token"]
         assert len(again.get("/api/materials").json()) == count
         assert len(again.get("/api/chapters").json()) == 7
 
@@ -176,10 +189,14 @@ def test_old_database_upgrade(tmp_path, monkeypatch):
         db.execute("INSERT INTO materials(title,content) VALUES ('旧资料','旧正文')")
     monkeypatch.setattr(main, "DB_PATH", path)
     with TestClient(main.app) as c:
-        old = c.get("/api/materials/1").json()
-        assert (
-            old["title"] == "旧资料"
-            and old["content"] == "旧正文"
-            and old["category"] == "personal"
-        )
-        assert len(c.get("/api/chapters").json()) == 7
+        with main.database() as db:
+            old = dict(db.execute("SELECT * FROM documents WHERE id=1").fetchone())
+            assert (
+                old["title"] == "旧资料"
+                and old["content"] == "旧正文"
+                and old["category"] == "personal"
+            )
+            assert old["owner_id"] is None
+            assert db.execute("SELECT count(*) FROM chapters").fetchone()[0] == 7
+        assert c.get("/api/materials/1").status_code == 401
+    assert list((tmp_path / "backups").glob("*/old.db"))

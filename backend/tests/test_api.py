@@ -9,6 +9,14 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setattr(main, "DB_PATH", tmp_path / "test.db")
     monkeypatch.setenv("LLM_MODE", "mock")
     with TestClient(main.app) as c:
+        from app.auth import create_user
+
+        create_user("test_student", "only-for-unit-tests", "student")
+        logged = c.post(
+            "/api/auth/login",
+            json={"username": "test_student", "password": "only-for-unit-tests"},
+        )
+        c.headers["X-CSRF-Token"] = logged.json()["csrf_token"]
         yield c
 
 

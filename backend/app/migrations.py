@@ -1,0 +1,88 @@
+"""非破坏性版本迁移；备份成功后才改现有数据库。"""
+
+import shutil
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def migrate(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existed = path.exists() and path.stat().st_size > 0
+    db = sqlite3.connect(path)
+    db.row_factory = sqlite3.Row
+    try:
+        has_versions = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_versions'"
+        ).fetchone()
+        if (
+            has_versions
+            and db.execute("SELECT 1 FROM schema_versions WHERE version=2").fetchone()
+        ):
+            return
+        if existed:
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+            folder = path.parent / "backups" / stamp
+            folder.mkdir(parents=True)
+            with sqlite3.connect(folder / path.name) as backup:
+                db.backup(backup)
+            if (path.parent / "uploads").exists():
+                shutil.copytree(path.parent / "uploads", folder / "uploads")
+        # 沿用 V0.1 初始化，为空环境及更旧的资料表补齐结构。
+        db.executescript(
+            """
+        CREATE TABLE IF NOT EXISTS materials(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,content TEXT NOT NULL,chapter TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        CREATE TABLE IF NOT EXISTS conversations(id INTEGER PRIMARY KEY AUTOINCREMENT,material_id INTEGER,question TEXT NOT NULL,answer TEXT NOT NULL,model TEXT NOT NULL,mode TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+        """
+        )
+        columns = {row["name"] for row in db.execute("PRAGMA table_info(materials)")}
+        for name, definition in {
+            "category": "TEXT NOT NULL DEFAULT 'personal'",
+            "original_name": "TEXT",
+            "stored_name": "TEXT",
+            "file_size": "INTEGER",
+            "file_type": "TEXT",
+        }.items():
+            if name not in columns:
+                db.execute(f"ALTER TABLE materials ADD COLUMN {name} {definition}")
+        from .course import initialize
+
+        initialize(db)
+        db.commit()
+        db.execute("BEGIN IMMEDIATE")
+        db.execute("ALTER TABLE materials RENAME TO documents")
+        db.execute("ALTER TABLE knowledge RENAME TO knowledge_points")
+        statements = [
+            "CREATE TABLE users(id INTEGER PRIMARY KEY,username TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('teacher','student')),active INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
+            "CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),csrf_token TEXT NOT NULL,expires_at INTEGER NOT NULL)",
+            "CREATE INDEX sessions_expiry ON sessions(expires_at)",
+            "CREATE TABLE courses(id INTEGER PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL DEFAULT '',published INTEGER NOT NULL DEFAULT 0,is_demo INTEGER NOT NULL DEFAULT 1)",
+            "INSERT INTO courses VALUES(1,'操作系统（演示课程）','人工示例内容，请以实际教材为准。',1,1)",
+            "ALTER TABLE chapters ADD COLUMN course_id INTEGER REFERENCES courses(id) DEFAULT 1",
+            "ALTER TABLE chapters ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE chapters ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
+            "UPDATE chapters SET sort_order=id",
+            "ALTER TABLE knowledge_points ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE documents ADD COLUMN course_id INTEGER REFERENCES courses(id) DEFAULT 1",
+            "ALTER TABLE documents ADD COLUMN chapter_id INTEGER REFERENCES chapters(id)",
+            "ALTER TABLE documents ADD COLUMN owner_id INTEGER REFERENCES users(id)",
+            "ALTER TABLE documents ADD COLUMN published INTEGER NOT NULL DEFAULT 0",
+            "UPDATE documents SET published=1 WHERE category='public'",
+            "UPDATE documents SET chapter_id=(SELECT id FROM chapters WHERE chapters.title=documents.chapter ORDER BY id LIMIT 1)",
+            "ALTER TABLE questions ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE conversations ADD COLUMN user_id INTEGER REFERENCES users(id)",
+            "CREATE TABLE document_knowledge_points(document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,knowledge_point_id INTEGER NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,PRIMARY KEY(document_id,knowledge_point_id))",
+            "CREATE INDEX document_owner ON documents(owner_id,category)",
+            "CREATE INDEX knowledge_chapter ON knowledge_points(chapter_id)",
+            "CREATE VIEW materials AS SELECT * FROM documents",
+            "CREATE VIEW knowledge AS SELECT * FROM knowledge_points",
+            "INSERT INTO schema_versions VALUES(2)",
+        ]
+        for statement in statements:
+            db.execute(statement)
+        db.commit()
+    except BaseException:
+        db.rollback()
+        raise
+    finally:
+        db.close()

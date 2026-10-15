@@ -1,57 +1,87 @@
-# 基础接口 v0.1
+# V0.2 API 与数据模型
 
-前端请求以 `/api` 开头；JSON 请求及响应，删除成功返回空体。当前没有认证，仅用于本地开发。
+统一 `/api`。JSON 请求及响应；文件上传用 multipart。除 health/login 外，业务接口均需 `os_session` Cookie。Cookie 为 HttpOnly、SameSite=Strict、Path=/api；本地 HTTP 下 Secure=false，配置 COOKIE_SECURE=true 时需 HTTPS。
+
+写操作还需 `X-CSRF-Token`，由登录或 me 响应取得。浏览器前端自动处理。401 表示未登录/会话过期；403 表示角色不足、CSRF/来源校验失败；404 同时用于内容不存在或不可读，避免透露私人资料；422 参数错误；409 章节仍有关联内容。
+
+## 账号
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | /api/health | 检查数据库连接、返回模型模式（不检测模型可用性） |
-| GET | /api/materials?limit=50&offset=0 | 分页资料列表，limit 1–100 |
-| POST | /api/materials | 创建资料，201 |
-| GET | /api/materials/{id} | 获取资料 |
-| PUT | /api/materials/{id} | 替换资料 |
-| DELETE | /api/materials/{id} | 删除资料，204 |
-| POST | /api/chat | 调用模型并持久化问答记录 |
-| GET | /api/conversations | 最近 50 条问答 |
+| GET | /api/health | 无需登录；数据库状态和 AI 配置标志，不证明模型可调用 |
+| POST | /api/auth/login | `{"username":"自己的账号","password":"自己的密码"}`，返回 id/username/role/csrf_token，设置 Cookie |
+| GET | /api/auth/me | 同上用户信息，不返回密码哈希或会话令牌 |
+| POST | /api/auth/logout | CSRF 校验；撤销当前服务端会话并清 Cookie，204 |
 
-资料输入：`{"title":"进程管理","chapter":"第二章","content":"进程是资源分配的单位"}`。title 长度 1–200，content 最长 50000，chapter 最长 100。响应额外包含 id、created_at、updated_at（UTC）。PUT 未提供 content/chapter 时重置为空字符串。
+密码 Argon2id 哈希；会话随机 256 位令牌，数据库只保存 SHA-256 摘要，8 小时过期。角色不能在登录请求中指定。没有开放注册、默认生产账号或教师自助提权接口。账号由本地管理员 manage.py 交互创建。
 
-问答输入：`{"question":"解释进程","material_id":1}`。question 长度 1–8000；material_id 可省略，指定时读取资料正文作为模型上下文（只是直接注入参考资料，未实现检索增强）。响应：`{"id":1,"answer":"...","model":"mock","mode":"mock"}`。真实调用 mode 为 openai。
+## 学习接口（教师可读草稿，学生仅可读已发布内容）
 
-```bash
-curl -X POST http://127.0.0.1:8000/api/materials -H 'Content-Type: application/json' -d '{"title":"进程管理","content":"进程是资源分配的单位"}'
-curl -X POST http://127.0.0.1:8000/api/chat -H 'Content-Type: application/json' -d '{"question":"解释进程","material_id":1}'
-```
-
-错误使用 FastAPI 的 `detail` 字段：404 资料不存在；422 参数错误；503 模型配置缺失/无效；502 上游错误或无效响应；504 上游超时。上游错误不透出凭据或原始响应。
-
-## 数据设计
-
-- materials：id 主键；title、content、chapter；created_at、updated_at。
-- conversations：id 主键；material_id 可空的历史资料编号；question、answer、model、mode、created_at。
-
-material_id 是历史引用而非外键：删除资料不级联删除问答。只持久化问答文本，不保存当时的资料快照。SQLite 单文件存储，SQL 参数化执行；数据库初始化可重复执行。
-
-## MVP V0.1 新增接口与更新
-
-| 方法 | 路径 | 输入/输出 |
+| 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | /api/chapters | 返回章节 id/title/description |
-| GET | /api/knowledge?chapter_id=3 | 章节知识点列表 |
-| GET | /api/knowledge/{id} | 知识点详情、关联资料、可选 lab_path |
-| POST | /api/materials/upload | multipart：file、可选 chapter（章节名称）；201 返回资料 |
-| GET | /api/materials/{id}/file | 内联查看；`?download=true` 下载 |
-| POST | /api/labs/fcfs | `{"processes":[{"pid":"P1","arrival":0,"burst":4}]}` |
-| GET | /api/questions?chapter_id=1 | 题目与选项，提交前不返回答案 |
-| POST | /api/practice/submit | `{"answers":{"1":0}}`；选项从 0 开始 |
+| GET | /api/courses | 可见课程；本版统一一门演示课程 |
+| GET | /api/chapters | 按 sort_order、id 排序 |
+| GET | /api/knowledge?chapter_id=3 | 可见知识点列表 |
+| GET | /api/knowledge/{id} | 详情，materials 为经授权过滤的显式关联资料 |
+| GET | /api/questions?chapter_id=1 | 题目与 options，不返回 answer/explanation |
+| POST | /api/practice/submit | `{"answers":{"1":0}}`；0-based 选项；返回 score/total/results（答案、解析） |
+| POST | /api/labs/fcfs | 保留原 FCFS 输入输出，必须登录和传 CSRF |
+| POST | /api/chat | `{"question":"...","material_id":1}`，资料可选，引用前检查所有权/发布状态 |
+| GET | /api/conversations | 最近 50 条本人成功问答；历史无归属记录不公开 |
 
-资料列表新增可选 `category=public` 或 `personal`；返回新增 category、original_name、stored_name、file_size、file_type。前端按 50 条分页。无附件的旧资料保持可读。公共资料 PUT/DELETE 返回 403，只是防止误操作，不构成认证或用户隔离。
+FCFS 输入 `{"processes":[{"pid":"P1","arrival":0,"burst":4}]}`。最多 100 进程，ID 去空格唯一，arrival≥0、burst>0 且有限，均≤1000000。稳定排序到达时间，返回 results（start/completion/waiting/turnaround）、timeline（含 idle）、平均指标。无需 AI。
 
-上传使用 UUID 文件名，拒绝不允许的扩展名、空文件、无效 PDF 文件头、非 UTF-8 TXT 或 NUL 内容；文件上限 10 MB（413），解析前请求体总上限 11 MB。非法类型 415。文件路径只能由 ID 查数据库获得，并校验解析后路径不逃出存储目录。PDF 未做全文解析或内容安全扫描。
+AI 仅后端读 LLM_API_KEY，兼容 HTTPS Chat Completions 非流式接口；成功返回 id/answer/model/mode 并记录 user_id。503 未配置，502 上游错误/响应无效，504 超时。默认 openai，无密钥不编造回答；显式 mock 仅演示。每次为单问调用，无完整多轮记忆/RAG。
 
-FCFS 输出 results（每个进程的 pid/arrival/burst/start/completion/waiting/turnaround）、timeline（含 idle 空闲区间）、average_waiting、average_turnaround。参数最多 100 个进程，到达时间 ≥0，运行时间 >0，均 ≤1000000 且为有限数，ID 去除首尾空格后必须唯一。同到达时间按输入顺序，算法独立于 AI。
+## 资料接口
 
-练习响应示例：`{"score":1,"total":1,"results":[{"id":1,"selected":0,"correct":true,"answer":0,"explanation":"..."}]}`。练习不写入学习历史；示例题与课程内容来自服务器数据库。
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | /api/materials?limit=50&offset=0&category=personal | 公共已发布资料 + 本人个人资料；教师可读公共草稿，但不可读其他人的私有文件 |
+| POST | /api/materials | 原文本 CRUD 兼容入口：title/content/chapter；自动创建本人个人资料，不接受客户端指定所有者/公共角色 |
+| GET | /api/materials/{id} | 资料详情，统一授权 |
+| PUT | /api/materials/{id} | 原文本编辑入口；本人私有或教师公共资料 |
+| DELETE | /api/materials/{id} | 本人私有或教师公共资料；204；删除物理文件与资料关联 |
+| POST | /api/materials/upload | multipart：file、可选 chapter_id、category=personal/public；兼容旧 chapter 名称字段；public 仅教师 |
+| GET | /api/materials/{id}/file | 授权内联查看；download=true 下载；不提供 uploads 静态目录 |
 
-健康检查新增 ai_configured（只表示已设置真实模式和密钥，不证明供应商可用）。**默认模式已从 mock 调整为 openai**，缺少密钥时聊天返回 503“尚未配置 AI 服务”。显式 mock 仍保留供测试使用。
+文件 ≤10 MB，请求体 ≤11 MB（解析前限制）；类型仅 PDF/TXT，PDF 检查头，TXT 验证 UTF-8/NUL，使用 UUID 服务端名。非法类型415、过大413、空文件422。新公共上传为草稿；个人文件无论学生还是教师只能本人访问。文件访问与 API 响应 no-store。
 
-新增表：chapters（章节）、knowledge（知识点与章节关联）、questions（选项 JSON、正确选项及解析）、schema_versions（种子版本）。materials 通过向后兼容的加列升级保留旧数据。初始化自动执行，也可从 backend 运行 `python init_db.py`。
+返回字段：id、title、content、chapter（兼容显示）、chapter_id、course_id、category、owner_id、published、original_name、stored_name、file_size、file_type、created_at、updated_at。客户端不能将 stored_name 作为任意路径传入下载接口。PDF 无正文提取；TXT 正文最多 50000 字。
+
+## 教师管理（路由级 require teacher）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET / POST | /api/teacher/chapters | 列表 / 新增 |
+| PUT / DELETE | /api/teacher/chapters/{id} | 编辑 / 删除空章节，关联内容存在返回409 |
+| GET / POST | /api/teacher/knowledge | 列表 / 新增 |
+| PUT | /api/teacher/knowledge/{id} | 编辑、调整章节、发布状态 |
+| GET | /api/teacher/documents | 公共资料（含草稿）及 knowledge_ids |
+| PUT | /api/teacher/documents/{id} | 标题、章节、多知识点、发布；仅公共资料 |
+| GET / POST | /api/teacher/questions | 列表（含答案）/ 新增人工题 |
+| PUT | /api/teacher/questions/{id} | 编辑、发布 |
+
+章节请求：`{"title":"新章","description":"...","course_id":1,"sort_order":10,"published":false}`。
+知识点：`{"chapter_id":1,"title":"概念","content":"# 标题\n正文","lab_path":null,"published":false}`；lab_path 只允许现有 FCFS 路径。
+资料元数据：`{"title":"讲义","chapter_id":1,"knowledge_ids":[1,2],"published":true}`；知识点必须与资料同课程，chapter_id 可空。
+题目：`{"chapter_id":1,"prompt":"问题","options":["A内容","B内容"],"answer":0,"explanation":"解析","published":false}`。
+
+课程、章节、知识点/题目任一层未发布时学生不可读。公共文件受课程、自身及所属章节状态控制；知识点的取消发布会隐藏该知识点，但不会自动撤销一个独立已发布文件（应在资料管理中取消发布文件本身）。
+
+## 数据库
+
+| 表 | 关键关系 |
+|---|---|
+| users | username 唯一、password_hash、teacher/student、active |
+| sessions | token_hash 主键、user_id、csrf_token、expires_at |
+| courses | title、description、published、is_demo |
+| chapters | course_id、sort_order、published，保留原 id |
+| knowledge_points | chapter_id、title、content、lab_path、published |
+| documents | course_id、chapter_id、owner_id、category、published、受控文件元数据 |
+| document_knowledge_points | document_id + knowledge_point_id 复合主键；文档删除级联移除关联 |
+| questions | chapter_id、prompt、options JSON、answer、explanation、published |
+| conversations | user_id、历史 material_id、question、answer、model、mode |
+| schema_versions | 迁移标记，防止重复初始化 |
+
+V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图。旧个人资料 owner_id=NULL、旧问答 user_id=NULL，保留不公开。旧 chapter 文本仅用于显示和旧 API 兼容，新的关系使用 ID。历史表中未重建的外键通过写入校验和删除限制维护；不要绕过 API 直接改数据库。

@@ -1,25 +1,51 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Health, courseApi } from "../api";
+import { Health, courseApi, api, Material, courses, Course } from "../api";
 import { Page, Notice, useChapters } from "../components";
+import { useAuth } from "../auth";
 export default function Home() {
   const { chapters, error } = useChapters();
+  const { user } = useAuth();
   const [health, setHealth] = useState<Health>();
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [course, setCourse] = useState<Course>();
   const [failure, setFailure] = useState("");
+  let last: { chapter: number; point: number; title: string } | undefined;
+  try {
+    last =
+      JSON.parse(sessionStorage.getItem(`os:last:${user?.id}`) || "null") ||
+      undefined;
+  } catch {
+    /*无有效本地访问记录*/
+  }
   useEffect(() => {
-    courseApi
-      .health()
-      .then(setHealth)
+    Promise.all([courseApi.health(), api.materials(0, "public"), courses()])
+      .then(([h, m, c]) => {
+        setHealth(h);
+        setMaterials(m.slice(0, 5));
+        setCourse(c[0]);
+      })
       .catch((e) => setFailure(e.message));
   }, []);
   return (
     <Page title="学习首页">
-      <section className="hero">
-        <span className="badge">LEARN · EXPERIMENT · REFLECT</span>
-        <h2>理解操作系统，从一次探索开始。</h2>
-        <p>学习核心知识，运行真实调度算法，通过章节练习巩固理解。</p>
-        <Link className="button" to="/knowledge">
-          开始学习 →
+      <section className="coursebrief">
+        <div>
+          <span className="badge">
+            {course?.is_demo ? "DEMO COURSE" : "COURSE"}
+          </span>
+          <h2>{course?.title || "课程概览"}</h2>
+          <p>{course?.description || "正在加载课程…"}</p>
+        </div>
+        <Link
+          className="button"
+          to={
+            last
+              ? `/student/knowledge?chapter=${last.chapter}&point=${last.point}`
+              : "/student/knowledge"
+          }
+        >
+          {last ? `继续：${last.title}` : "从章节开始 →"}
         </Link>
       </section>
       <Notice error={error || failure} />
@@ -27,34 +53,60 @@ export default function Home() {
         {health
           ? `后端正常 · 数据库 ${health.database} · ${health.ai_configured ? "AI 已配置（可用性以调用为准）" : "尚未配置 AI 服务"}`
           : "正在检查服务…"}
-        <span> 人工示例教材 · 无虚构学习统计</span>
+        <span> 继续学习仅记录本浏览器当前会话中的实际访问。</span>
       </div>
       <div className="grid">
-        {[
-          ["/materials", "课程资料", "浏览公共示例，上传个人 PDF / TXT"],
-          ["/knowledge", "知识点学习", "章节、概念与关联资料"],
-          ["/lab", "算法实验", "FCFS 调度与甘特时间轴"],
-          ["/chat", "智能问答", "真实模型接口与明确配置提示"],
-          ["/practice", "章节练习", "单选练习、判分与解析"],
-        ].map(([path, title, desc]) => (
-          <Link className="panel card" to={path} key={path}>
-            <h2>{title}</h2>
-            <p>{desc}</p>
-            <span>打开模块 ↗</span>
-          </Link>
-        ))}
-      </div>
-      <section className="panel spaced">
-        <h2>推荐从第一章开始</h2>
-        <p>以下章节为可修改的示例结构，请以实际教材为准。</p>
-        <div className="chips">
-          {chapters.map((c) => (
-            <Link key={c.id} to={`/knowledge?chapter=${c.id}`}>
-              {c.title} →
+        <section className="panel">
+          <h2>章节导航</h2>
+          <div className="chapterlist">
+            {chapters.map((c, i) => (
+              <Link key={c.id} to={`/student/knowledge?chapter=${c.id}`}>
+                <span>{String(i + 1).padStart(2, "0")}</span>
+                <div>
+                  <strong>{c.title}</strong>
+                  <small>{c.description}</small>
+                </div>
+                <b>→</b>
+              </Link>
+            ))}
+          </div>
+          {!chapters.length && <p>暂无已发布章节</p>}
+        </section>
+        <div>
+          <section className="panel">
+            <div className="toolbar">
+              <h2>公共课程资料</h2>
+              <Link className="textlink" to="/student/materials">
+                全部 →
+              </Link>
+            </div>
+            {materials.map((m) => (
+              <p className="resource" key={m.id}>
+                <Link to={`/student/materials?document=${m.id}`}>
+                  {m.title}
+                </Link>
+                <small>
+                  {m.chapter || "课程资料"} ·{" "}
+                  {m.file_type?.toUpperCase() || "文本"}
+                </small>
+              </p>
+            ))}
+            {!materials.length && <p>暂无已发布公共资料</p>}
+          </section>
+          <div className="grid spaced">
+            <Link className="panel card" to="/student/experiments">
+              <h2>FCFS 算法实验</h2>
+              <p>编辑进程，比较等待时间，观察 CPU 空闲。</p>
+              <span>动手运行 →</span>
             </Link>
-          ))}
+            <Link className="panel card" to="/student/practice">
+              <h2>章节练习</h2>
+              <p>人工选择题，提交后查看答案与解析。</p>
+              <span>巩固知识 →</span>
+            </Link>
+          </div>
         </div>
-      </section>
+      </div>
     </Page>
   );
 }

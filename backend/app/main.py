@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -17,6 +17,7 @@ DB_PATH = Path(os.getenv("DATABASE_PATH", "data/assistant.db"))
 def database():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
     try:
         with conn:
             yield conn
@@ -26,47 +27,20 @@ def database():
 
 @asynccontextmanager
 async def lifespan(app):
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with database() as db:
-        db.executescript(
-            """
-        CREATE TABLE IF NOT EXISTS materials (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            chapter TEXT NOT NULL DEFAULT '',
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            material_id INTEGER,
-            question TEXT NOT NULL,
-            answer TEXT NOT NULL,
-            model TEXT NOT NULL,
-            mode TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        );
-        """
-        )
-        columns = {r["name"] for r in db.execute("PRAGMA table_info(materials)")}
-        for name, definition in {
-            "category": "TEXT NOT NULL DEFAULT 'personal'",
-            "original_name": "TEXT",
-            "stored_name": "TEXT",
-            "file_size": "INTEGER",
-            "file_type": "TEXT",
-        }.items():
-            if name not in columns:
-                db.execute(f"ALTER TABLE materials ADD COLUMN {name} {definition}")
-        from .course import initialize
+    from .migrations import migrate
 
-        initialize(db)
+    migrate(DB_PATH)
     yield
 
 
+from .auth import require_user
+from .access import read_document, writable_document, document_visible, visible_chapter
+
 app = FastAPI(
-    title="操作系统课程智能助教 · 开发底座", version="0.1.0", lifespan=lifespan
+    title="操作系统课程智能助教 · 开发底座",
+    version="0.2.0",
+    lifespan=lifespan,
+    dependencies=[Depends(require_user)],
 )
 
 from .upload_limit import UploadLimitMiddleware
@@ -85,8 +59,10 @@ class ChatInput(BaseModel):
     material_id: int | None = Field(default=None, gt=0)
 
 
-def get_material(db, material_id):
-    row = db.execute("SELECT * FROM materials WHERE id=?", (material_id,)).fetchone()
+def get_material(db, material_id, user=None):
+    if user is not None:
+        return read_document(db, material_id, user)
+    row = db.execute("SELECT * FROM documents WHERE id=?", (material_id,)).fetchone()
     if row is None:
         raise HTTPException(404, "资料不存在")
     return dict(row)
@@ -106,57 +82,93 @@ def health():
 
 
 @app.get("/api/materials")
-def materials(limit: int = 50, offset: int = 0, category: str | None = None):
+def materials(
+    limit: int = 50,
+    offset: int = 0,
+    category: str | None = None,
+    user: dict = Depends(require_user),
+):
     if not 1 <= limit <= 100 or offset < 0:
         raise HTTPException(422, "limit 应为 1–100，offset 不小于 0")
     if category not in (None, "public", "personal"):
         raise HTTPException(422, "资料类别无效")
     with database() as db:
-        return [
+        rows = [
             dict(row)
             for row in db.execute(
-                "SELECT * FROM materials WHERE (? IS NULL OR category=?) ORDER BY id DESC LIMIT ? OFFSET ?",
-                (category, category, limit, offset),
+                "SELECT * FROM documents WHERE (? IS NULL OR category=?) ORDER BY id DESC",
+                (category, category),
             )
+        ]
+        return [row for row in rows if document_visible(db, row, user)][
+            offset : offset + limit
         ]
 
 
+def resolve_legacy_chapter(db, title: str, user: dict):
+    if not title:
+        return None
+    row = db.execute(
+        "SELECT id FROM chapters WHERE title=? ORDER BY id LIMIT 1", (title,)
+    ).fetchone()
+    if not row:
+        raise HTTPException(422, "章节名称不存在，请使用现有课程章节")
+    return visible_chapter(db, row[0], user)
+
+
 @app.post("/api/materials", status_code=201)
-def create_material(body: MaterialInput):
+def create_material(body: MaterialInput, user: dict = Depends(require_user)):
     with database() as db:
+        chapter = resolve_legacy_chapter(db, body.chapter, user)
         cursor = db.execute(
-            "INSERT INTO materials(title,content,chapter) VALUES (?,?,?)",
-            (body.title, body.content, body.chapter),
+            "INSERT INTO documents(title,content,chapter,owner_id,chapter_id,course_id) VALUES (?,?,?,?,?,?)",
+            (
+                body.title,
+                body.content,
+                body.chapter,
+                user["id"],
+                chapter["id"] if chapter else None,
+                chapter["course_id"] if chapter else 1,
+            ),
         )
         return get_material(db, cursor.lastrowid)
 
 
 @app.get("/api/materials/{material_id}")
-def read_material(material_id: int):
+def read_material(material_id: int, user: dict = Depends(require_user)):
     with database() as db:
-        return get_material(db, material_id)
+        return get_material(db, material_id, user)
 
 
 @app.put("/api/materials/{material_id}")
-def update_material(material_id: int, body: MaterialInput):
+def update_material(
+    material_id: int, body: MaterialInput, user: dict = Depends(require_user)
+):
     with database() as db:
-        material = get_material(db, material_id)
-        if material["category"] == "public":
-            raise HTTPException(403, "公共示例资料不可修改")
+        material = get_material(db, material_id, user)
+        writable_document(material, user)
+        chapter = resolve_legacy_chapter(db, body.chapter, user)
+        if chapter and chapter["course_id"] != material["course_id"]:
+            raise HTTPException(422, "不支持通过兼容接口跨课程移动资料")
         db.execute(
-            "UPDATE materials SET title=?,content=?,chapter=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            (body.title, body.content, body.chapter, material_id),
+            "UPDATE documents SET title=?,content=?,chapter=?,chapter_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (
+                body.title,
+                body.content,
+                body.chapter,
+                chapter["id"] if chapter else None,
+                material_id,
+            ),
         )
         return get_material(db, material_id)
 
 
 @app.delete("/api/materials/{material_id}", status_code=204)
-def delete_material(material_id: int):
+def delete_material(material_id: int, user: dict = Depends(require_user)):
     with database() as db:
-        material = get_material(db, material_id)
-        if material["category"] == "public":
-            raise HTTPException(403, "公共示例资料不可删除")
-        db.execute("DELETE FROM materials WHERE id=?", (material_id,))
+        material = get_material(db, material_id, user)
+        writable_document(material, user)
+        db.execute("DELETE FROM documents WHERE id=?", (material_id,))
     if material["stored_name"]:
         from .files import storage
 
@@ -212,27 +224,28 @@ async def generate_answer(question: str, context: str):
 
 
 @app.post("/api/chat")
-async def chat(body: ChatInput):
+async def chat(body: ChatInput, user: dict = Depends(require_user)):
     context = ""
     if body.material_id is not None:
         with database() as db:
-            context = get_material(db, body.material_id)["content"]
+            context = get_material(db, body.material_id, user)["content"]
     answer, model, mode = await generate_answer(body.question, context)
     with database() as db:
         cursor = db.execute(
-            "INSERT INTO conversations(material_id,question,answer,model,mode) VALUES (?,?,?,?,?)",
-            (body.material_id, body.question, answer, model, mode),
+            "INSERT INTO conversations(material_id,question,answer,model,mode,user_id) VALUES (?,?,?,?,?,?)",
+            (body.material_id, body.question, answer, model, mode, user["id"]),
         )
         return {"id": cursor.lastrowid, "answer": answer, "model": model, "mode": mode}
 
 
 @app.get("/api/conversations")
-def conversations():
+def conversations(user: dict = Depends(require_user)):
     with database() as db:
         return [
             dict(row)
             for row in db.execute(
-                "SELECT * FROM conversations ORDER BY id DESC LIMIT 50"
+                "SELECT * FROM conversations WHERE user_id=? ORDER BY id DESC LIMIT 50",
+                (user["id"],),
             )
         ]
 
@@ -243,3 +256,20 @@ from .files import router as files_router
 
 app.include_router(learning_router)
 app.include_router(files_router)
+
+from .auth import router as auth_router
+
+app.include_router(auth_router)
+
+from .teaching import router as teaching_router
+
+app.include_router(teaching_router)
+
+
+@app.middleware("http")
+async def no_api_cache(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+    return response

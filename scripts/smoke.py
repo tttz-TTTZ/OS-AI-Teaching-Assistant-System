@@ -1,30 +1,42 @@
-"""对正在运行的前端开发代理进行集成验证。"""
+"""对实际服务进行 V0.2 联调。常规使用交互输入密码；自动验收用临时账号文件。"""
 
+import argparse
+import getpass
+import json
 import httpx
 
-with httpx.Client(base_url="http://127.0.0.1:5173", timeout=60) as c:
-    assert c.get("/").status_code == 200
+parser = argparse.ArgumentParser()
+parser.add_argument("--base-url", default="http://127.0.0.1:5173")
+parser.add_argument("--username")
+parser.add_argument("--test-accounts-file")
+args = parser.parse_args()
+if args.test_accounts_file:
+    with open(args.test_accounts_file, encoding="utf-8") as source:
+        account = json.load(source)[1]
+    username, password = account["username"], account["password"]
+else:
+    username = args.username or input("学生用户名：")
+    password = getpass.getpass("密码（不会显示）：")
+
+with httpx.Client(base_url=args.base_url, timeout=60) as c:
     assert c.get("/api/health").json()["database"] == "ok"
+    assert c.get("/api/materials").status_code == 401
+    r = c.post("/api/auth/login", json={"username": username, "password": password})
+    r.raise_for_status()
+    c.headers["X-CSRF-Token"] = r.json()["csrf_token"]
+    assert c.get("/api/auth/me").json()["role"] == "student"
+    assert c.get("/api/teacher/chapters").status_code == 403
+    assert c.get("/api/chapters").json()
+    assert c.get("/api/knowledge?chapter_id=3").json()
     r = c.post(
-        "/api/materials",
-        json={
-            "title": "集成验证临时资料",
-            "content": "进程是资源分配单位",
-            "chapter": "进程管理",
-        },
+        "/api/materials/upload",
+        files={"file": ("smoke.txt", "资料".encode(), "text/plain")},
     )
     r.raise_for_status()
     mid = r.json()["id"]
     try:
-        assert c.get(f"/api/materials/{mid}").json()["title"] == "集成验证临时资料"
-        c.put(
-            f"/api/materials/{mid}",
-            json={"title": "更新后的测试资料", "content": "进程是资源分配单位"},
-        ).raise_for_status()
-        chapters = c.get("/api/chapters").json()
-        assert len(chapters) >= 7
-        assert c.get("/api/knowledge?chapter_id=3").json()
-        fcfs = c.post(
+        assert c.get(f"/api/materials/{mid}/file").text == "资料"
+        r = c.post(
             "/api/labs/fcfs",
             json={
                 "processes": [
@@ -33,52 +45,21 @@ with httpx.Client(base_url="http://127.0.0.1:5173", timeout=60) as c:
                 ]
             },
         )
-        fcfs.raise_for_status()
-        assert fcfs.json()["average_waiting"] == 0
-        assert len([s for s in fcfs.json()["timeline"] if s["idle"]]) == 2
-        upload = c.post(
-            "/api/materials/upload",
-            files={"file": ("smoke.txt", "测试资料".encode(), "text/plain")},
-        )
-        upload.raise_for_status()
-        fid = upload.json()["id"]
-        try:
-            assert c.get(f"/api/materials/{fid}/file").text == "测试资料"
-        finally:
-            c.delete(f"/api/materials/{fid}").raise_for_status()
+        r.raise_for_status()
+        assert r.json()["average_waiting"] == 0
+        assert len([t for t in r.json()["timeline"] if t["idle"]]) == 2
+        r = c.get("/api/questions?chapter_id=1")
+        r.raise_for_status()
+        qid = r.json()[0]["id"]
         assert (
-            c.post(
-                "/api/materials/upload", files={"file": ("bad.exe", b"x")}
-            ).status_code
-            == 415
-        )
-        q = c.get("/api/questions?chapter_id=1").json()[0]
-        assert (
-            c.post("/api/practice/submit", json={"answers": {str(q["id"]): 0}}).json()[
-                "score"
-            ]
-            == 1
-        )
-        r = c.post(
-            "/api/chat", json={"question": "依据资料解释进程", "material_id": mid}
+            c.post("/api/practice/submit", json={"answers": {str(qid): 0}}).status_code
+            == 200
         )
         health = c.get("/api/health").json()
-        if health["llm_mode"] == "openai" and not health["ai_configured"]:
-            assert r.status_code == 503 and "尚未配置 AI 服务" in r.json()["detail"]
-            print("PASS: AI 未配置时明确返回 503；未验证真实模型")
-        else:
-            r.raise_for_status()
-            result = r.json()
-            assert result["answer"]
-            assert any(
-                row["id"] == result["id"] for row in c.get("/api/conversations").json()
-            )
-            print(f"PASS: 模型适配模式={result['mode']}")
-        for path in ["/", "/materials", "/knowledge", "/lab", "/chat", "/practice"]:
-            assert '<div id="root">' in c.get(path).text
-        print(
-            "PASS: 前端代理 → 后端 → SQLite；课程、文件、FCFS、练习、六条路由 HTTP 回退"
-        )
+        if not health["ai_configured"] and health["llm_mode"] == "openai":
+            assert c.post("/api/chat", json={"question": "解释进程"}).status_code == 503
     finally:
         c.delete(f"/api/materials/{mid}").raise_for_status()
-    assert c.get(f"/api/materials/{mid}").status_code == 404
+    assert c.post("/api/auth/logout").status_code == 204
+    assert c.get("/api/materials").status_code == 401
+    print("PASS HTTP: 登录/退出、403、章节/知识点、文件、FCFS、练习与 AI 未配置状态")

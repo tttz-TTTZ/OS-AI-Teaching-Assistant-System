@@ -1,9 +1,14 @@
+import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
 import { courseApi, Question, Grade } from "../api";
 import { Page, Notice, useChapters, ChapterSelect } from "../components";
 export default function Practice() {
   const { chapters, error } = useChapters();
-  const [chapter, setChapter] = useState(1);
+  const [params] = useSearchParams();
+  const [chapter, setChapter] = useState(Number(params.get("chapter")) || 0);
+  useEffect(() => {
+    if (!chapter && chapters[0]) setChapter(chapters[0].id);
+  }, [chapters, chapter]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [grade, setGrade] = useState<Grade>();
@@ -16,6 +21,7 @@ export default function Practice() {
     setGrade(undefined);
     setFailure("");
     setQuestions([]);
+    if (!chapter) return;
     setLoading(true);
     courseApi
       .questions(chapter)

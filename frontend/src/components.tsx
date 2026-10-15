@@ -12,7 +12,7 @@ export function Page({
       <header>
         <span>OPERATING SYSTEMS / LEARNING SPACE</span>
         <h1>{title}</h1>
-        <p>操作系统课程 AI 助教 · 本地单用户 MVP V0.1</p>
+        <p>操作系统课程 AI 助教 · V0.2 教学与学习平台</p>
       </header>
       {children}
     </>

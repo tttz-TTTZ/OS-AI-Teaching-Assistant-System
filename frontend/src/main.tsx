@@ -1,69 +1,172 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  NavLink,
+  Route,
+  Routes,
+  Navigate,
+  Outlet,
+  useLocation,
+} from "react-router-dom";
 import "./style.css";
-
+import { AuthProvider, useAuth } from "./auth";
+import { courses } from "./api";
 import Home from "./pages/Home";
 import Materials from "./pages/Materials";
 import Knowledge from "./pages/Knowledge";
 import Lab from "./pages/Lab";
 import Chat from "./pages/Chat";
 import Practice from "./pages/Practice";
-import { Page } from "./components";
-const sections = [
-  ["/", "学习首页"],
-  ["/materials", "课程资料"],
-  ["/knowledge", "知识点学习"],
-  ["/lab", "算法实验"],
-  ["/chat", "智能问答"],
-  ["/practice", "章节练习"],
+import Login from "./pages/Login";
+import TeacherDashboard from "./pages/teacher/Dashboard";
+import TeacherChapters from "./pages/teacher/Chapters";
+import TeacherKnowledge from "./pages/teacher/Knowledge";
+import TeacherQuestions from "./pages/teacher/Questions";
+import TeacherMaterials from "./pages/teacher/Materials";
+import { Page, Notice } from "./components";
+const student = [
+  ["dashboard", "学习首页"],
+  ["materials", "课程资料"],
+  ["knowledge", "知识点学习"],
+  ["experiments", "算法实验"],
+  ["ai-chat", "智能问答"],
+  ["practice", "章节练习"],
 ];
-function App() {
+const teacher = [
+  ["dashboard", "教师工作台"],
+  ["chapters", "章节管理"],
+  ["knowledge", "知识点管理"],
+  ["materials", "公共资料"],
+  ["questions", "练习题管理"],
+];
+function Guard({ role }: { role: "student" | "teacher" }) {
+  const { user, loading } = useAuth();
+  if (loading) return <p className="empty">正在恢复登录状态…</p>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== role)
+    return (
+      <Page title="无权访问">
+        <p>此工作区需要 {role === "teacher" ? "教师" : "学生"} 角色。</p>
+        <NavLink to={`/${user.role}/dashboard`}>返回我的工作区</NavLink>
+      </Page>
+    );
+  return <Layout role={role} />;
+}
+function Layout({ role }: { role: "student" | "teacher" }) {
+  const { user, logout } = useAuth();
+  const [error, setError] = useState("");
+  const [courseTitle, setCourseTitle] = useState("正在加载课程…");
+  useEffect(() => {
+    courses()
+      .then((data) => setCourseTitle(data[0]?.title || "暂无可用课程"))
+      .catch((e) => setError(e.message));
+  }, []);
   return (
-    <div className="layout">
+    <div className={`layout ${role}`}>
       <aside>
         <div className="brand">
           OS<span> / ASSISTANT</span>
         </div>
-        <p className="caption">学习与探索工作空间</p>
+        <p className="caption">
+          {role === "teacher" ? "教师 · 课程内容管理" : "学生 · 学习与探索"}
+        </p>
         <nav>
-          {sections.map(([path, title]) => (
-            <NavLink end={path === "/"} to={path} key={path}>
+          {(role === "teacher" ? teacher : student).map(([path, title]) => (
+            <NavLink key={path} to={`/${role}/${path}`}>
               {title}
             </NavLink>
           ))}
         </nav>
         <footer>
-          MVP V0.1 · 本地单用户
-          <br />
-          人工示例内容 / 持续迭代
+          <strong>{user?.username}</strong>
+          <p>V0.2 · 本地课程平台</p>
+          <button
+            className="secondary"
+            onClick={() => {
+              setError("");
+              logout().catch((e) => setError(e.message));
+            }}
+          >
+            退出登录
+          </button>
         </footer>
       </aside>
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/materials" element={<Materials />} />
-          <Route path="/knowledge" element={<Knowledge />} />
-          <Route path="/lab" element={<Lab />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/practice" element={<Practice />} />
-          <Route
-            path="*"
-            element={
-              <Page title="页面不存在">
-                <NavLink to="/">返回学习首页</NavLink>
-              </Page>
-            }
-          />
-        </Routes>
+        <div className="workspacebar">
+          <span>{courseTitle}</span>
+          <span>{role === "teacher" ? "教师工作区" : "学生工作区"}</span>
+        </div>
+        <Notice error={error} />
+        <Outlet />
       </main>
     </div>
+  );
+}
+function Legacy() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  if (loading) return <p>加载中…</p>;
+  if (!user) return <Navigate to="/login" replace />;
+  const path = location.pathname;
+  const map: Record<string, string> = {
+    "/": "dashboard",
+    "/materials": "materials",
+    "/knowledge": "knowledge",
+    "/lab": "experiments",
+    "/chat": "ai-chat",
+    "/practice": "practice",
+  };
+  return (
+    <Navigate
+      replace
+      to={`/${user.role}/${user.role === "teacher" ? "dashboard" : map[path] || "dashboard"}${location.search}`}
+    />
+  );
+}
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/student" element={<Guard role="student" />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<Home />} />
+        <Route path="materials" element={<Materials />} />
+        <Route path="knowledge" element={<Knowledge />} />
+        <Route path="experiments" element={<Lab />} />
+        <Route path="ai-chat" element={<Chat />} />
+        <Route path="practice" element={<Practice />} />
+      </Route>
+      <Route path="/teacher" element={<Guard role="teacher" />}>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<TeacherDashboard />} />
+        <Route path="chapters" element={<TeacherChapters />} />
+        <Route path="knowledge" element={<TeacherKnowledge />} />
+        <Route path="questions" element={<TeacherQuestions />} />
+        <Route path="materials" element={<TeacherMaterials />} />
+      </Route>
+      {["/", "/materials", "/knowledge", "/lab", "/chat", "/practice"].map(
+        (p) => (
+          <Route key={p} path={p} element={<Legacy />} />
+        ),
+      )}
+      <Route
+        path="*"
+        element={
+          <Page title="页面不存在">
+            <NavLink to="/">返回工作区</NavLink>
+          </Page>
+        }
+      />
+    </Routes>
   );
 }
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

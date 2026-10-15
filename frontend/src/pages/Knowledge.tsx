@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { courseApi, Knowledge as Item } from "../api";
-import { Page, Notice, useChapters, ChapterSelect } from "../components";
+import { Page, Notice, useChapters } from "../components";
+import { useAuth } from "../auth";
+import Markdown from "../Markdown";
 export default function Knowledge() {
   const { chapters, error } = useChapters();
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
-  const chapter = Number(params.get("chapter")) || 1;
+  const chapter = Number(params.get("chapter")) || chapters[0]?.id;
+  const requested = Number(params.get("point"));
   const [items, setItems] = useState<Item[]>([]);
   const [detail, setDetail] = useState<Item>();
   const [failure, setFailure] = useState("");
@@ -13,16 +17,30 @@ export default function Knowledge() {
   useEffect(() => {
     let active = true;
     setDetail(undefined);
-    setLoading(true);
+    setItems([]);
     setFailure("");
+    if (!chapter) return;
+    setLoading(true);
     courseApi
       .knowledge(chapter)
       .then(async (list) => {
         if (!active) return;
         setItems(list);
-        if (list[0]) {
-          const d = await courseApi.detail(list[0].id);
-          if (active) setDetail(d);
+        const item = list.find((k) => k.id === requested) || list[0];
+        if (item) {
+          const d = await courseApi.detail(item.id);
+          if (active) {
+            setDetail(d);
+            if (user)
+              sessionStorage.setItem(
+                `os:last:${user.id}`,
+                JSON.stringify({
+                  chapter: d.chapter_id,
+                  point: d.id,
+                  title: d.title,
+                }),
+              );
+          }
         }
       })
       .catch((e) => {
@@ -34,69 +52,94 @@ export default function Knowledge() {
     return () => {
       active = false;
     };
-  }, [chapter]);
-  async function select(id: number) {
-    try {
-      setDetail(await courseApi.detail(id));
-    } catch (e) {
-      setFailure((e as Error).message);
-    }
-  }
+  }, [chapter, requested, user?.id]);
   return (
     <Page title="知识点学习">
-      <section className="panel">
-        <ChapterSelect
-          value={chapter}
-          onChange={(id) => setParams({ chapter: String(id) })}
-          chapters={chapters}
-        />
-        <p>人工整理示例内容，可在后端课程数据中按教材扩展。</p>
-      </section>
       <Notice error={error || failure} />
-      {loading ? (
-        <p>加载中…</p>
-      ) : (
-        <div className="split spaced">
-          <section className="panel">
-            <h2>知识点目录</h2>
-            {items.map((i) => (
+      <div className="reading">
+        <aside className="panel chaptertree">
+          <h2>课程目录</h2>
+          {chapters.map((c) => (
+            <div key={c.id}>
               <button
-                className="topic"
-                key={i.id}
-                onClick={() => void select(i.id)}
+                className={`chapter ${c.id === chapter ? "selected" : ""}`}
+                onClick={() => setParams({ chapter: String(c.id) })}
               >
-                {i.title} →
+                {c.title}
               </button>
-            ))}
-            {!items.length && <p>该章节暂无知识点</p>}
-          </section>
-          <section className="panel">
-            <h2>{detail?.title || "选择知识点"}</h2>
-            <p className="bodytext">{detail?.content}</p>
-            {detail && (
-              <>
-                <h3>相关资料</h3>
-                {detail.materials?.length ? (
-                  detail.materials.map((m) => (
-                    <p key={m.id}>
-                      <Link className="textlink" to="/materials">
-                        {m.title} → 资料页
-                      </Link>
-                    </p>
-                  ))
-                ) : (
-                  <p>暂无关联资料，可在资料页按本章节上传。</p>
+              {c.id === chapter &&
+                items.map((k) => (
+                  <button
+                    className={`point ${detail?.id === k.id ? "selected" : ""}`}
+                    key={k.id}
+                    onClick={() =>
+                      setParams({ chapter: String(c.id), point: String(k.id) })
+                    }
+                  >
+                    {k.title}
+                  </button>
+                ))}
+            </div>
+          ))}
+          {!chapters.length && <p>暂无已发布章节</p>}
+        </aside>
+        <section className="panel readingbody">
+          {loading ? (
+            <p>加载中…</p>
+          ) : detail ? (
+            <>
+              <span className="badge">课程知识点</span>
+              <h2>{detail.title}</h2>
+              <Markdown content={detail.content} />
+            </>
+          ) : (
+            <p className="empty">本章暂无已发布知识点。</p>
+          )}
+        </section>
+        <section className="panel readinglinks">
+          <h2>关联学习</h2>
+          <h3>相关资料</h3>
+          {detail?.materials?.length ? (
+            detail.materials.map((m) => (
+              <div className="resource" key={m.id}>
+                <Link
+                  className="textlink"
+                  to={`/student/materials?document=${m.id}`}
+                >
+                  {m.title} →
+                </Link>
+                {m.file_type && (
+                  <a
+                    className="textlink"
+                    href={`/api/materials/${m.id}/file`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    打开文件
+                  </a>
                 )}
-                {detail.lab_path && (
-                  <Link className="button" to={detail.lab_path}>
-                    进入 FCFS 实验 →
-                  </Link>
-                )}
-              </>
-            )}
-          </section>
-        </div>
-      )}
+              </div>
+            ))
+          ) : (
+            <p>暂无关联资料</p>
+          )}
+          {detail?.lab_path && (
+            <>
+              <h3>动手实验</h3>
+              <Link className="button" to="/student/experiments">
+                运行 FCFS →
+              </Link>
+            </>
+          )}
+          <h3>巩固练习</h3>
+          <Link
+            className="textlink"
+            to={`/student/practice?chapter=${chapter || ""}`}
+          >
+            进入章节练习 →
+          </Link>
+        </section>
+      </div>
     </Page>
   );
 }
