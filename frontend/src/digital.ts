@@ -190,6 +190,17 @@ export const digitalApi = {
     request<Content>(
       `/learning-content/${id}${preview ? "?preview=true" : ""}`,
     ),
+  teacherDetail: (id: number) =>
+    request<Content>(`/teacher/learning-content/${id}`),
+  planTitles: (
+    chapter_id: number,
+    section_id: number | null,
+    titles: string[],
+  ) =>
+    request<Content[]>("/teacher/learning-outline", {
+      method: "POST",
+      body: JSON.stringify({ chapter_id, section_id, titles }),
+    }),
   teacherList: () => request<Content[]>("/teacher/learning-content"),
   save: (content: Content) => {
     const {

@@ -549,3 +549,34 @@ def test_old_textbook_bulk_merge_cannot_bypass_revision_structure(clients):
     )
     assert kept["title"] == point["title"] and kept["chapter_id"] == point["chapter_id"]
     assert len(s.get("/api/chapters").json()) == 7
+
+
+def test_title_planner_is_atomic_and_creates_only_drafts(clients):
+    t, s, _ = clients
+    before = len(t.get("/api/teacher/learning-content").json())
+    invalid = t.post(
+        "/api/teacher/learning-outline",
+        json={"chapter_id": 1, "titles": ["有效标题", "   "]},
+    )
+    assert invalid.status_code == 422
+    assert len(t.get("/api/teacher/learning-content").json()) == before
+    assert (
+        s.post(
+            "/api/teacher/learning-outline", json={"chapter_id": 1, "titles": ["越权"]}
+        ).status_code
+        == 403
+    )
+    response = t.post(
+        "/api/teacher/learning-outline",
+        json={"chapter_id": 1, "titles": ["先规划标题A", "先规划标题B"]},
+    )
+    assert response.status_code == 201, response.text
+    points = response.json()
+    assert len(points) == 2 and all(not p["published"] for p in points)
+    assert points[0]["sort_order"] < points[1]["sort_order"]
+    assert (
+        t.get(f"/api/teacher/learning-content/{points[0]['id']}").json()["title"]
+        == "先规划标题A"
+    )
+    assert s.get(f"/api/teacher/learning-content/{points[0]['id']}").status_code == 403
+    assert s.get(f"/api/learning-content/{points[0]['id']}").status_code == 404

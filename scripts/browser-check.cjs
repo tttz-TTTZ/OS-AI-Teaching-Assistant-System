@@ -74,11 +74,13 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     const suffix = Date.now();
     const chapterTitle = `浏览器验收章-${suffix}`;
     const pointTitle = `浏览器知识点-${suffix}`;
-    await t.getByRole("link", { name: "章节管理", exact: true }).click();
+    await t.getByRole("link", { name: "课程目录", exact: true }).click();
+    await t.getByRole("link", { name: "＋ 新建章节", exact: true }).click();
     await t.getByLabel("章节标题").fill(chapterTitle);
     await t.getByLabel("章节说明").fill("浏览器真实提交的演示章节");
     await t.getByRole("button", { name: "保存章节", exact: true }).click();
-    await t.getByRole("status").filter({ hasText: "章节已保存" }).waitFor();
+    await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.getByRole("heading", { name: chapterTitle, exact: true }).waitFor();
     const chapters = await (
       await apiCall(t, "get", base + "/api/teacher/chapters")
     ).json();
@@ -89,51 +91,145 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       )
     )
       throw Error("draft exposed");
-    await t.getByRole("link", { name: "知识点管理", exact: true }).click();
+    await t.getByRole("link", { name: "＋ 添加小节", exact: true }).click();
+    await t.getByLabel("小节标题", { exact: true }).fill("先规划的小节");
+    await t.getByLabel("小节编号", { exact: true }).fill("待校对");
+    await t.getByLabel("发布小节", { exact: true }).check();
+    await t.getByRole("button", { name: "保存小节", exact: true }).click();
+    await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.getByRole("link", { name: "＋ 添加本节标题", exact: true }).click();
+    await t
+      .getByLabel("知识点标题", { exact: true })
+      .fill("预先规划的标题一\n预先规划的标题二");
+    await t
+      .getByRole("button", { name: "保存标题，建立目录", exact: true })
+      .click();
+    await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.getByText("预先规划的标题一", { exact: true }).waitFor();
+    await t.getByText("预先规划的标题二", { exact: true }).waitFor();
+    if (await t.locator("textarea:visible").count())
+      throw Error("目录规划页不应展示正文编辑表单");
+    if (process.env.BROWSER_SCREENSHOT_DIR)
+      await t.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "teacher-flow-outline.png",
+        ),
+      });
+    await t.getByRole("link", { name: "知识点内容", exact: true }).click();
+    await t
+      .getByRole("heading", { name: "选择知识点，开始编写", exact: true })
+      .waitFor();
+    await t
+      .getByRole("link", { name: "＋ 添加知识点标题", exact: true })
+      .click();
     await t.getByLabel("所属章节", { exact: true }).selectOption(String(cid));
-    await t.getByLabel("知识点标题").fill(pointTitle);
+    await t.getByLabel("知识点标题", { exact: true }).fill(pointTitle);
+    await t
+      .getByRole("button", { name: "保存标题，建立目录", exact: true })
+      .click();
+    await t.waitForURL("**/teacher/knowledge/*/settings");
+    const kid = Number(new URL(t.url()).pathname.split("/")[3]);
+    const steps = t.getByRole("navigation", { name: "知识点编写步骤" });
+    await t.getByLabel("教学编号", { exact: true }).fill("1.1.待校对");
+    await steps.getByRole("button", { name: /编写内容/ }).click();
+    await t.getByLabel("学习目标", { exact: true }).fill("理解测试原理");
+    for (const [kind, label] of [
+      ["intro", "问题导入"],
+      ["concept", "核心概念"],
+      ["case", "典型案例"],
+      ["mistake", "易错点"],
+      ["summary", "总结"],
+    ]) {
+      await t.getByLabel("正在编写的模块", { exact: true }).selectOption(kind);
+      await t
+        .getByLabel(label + "正文", { exact: true })
+        .fill("教学演示：" + label);
+    }
+    await t
+      .getByLabel("正在编写的模块", { exact: true })
+      .selectOption("explanation");
     await t
       .getByLabel("正文（支持基础 Markdown）")
       .fill(
         '# 测试概念\n- 真实课程内容\n\n```python\nprint("FCFS")\n```\n\n|指标|公式|\n|---|---|\n|等待|开始减到达|',
       );
-    await t.getByLabel("学习目标", { exact: true }).fill("理解测试原理");
-    for (const label of ["问题导入", "核心概念", "典型案例", "易错点", "总结"])
-      await t
-        .getByLabel(label + "正文", { exact: true })
-        .fill("教学演示：" + label);
-    await t.getByLabel("教学编号", { exact: true }).fill("1.1.待校对");
-    await t
-      .getByLabel("添加内容模块", { exact: true })
-      .selectOption("interaction");
+    const textWidth = await t
+      .getByLabel("正文（支持基础 Markdown）")
+      .boundingBox();
+    if (textWidth.width < 650) throw Error("内容编辑区不够宽");
+    if ((await t.locator("textarea:visible").count()) !== 1)
+      throw Error("同页不应同时铺开其他模块正文");
+    await t.getByRole("button", { name: "＋ 交互演示", exact: true }).click();
     await t
       .getByLabel("交互演示正文", { exact: true })
       .fill("观察不同内存分配后的剩余空间");
     await t.getByLabel("C 分配 MB", { exact: true }).fill("128");
-    await t.getByLabel("关联 FCFS 实验").check();
-    await t.getByRole("button", { name: "保存知识点", exact: true }).click();
-    await t
-      .getByRole("status")
-      .filter({ hasText: "知识点草稿已保存" })
-      .waitFor();
     if (process.env.BROWSER_SCREENSHOT_DIR) {
       await t.evaluate(() => window.scrollTo(0, 0));
       await t.screenshot({
         path: path.join(
           process.env.BROWSER_SCREENSHOT_DIR,
-          "digital-teacher.png",
+          "teacher-flow-content.png",
         ),
       });
     }
-    const points = await (
-      await apiCall(t, "get", base + "/api/teacher/knowledge")
-    ).json();
-    const kid = points.find((k) => k.title === pointTitle).id;
-    await t.getByLabel("知识点标题",{exact:true}).fill(pointTitle+" 草稿修改");
-    await t.waitForResponse(r=>r.url().endsWith(`/api/teacher/learning-content/${kid}`)&&r.request().method()==="PUT"&&r.status()===200);
-    await t.getByLabel("知识点标题",{exact:true}).fill(pointTitle);
-    await t.waitForResponse(r=>r.url().endsWith(`/api/teacher/learning-content/${kid}`)&&r.request().method()==="PUT"&&r.status()===200);
-
+    await steps.getByRole("button", { name: /资料与关联/ }).click();
+    await t.getByLabel("关联 FCFS 实验").check();
+    await steps.getByRole("button", { name: /基本信息/ }).click();
+    await t
+      .getByLabel("知识点标题", { exact: true })
+      .fill(pointTitle + " 草稿修改");
+    await t.waitForResponse(
+      (r) =>
+        r.url().endsWith(`/api/teacher/learning-content/${kid}`) &&
+        r.request().method() === "PUT" &&
+        r.status() === 200,
+    );
+    await t.getByLabel("知识点标题", { exact: true }).fill(pointTitle);
+    await t.waitForResponse(
+      (r) =>
+        r.url().endsWith(`/api/teacher/learning-content/${kid}`) &&
+        r.request().method() === "PUT" &&
+        r.status() === 200,
+    );
+    await t.getByLabel("停笔后自动保存草稿", { exact: true }).uncheck();
+    await t
+      .getByLabel("知识点标题", { exact: true })
+      .fill(pointTitle + " 未完成标题");
+    await t.waitForFunction(() =>
+      Object.keys(sessionStorage).some(
+        (key) =>
+          key.startsWith("os:authoring:") &&
+          JSON.parse(sessionStorage.getItem(key)).title.endsWith("未完成标题"),
+      ),
+    );
+    t.once("dialog", (dialog) => dialog.accept());
+    await t.reload();
+    await t
+      .getByRole("status")
+      .filter({ hasText: "已恢复本标签未保存的编辑" })
+      .waitFor();
+    if (
+      (await t.getByLabel("知识点标题", { exact: true }).inputValue()) !==
+      pointTitle + " 未完成标题"
+    )
+      throw Error("未保存草稿没有恢复");
+    await t.getByLabel("知识点标题", { exact: true }).fill(pointTitle);
+    await t.waitForResponse(
+      (r) =>
+        r.url().endsWith(`/api/teacher/learning-content/${kid}`) &&
+        r.request().method() === "PUT" &&
+        r.status() === 200,
+    );
+    if (process.env.BROWSER_SCREENSHOT_DIR) {
+      await t.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "teacher-flow-settings.png",
+        ),
+      });
+    }
     if (
       (await apiCall(s, "get", base + `/api/knowledge/${kid}`)).status() !== 404
     )
@@ -163,26 +259,27 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       ).status() !== 404
     )
       throw Error("file parent visibility");
-    await t.getByRole("link", { name: "章节管理", exact: true }).click();
-    const row = t.getByRole("row").filter({ hasText: chapterTitle });
-    await row.getByRole("button", { name: "编辑", exact: true }).click();
+    await t.getByRole("link", { name: "课程目录", exact: true }).click();
+    const row = t.locator(".outline-chapter").filter({
+      has: t.getByRole("heading", { name: chapterTitle, exact: true }),
+    });
+    await row.getByRole("link", { name: "编辑章节", exact: true }).click();
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存章节", exact: true }).click();
-    await t.getByRole("status").filter({ hasText: "章节已保存" }).waitFor();
-    const draftPoints = await (
-      await apiCall(t, "get", base + "/api/teacher/learning-content")
-    ).json();
-    const digitalPoint = draftPoints.find((p) => p.id === kid);
-    const publication = await apiCall(
-      t,
-      "post",
-      base + `/api/teacher/learning-content/${kid}/publish`,
-      {
-        headers: { "X-CSRF-Token": await csrf(t) },
-        data: { expected_version: digitalPoint.edit_version },
-      },
-    );
-    if (publication.status() !== 200) throw Error(await publication.text());
+    await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.goto(base + `/teacher/knowledge/${kid}/preview`);
+    await t.getByRole("button", { name: "发布当前草稿", exact: true }).click();
+    await t.getByRole("status").filter({ hasText: "知识点已发布" }).waitFor();
+    await t.reload();
+    await t.getByRole("button", { name: "撤回发布", exact: true }).waitFor();
+    if (process.env.BROWSER_SCREENSHOT_DIR) {
+      await t.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "teacher-flow-preview.png",
+        ),
+      });
+    }
     await s.goto(base + `/student/knowledge?chapter=${cid}`);
     await s.getByRole("heading", { name: pointTitle, exact: true }).waitFor();
     await s.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
@@ -329,14 +426,17 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();
     await s.getByRole("link", { name: "返回原知识点 →", exact: true }).click();
     await s.getByText("练习：已完成作答", { exact: true }).waitFor();
-    await s.getByText("给教师反馈本知识点",{exact:true}).click();
-    await s.getByLabel("主动提交的学习反馈",{exact:true}).fill("请补充这个案例的解释");
-    await s.getByRole("button",{name:"发送学习反馈",exact:true}).click();
-    await s.getByRole("status").filter({hasText:"反馈已发送给教师"}).waitFor();
-    await t.getByRole("link",{name:"知识点管理",exact:true}).click();
-    await t.getByText("查看真实学习情况与主动反馈",{exact:true}).click();
-    await t.getByRole("button",{name:"加载学习反馈",exact:true}).click();
-    await t.getByText("请补充这个案例的解释",{exact:true}).waitFor();
+    await s.getByText("给教师反馈本知识点", { exact: true }).click();
+    await s
+      .getByLabel("主动提交的学习反馈", { exact: true })
+      .fill("请补充这个案例的解释");
+    await s.getByRole("button", { name: "发送学习反馈", exact: true }).click();
+    await s
+      .getByRole("status")
+      .filter({ hasText: "反馈已发送给教师" })
+      .waitFor();
+    await t.goto(base + "/teacher/learning-feedback");
+    await t.getByText("请补充这个案例的解释", { exact: true }).waitFor();
 
     await t.route("**/api/teacher/chapters", (r) =>
       r.fulfill({
@@ -345,7 +445,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         body: JSON.stringify({ detail: "验收模拟后端错误" }),
       }),
     );
-    await t.getByRole("link", { name: "章节管理", exact: true }).click();
+    await t.getByRole("link", { name: "课程目录", exact: true }).click();
     await t
       .getByRole("alert")
       .filter({ hasText: "验收模拟后端错误" })
@@ -542,7 +642,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     );
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "PASS browser 数字教材与V0.2回归：灵活编号、草稿自动保存、知识点发布、内存事件运行/回放/完成记录、私人笔记刷新保持、知识点练习往返、主动反馈； 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
+      "PASS browser 教师分步流程：独立章节/小节表单、批量标题规划、全宽单模块编辑、跨步骤保存、刷新草稿恢复、整页预览发布；数字教材与V0.2回归：灵活编号、草稿自动保存、知识点发布、内存事件运行/回放/完成记录、私人笔记刷新保持、知识点练习往返、主动反馈； 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
     );
   } finally {
     await browser.close();

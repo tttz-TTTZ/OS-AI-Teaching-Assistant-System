@@ -630,3 +630,70 @@ def learning_resume(user=Depends(require_user)):
             except HTTPException:
                 continue
         return None
+
+
+@router.get("/teacher/learning-content/{ident}")
+def teacher_content_detail(ident: int, user=Depends(teacher)):
+    with database() as db:
+        point = get(db, "knowledge_points", ident)
+        return {
+            **body_of(db, point),
+            "id": ident,
+            "edit_version": point["edit_version"],
+            "revision_id": point["draft_revision_id"] or 0,
+            "published": bool(point["published"]),
+            "archived": bool(point["archived_at"]),
+        }
+
+
+class OutlineTitles(BaseModel):
+    chapter_id: int
+    section_id: int | None = None
+    titles: list[str] = Field(min_length=1, max_length=30)
+
+    @model_validator(mode="after")
+    def valid_titles(self):
+        self.titles = [title.strip() for title in self.titles]
+        if any(not title or len(title) > 200 for title in self.titles):
+            raise ValueError("每个标题需1–200字")
+        return self
+
+
+@router.post("/teacher/learning-outline", status_code=201)
+def plan_titles(body: OutlineTitles, user=Depends(teacher)):
+    with database() as db:
+        db.execute("BEGIN IMMEDIATE")
+        existing = db.execute(
+            "SELECT * FROM knowledge_points WHERE chapter_id=?", (body.chapter_id,)
+        ).fetchall()
+        start = max([body_of(db, dict(p))["sort_order"] for p in existing] or [0]) + 10
+        if start + len(body.titles) * 10 > 100000:
+            raise HTTPException(422, "排序数值已满，请先调整已有知识点顺序")
+        result = []
+        for index, title in enumerate(body.titles):
+            data = Content(
+                chapter_id=body.chapter_id,
+                section_id=body.section_id,
+                title=title,
+                sort_order=start + index * 10,
+                blocks=[
+                    Block(id=kind, kind=kind, title=label)
+                    for kind, label in [
+                        ("intro", "问题导入"),
+                        ("concept", "核心概念"),
+                        ("explanation", "原理精讲"),
+                        ("case", "典型案例"),
+                        ("mistake", "易错点"),
+                        ("summary", "总结"),
+                    ]
+                ],
+            )
+            validate_refs(db, data)
+            ident = db.execute(
+                "INSERT INTO knowledge_points(chapter_id,title,content,published) VALUES (?,?,?,0)",
+                (body.chapter_id, title, ""),
+            ).lastrowid
+            result.append(
+                save_revision(db, get(db, "knowledge_points", ident), data, user)
+            )
+        return result

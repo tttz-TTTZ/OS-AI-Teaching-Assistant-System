@@ -20,7 +20,9 @@ import Chat from "./pages/Chat";
 import Practice from "./pages/Practice";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
-import TeacherChapters from "./pages/teacher/Chapters";
+import TeacherChapters, { SectionForm } from "./pages/teacher/Chapters";
+import CourseOutline, { PlanKnowledge } from "./pages/teacher/CourseOutline";
+import LearningFeedback from "./pages/teacher/LearningFeedback";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
 import TeacherQuestions from "./pages/teacher/Questions";
 import TeacherMaterials from "./pages/teacher/Materials";
@@ -37,8 +39,8 @@ const student = [
 ];
 const teacher = [
   ["dashboard", "教师工作台"],
-  ["chapters", "章节管理"],
-  ["knowledge", "知识点管理"],
+  ["chapters", "课程目录"],
+  ["knowledge", "知识点内容"],
   ["materials", "公共资料"],
   ["questions", "练习题管理"],
   ["accounts", "账号管理"],
@@ -148,8 +150,15 @@ function App() {
       <Route path="/teacher" element={<Guard role="teacher" />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TeacherDashboard />} />
-        <Route path="chapters" element={<TeacherChapters />} />
-        <Route path="knowledge" element={<TeacherKnowledge />} />
+        <Route path="chapters" element={<CourseOutline />} />
+        <Route path="chapters/new" element={<TeacherChapters />} />
+        <Route path="chapters/:chapterId/edit" element={<TeacherChapters />} />
+        <Route path="sections/new" element={<SectionForm />} />
+        <Route path="sections/:sectionId/edit" element={<SectionForm />} />
+        <Route path="learning-feedback" element={<LearningFeedback />} />
+        <Route path="knowledge" element={<CourseOutline library />} />
+        <Route path="knowledge/new" element={<PlanKnowledge />} />
+        <Route path="knowledge/:pointId/:step" element={<TeacherKnowledge />} />
         <Route path="questions" element={<TeacherQuestions />} />
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="accounts" element={<Accounts />} />

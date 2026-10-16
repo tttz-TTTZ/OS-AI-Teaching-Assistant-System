@@ -1,33 +1,54 @@
 import { Link } from "react-router-dom";
-import { Page } from "../../components";
+import { AuthoringPage } from "./Authoring";
 export default function Dashboard() {
   return (
-    <Page title="教师工作台">
-      <section className="panel">
-        <h2>维护课程的三个步骤</h2>
-        <ol>
-          <li>先建立并排序章节，编写知识点。</li>
-          <li>上传公共资料并关联章节与知识点。</li>
-          <li>检查内容后发布；草稿不会出现在学生端。</li>
-        </ol>
-        <p>
-          当前管理统一的“操作系统（演示课程）”。这里不展示无数据支撑的学习统计。
-        </p>
-      </section>
-      <div className="grid spaced">
+    <AuthoringPage
+      title="今天准备哪一部分课程？"
+      description="从目录开始，逐个补内容，检查完再发布。"
+    >
+      <div className="teacher-start">
         {[
-          ["chapters", "章节管理", "编排课程结构、调整顺序与发布状态"],
-          ["knowledge", "知识点管理", "编辑正文、关联章节与 FCFS 实验"],
-          ["materials", "公共资料", "PDF / TXT 上传、知识点关联与发布"],
-          ["questions", "练习题管理", "人工单选题、答案解析与发布"],
-        ].map(([p, t, d]) => (
-          <Link className="panel card" key={p} to={`/teacher/${p}`}>
-            <h2>{t}</h2>
-            <p>{d}</p>
-            <span>开始管理 →</span>
-          </Link>
+          [
+            "01",
+            "chapters",
+            "先规划课程目录",
+            "建立章节、小节和知识点标题，正文可以之后再写。",
+            "规划目录 →",
+          ],
+          [
+            "02",
+            "knowledge",
+            "再编写知识点内容",
+            "选一个知识点，整页编写目标、正文、图片和互动。",
+            "选择知识点 →",
+          ],
+          [
+            "03",
+            "knowledge",
+            "最后预览与发布",
+            "进入知识点的“预览发布”，检查完整效果后推送学生。",
+            "检查待发布内容 →",
+          ],
+        ].map(([number, path, title, description, action]) => (
+          <section className="authoring-card start-task" key={number}>
+            <span className="task-number">{number}</span>
+            <h2>{title}</h2>
+            <p>{description}</p>
+            <Link className="button" to={"/teacher/" + path}>
+              {action}
+            </Link>
+          </section>
         ))}
       </div>
-    </Page>
+      <section className="authoring-card">
+        <h2>其他常用工作</h2>
+        <div className="support-links">
+          <Link to="/teacher/materials">上传公共资料 →</Link>
+          <Link to="/teacher/questions">维护练习题库 →</Link>
+          <Link to="/teacher/learning-feedback">查看学习反馈 →</Link>
+          <Link to="/teacher/accounts">管理学生账号 →</Link>
+        </div>
+      </section>
+    </AuthoringPage>
   );
 }

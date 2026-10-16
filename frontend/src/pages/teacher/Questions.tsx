@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Chapter, teacherApi } from "../../api";
 import { Content, digitalApi } from "../../digital";
 import { StudyQuestion, studyApi, typeNames } from "../../study";
@@ -19,6 +20,21 @@ export default function Questions() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [points, setPoints] = useState<Content[]>([]);
   const [form, setForm] = useState(empty);
+  const [params] = useSearchParams();
+  const initialized = useRef(false);
+  useEffect(() => {
+    const selected = points.find(
+      (p) => p.id === Number(params.get("knowledge")),
+    );
+    if (selected && !initialized.current) {
+      setForm({
+        ...empty(),
+        chapter_id: selected.chapter_id,
+        knowledge_ids: [selected.id!],
+      });
+      initialized.current = true;
+    }
+  }, [points, params]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
