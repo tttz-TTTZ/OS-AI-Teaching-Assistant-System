@@ -43,7 +43,7 @@
 ### 登录与账号
 
 - `auth.py`：`X-Session-Context`或文件链接session_context选择标签Cookie（os_session_<随机selector>）；selector不是凭据，真正令牌只在HttpOnly Cookie。无context的旧API客户端仍用原os_session，保持兼容。新增本人改密并撤销其他会话。
-- 前端`api.ts`：sessionStorage仅保存标签selector，所有fetch带header；fileUrl给PDF/下载链接带selector。`/login?new_session=1`初始化新标签上下文，侧栏有入口。
+- 前端`api.ts`：sessionStorage仅保存标签selector，所有fetch带header；fileUrl给PDF/下载链接带selector。`/login?new_session=1`初始化新标签上下文；按用户最新要求，侧栏不再展示该入口，保留独立标签登录能力。
 - `accounts.py`：普通教师管理学生；显式授权的is_admin教师才能创建/管理教师。创建、搜索、启停、重置密码，停用/重置立即撤销会话，不删用户资料。防止停用自己或停用最后管理员。
 - `manage.py`：保留原交互创建，新增 --admin 与 --grant-existing。没有默认密码或自助提权；2026-10-16 新增学生自注册（/register + /api/auth/register），仅创建 student，教师仍由管理员分配。
 - 前端新增teacher/Accounts和Profile页面，可创建/停用/重置学生账号、本人改密。

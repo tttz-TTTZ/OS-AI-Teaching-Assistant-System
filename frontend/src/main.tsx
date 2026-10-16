@@ -86,11 +86,6 @@ function Layout({ role }: { role: "student" | "teacher" }) {
           <p>
             <NavLink to={`/${role}/profile`}>个人账号 / 修改密码</NavLink>
           </p>
-          <p>
-            <a href="/login?new_session=1" target="_blank" rel="noreferrer">
-              新标签登录其他账号 ↗
-            </a>
-          </p>
           <p>V0.2 · 本地课程平台</p>
           <button
             className="secondary"
