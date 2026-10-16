@@ -2,7 +2,7 @@
 
 import json
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from .auth import teacher, require_user
 from .access import visible_chapter, list_documents
 
@@ -30,6 +30,16 @@ class ChapterInput(BaseModel):
     sort_order: int = Field(default=0, ge=0, le=100000)
     published: bool = False
 
+    textbook_number: int | None = Field(default=None, ge=1, le=1000)
+    pdf_start: int | None = Field(default=None, ge=1)
+    pdf_end: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def valid_pages(self):
+        if self.pdf_start and self.pdf_end and self.pdf_start > self.pdf_end:
+            raise ValueError("PDF起始页不能大于末页")
+        return self
+
     @field_validator("title")
     @classmethod
     def title_not_blank(cls, value):
@@ -54,13 +64,16 @@ def add_chapter(body: ChapterInput):
     with database() as db:
         exists(db, "courses", body.course_id)
         cur = db.execute(
-            "INSERT INTO chapters(title,description,course_id,sort_order,published) VALUES (?,?,?,?,?)",
+            "INSERT INTO chapters(title,description,course_id,sort_order,published,textbook_number,pdf_start,pdf_end) VALUES (?,?,?,?,?,?,?,?)",
             (
                 body.title,
                 body.description,
                 body.course_id,
                 body.sort_order,
                 body.published,
+                body.textbook_number,
+                body.pdf_start,
+                body.pdf_end,
             ),
         )
         return exists(db, "chapters", cur.lastrowid)
@@ -72,9 +85,23 @@ def edit_chapter(item_id: int, body: ChapterInput):
         old = exists(db, "chapters", item_id)
         if old["course_id"] != body.course_id:
             raise HTTPException(422, "本版不支持跨课程移动已有章节")
+        for name in ("textbook_number", "pdf_start", "pdf_end"):
+            if name not in body.model_fields_set:
+                setattr(body, name, old[name])
+        if body.pdf_start and body.pdf_end and body.pdf_start > body.pdf_end:
+            raise HTTPException(422, "PDF起始页不能大于末页")
         db.execute(
-            "UPDATE chapters SET title=?,description=?,sort_order=?,published=? WHERE id=?",
-            (body.title, body.description, body.sort_order, body.published, item_id),
+            "UPDATE chapters SET title=?,description=?,sort_order=?,published=?,textbook_number=?,pdf_start=?,pdf_end=? WHERE id=?",
+            (
+                body.title,
+                body.description,
+                body.sort_order,
+                body.published,
+                body.textbook_number,
+                body.pdf_start,
+                body.pdf_end,
+                item_id,
+            ),
         )
         # 保留旧 API 的章节名称展示字段，但关联一律以 ID 为准。
         db.execute(
@@ -91,7 +118,7 @@ def delete_chapter(item_id: int):
             db.execute(
                 f"SELECT 1 FROM {table} WHERE chapter_id=? LIMIT 1", (item_id,)
             ).fetchone()
-            for table in ["knowledge_points", "questions", "documents"]
+            for table in ["knowledge_points", "questions", "documents", "sections"]
         ):
             raise HTTPException(
                 409, "章节仍有关联内容，请先调整归属或取消发布；不会级联删除"
@@ -138,6 +165,10 @@ def add_knowledge(body: KnowledgeInput):
 def edit_knowledge(item_id: int, body: KnowledgeInput):
     with database() as db:
         old = exists(db, "knowledge_points", item_id)
+        if old["digital_managed"]:
+            raise HTTPException(
+                409, "该知识点已使用版本教材，请从知识点工作台保存草稿并发布"
+            )
         chapter = exists(db, "chapters", body.chapter_id)
         old_chapter = exists(db, "chapters", old["chapter_id"])
         if chapter["course_id"] != old_chapter["course_id"]:
@@ -268,14 +299,16 @@ def add_question(body: QuestionInput):
 @router.put("/questions/{item_id}")
 def edit_question(item_id: int, body: QuestionInput):
     with database() as db:
-        exists(db, "questions", item_id)
+        old = exists(db, "questions", item_id)
+        if old["answer_data"] is not None:
+            raise HTTPException(409, "该题已采用多题型版本，请使用新版题库接口")
         exists(db, "chapters", body.chapter_id)
         if body.answer >= len(body.options) or any(
             not o.strip() or len(o) > 1000 for o in body.options
         ):
             raise HTTPException(422, "选项或正确答案无效")
         db.execute(
-            "UPDATE questions SET chapter_id=?,prompt=?,options=?,answer=?,explanation=?,published=? WHERE id=?",
+            "UPDATE questions SET chapter_id=?,prompt=?,options=?,answer=?,explanation=?,published=?,version=version+1 WHERE id=?",
             (
                 body.chapter_id,
                 body.prompt,

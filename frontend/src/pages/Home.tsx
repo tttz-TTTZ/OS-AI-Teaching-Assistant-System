@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Health, courseApi, api, Material, courses, Course } from "../api";
 import { Page, Notice, useChapters } from "../components";
 import { useAuth } from "../auth";
+import { digitalApi } from "../digital";
 export default function Home() {
   const { chapters, error } = useChapters();
   const { user } = useAuth();
@@ -10,6 +11,22 @@ export default function Home() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [course, setCourse] = useState<Course>();
   const [failure, setFailure] = useState("");
+  const [resume, setResume] =
+    useState<Awaited<ReturnType<typeof digitalApi.resume>>>();
+  useEffect(() => {
+    let active = true;
+    digitalApi
+      .resume()
+      .then((data) => {
+        if (active) setResume(data);
+      })
+      .catch((e) => {
+        if (active) setFailure(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
   let last: { chapter: number; point: number; title: string } | undefined;
   try {
     last =
@@ -18,6 +35,7 @@ export default function Home() {
   } catch {
     /*无有效本地访问记录*/
   }
+  if (resume) last = resume;
   useEffect(() => {
     Promise.all([courseApi.health(), api.materials(0, "public"), courses()])
       .then(([h, m, c]) => {
@@ -53,7 +71,12 @@ export default function Home() {
         {health
           ? `后端正常 · 数据库 ${health.database} · ${health.ai_configured ? "AI 已配置（可用性以调用为准）" : "尚未配置 AI 服务"}`
           : "正在检查服务…"}
-        <span> 继续学习仅记录本浏览器当前会话中的实际访问。</span>
+        <span>
+          {" "}
+          {resume
+            ? "继续学习来自账号已保存的学习位置。"
+            : "尚无账号学习记录时，继续学习使用本标签实际访问记录。"}
+        </span>
       </div>
       <div className="grid">
         <section className="panel">

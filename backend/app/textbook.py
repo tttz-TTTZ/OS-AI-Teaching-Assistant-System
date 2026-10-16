@@ -86,11 +86,27 @@ class Apply(BaseModel):
     fingerprint: str
 
 
+def protect_digital_versions(db):
+    # 旧工具直接合并chapter_id，不能绕过数字教材的不可变修订发布流程。
+    managed = db.execute(
+        "SELECT 1 FROM knowledge_points k JOIN chapters c ON c.id=k.chapter_id WHERE k.digital_managed=1 AND c.course_id=1 LIMIT 1"
+    ).fetchone()
+    sections = db.execute(
+        "SELECT 1 FROM sections s JOIN chapters c ON c.id=s.chapter_id WHERE c.course_id=1 LIMIT 1"
+    ).fetchone()
+    if managed or sections:
+        raise HTTPException(
+            409,
+            "课程已使用数字教材或小节，请在章节/知识点工作台手工调整；旧批量合并工具不会改动版本内容",
+        )
+
+
 @router.post("/apply")
 def apply(body: Apply):
     from .main import DB_PATH
 
     with database() as db:
+        protect_digital_versions(db)
         if build_plan(db)["fingerprint"] != body.fingerprint:
             raise HTTPException(409, "数据已变化，请重新预览")
     backup = (
@@ -101,6 +117,7 @@ def apply(body: Apply):
     backup_data(DB_PATH, backup)
     with storage_lock(DB_PATH), database() as db:
         db.execute("BEGIN IMMEDIATE")
+        protect_digital_versions(db)
         result = build_plan(db)
         if result["fingerprint"] != body.fingerprint:
             raise HTTPException(409, "备份期间数据已变化，请重新预览")

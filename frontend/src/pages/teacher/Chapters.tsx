@@ -59,7 +59,7 @@ export default function Chapters() {
       <section className="panel">
         <h2>按学院教材对齐七章</h2>
         <p>
-          先预览；执行前自动备份。保留知识点/资料/题目及所有者，旧拆分目录归档。不会删除自定义章节。
+          这是可选的历史目录对齐工具；尚未校对时无需执行。启用数字教材或小节后，请使用下方表单和知识点工作台手工调整，旧工具将阻止自动合并。先预览；执行前自动备份。保留知识点/资料/题目及所有者，旧拆分目录归档。不会删除自定义章节。
         </p>
         <button
           className="secondary"
@@ -198,6 +198,31 @@ export default function Chapters() {
                 }
               />
             </label>
+            <div className="editor-grid">
+              {(
+                [
+                  ["textbook_number", "教材章号"],
+                  ["pdf_start", "章节PDF起始页"],
+                  ["pdf_end", "章节PDF末页"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key}>
+                  {label}
+                  <input
+                    type="number"
+                    min={1}
+                    value={form[key] ?? ""}
+                    placeholder="可留空，之后校对"
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [key]: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
             <Publish
               value={form.published}
               onChange={(v) => setForm({ ...form, published: v })}

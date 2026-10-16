@@ -29,8 +29,18 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     for (const p of pages) p.on("pageerror", (e) => errors.push(e.message));
     async function login(page, account, navigate = true) {
       if (navigate) await page.goto(base + "/login");
-      await page.getByRole("link", { name: account.role === "teacher" ? "教师端" : "学生端", exact: true }).click();
-      await page.getByRole("heading", { name: account.role === "teacher" ? "教师登录" : "学生登录", exact: true }).waitFor();
+      await page
+        .getByRole("link", {
+          name: account.role === "teacher" ? "教师端" : "学生端",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("heading", {
+          name: account.role === "teacher" ? "教师登录" : "学生登录",
+          exact: true,
+        })
+        .waitFor();
       await page.getByLabel("用户名").fill(account.username);
       await page.getByLabel("密码", { exact: true }).fill(account.password);
       await page.getByRole("button", { name: "登录", exact: true }).click();
@@ -87,14 +97,43 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .fill(
         '# 测试概念\n- 真实课程内容\n\n```python\nprint("FCFS")\n```\n\n|指标|公式|\n|---|---|\n|等待|开始减到达|',
       );
+    await t.getByLabel("学习目标", { exact: true }).fill("理解测试原理");
+    for (const label of ["问题导入", "核心概念", "典型案例", "易错点", "总结"])
+      await t
+        .getByLabel(label + "正文", { exact: true })
+        .fill("教学演示：" + label);
+    await t.getByLabel("教学编号", { exact: true }).fill("1.1.待校对");
+    await t
+      .getByLabel("添加内容模块", { exact: true })
+      .selectOption("interaction");
+    await t
+      .getByLabel("交互演示正文", { exact: true })
+      .fill("观察不同内存分配后的剩余空间");
+    await t.getByLabel("C 分配 MB", { exact: true }).fill("128");
     await t.getByLabel("关联 FCFS 实验").check();
-    await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存知识点", exact: true }).click();
-    await t.getByRole("status").filter({ hasText: "知识点已保存" }).waitFor();
+    await t
+      .getByRole("status")
+      .filter({ hasText: "知识点草稿已保存" })
+      .waitFor();
+    if (process.env.BROWSER_SCREENSHOT_DIR) {
+      await t.evaluate(() => window.scrollTo(0, 0));
+      await t.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "digital-teacher.png",
+        ),
+      });
+    }
     const points = await (
       await apiCall(t, "get", base + "/api/teacher/knowledge")
     ).json();
     const kid = points.find((k) => k.title === pointTitle).id;
+    await t.getByLabel("知识点标题",{exact:true}).fill(pointTitle+" 草稿修改");
+    await t.waitForResponse(r=>r.url().endsWith(`/api/teacher/learning-content/${kid}`)&&r.request().method()==="PUT"&&r.status()===200);
+    await t.getByLabel("知识点标题",{exact:true}).fill(pointTitle);
+    await t.waitForResponse(r=>r.url().endsWith(`/api/teacher/learning-content/${kid}`)&&r.request().method()==="PUT"&&r.status()===200);
+
     if (
       (await apiCall(s, "get", base + `/api/knowledge/${kid}`)).status() !== 404
     )
@@ -130,10 +169,55 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存章节", exact: true }).click();
     await t.getByRole("status").filter({ hasText: "章节已保存" }).waitFor();
+    const draftPoints = await (
+      await apiCall(t, "get", base + "/api/teacher/learning-content")
+    ).json();
+    const digitalPoint = draftPoints.find((p) => p.id === kid);
+    const publication = await apiCall(
+      t,
+      "post",
+      base + `/api/teacher/learning-content/${kid}/publish`,
+      {
+        headers: { "X-CSRF-Token": await csrf(t) },
+        data: { expected_version: digitalPoint.edit_version },
+      },
+    );
+    if (publication.status() !== 200) throw Error(await publication.text());
     await s.goto(base + `/student/knowledge?chapter=${cid}`);
     await s.getByRole("heading", { name: pointTitle, exact: true }).waitFor();
     await s.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
     await s.getByRole("table").waitFor();
+    await s.getByRole("button", { name: "生成教学事件", exact: true }).click();
+    await s.getByRole("heading", { name: "空闲内存", exact: true }).waitFor();
+    for (let step = 0; step < 3; step++)
+      await s.getByRole("button", { name: "下一步", exact: true }).click();
+    await s
+      .getByRole("button", { name: "记录本次观察完成", exact: true })
+      .click();
+    await s
+      .getByRole("button", { name: "已记录观察完成", exact: true })
+      .waitFor();
+    if (process.env.BROWSER_SCREENSHOT_DIR) {
+      await s.locator(".interactive").scrollIntoViewIfNeeded();
+      await s.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "digital-student.png",
+        ),
+      });
+    }
+    await s.getByLabel("标记已阅读", { exact: true }).check();
+    await s
+      .getByLabel("私人学习笔记", { exact: true })
+      .fill("浏览器保存的私人笔记");
+    await s.getByRole("button", { name: "保存学习记录", exact: true }).click();
+    await s.getByRole("status").filter({ hasText: "学习记录已保存" }).waitFor();
+    await s.reload();
+    if (
+      (await s.getByLabel("私人学习笔记", { exact: true }).inputValue()) !==
+      "浏览器保存的私人笔记"
+    )
+      throw Error("学习笔记刷新丢失");
     if ((await s.locator("pre code").innerText()) !== 'print("FCFS")')
       throw Error("code rendering");
     if (
@@ -232,13 +316,28 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByLabel("选项 A", { exact: true }).fill("正确选项");
     await t.getByLabel("选项 B", { exact: true }).fill("错误选项");
     await t.getByLabel("解析", { exact: true }).fill("真实管理提交");
+    await t
+      .getByLabel("关联知识点（可多选）", { exact: true })
+      .selectOption(String(kid));
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存题目" }).click();
     await t.getByRole("status").filter({ hasText: "练习题已保存" }).waitFor();
-    await s.goto(base + `/student/practice?chapter=${cid}`);
+    await s.goto(base + `/student/knowledge?chapter=${cid}&point=${kid}`);
+    await s.getByRole("link", { name: "练习本知识点 →", exact: true }).click();
     await s.getByLabel("A. 正确选项", { exact: true }).check();
     await s.getByRole("button", { name: "提交练习", exact: true }).click();
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();
+    await s.getByRole("link", { name: "返回原知识点 →", exact: true }).click();
+    await s.getByText("练习：已完成作答", { exact: true }).waitFor();
+    await s.getByText("给教师反馈本知识点",{exact:true}).click();
+    await s.getByLabel("主动提交的学习反馈",{exact:true}).fill("请补充这个案例的解释");
+    await s.getByRole("button",{name:"发送学习反馈",exact:true}).click();
+    await s.getByRole("status").filter({hasText:"反馈已发送给教师"}).waitFor();
+    await t.getByRole("link",{name:"知识点管理",exact:true}).click();
+    await t.getByText("查看真实学习情况与主动反馈",{exact:true}).click();
+    await t.getByRole("button",{name:"加载学习反馈",exact:true}).click();
+    await t.getByText("请补充这个案例的解释",{exact:true}).waitFor();
+
     await t.route("**/api/teacher/chapters", (r) =>
       r.fulfill({
         status: 500,
@@ -291,45 +390,75 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     const copied = await popupPromise;
     copied.on("pageerror", (e) => errors.push(e.message));
     await copied.getByRole("button", { name: "登录", exact: true }).waitFor();
-    const teacherContext = await t.evaluate(() => sessionStorage.getItem("os:session-context"));
-    const copiedContext = await copied.evaluate(() => sessionStorage.getItem("os:session-context"));
+    const teacherContext = await t.evaluate(() =>
+      sessionStorage.getItem("os:session-context"),
+    );
+    const copiedContext = await copied.evaluate(() =>
+      sessionStorage.getItem("os:session-context"),
+    );
     if (teacherContext === copiedContext) throw Error("复制标签未分离上下文");
     await login(copied, accounts[1]);
     await copied.reload();
-    await copied.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+    await copied
+      .getByRole("heading", { name: "学习首页", exact: true })
+      .waitFor();
     await t.reload();
     await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
     // 挂起旧身份请求，重新登录后再返回。401 不得清空新登录；200 不得交付旧数据。
     for (const status of [401, 200]) {
       let release;
-      const gate = new Promise((resolve) => { release = resolve; });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
       let started;
-      const seen = new Promise((resolve) => { started = resolve; });
+      const seen = new Promise((resolve) => {
+        started = resolve;
+      });
       await copied.route("**/api/session-race-test", async (route) => {
         started();
         await gate;
-        await route.fulfill({ status, contentType: "application/json",
-          body: JSON.stringify(status === 401 ? { detail: "旧会话已过期" } : { private: "旧账号数据" }) });
+        await route.fulfill({
+          status,
+          contentType: "application/json",
+          body: JSON.stringify(
+            status === 401
+              ? { detail: "旧会话已过期" }
+              : { private: "旧账号数据" },
+          ),
+        });
       });
       await copied.evaluate(() => {
         window.raceResult = "pending";
-        import("/src/api.ts").then(({ request }) => request("/session-race-test"))
-          .then(() => { window.raceResult = "unexpected success"; })
-          .catch((e) => { window.raceResult = e.name; });
+        import("/src/api.ts")
+          .then(({ request }) => request("/session-race-test"))
+          .then(() => {
+            window.raceResult = "unexpected success";
+          })
+          .catch((e) => {
+            window.raceResult = e.name;
+          });
       });
       await seen;
-      await copied.getByRole("button", { name: "退出登录", exact: true }).click();
+      await copied
+        .getByRole("button", { name: "退出登录", exact: true })
+        .click();
       await copied.waitForURL("**/login");
       await login(copied, status === 401 ? accounts[2] : accounts[1], false);
       release();
       await copied.waitForFunction(() => window.raceResult === "AbortError");
-      await copied.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+      await copied
+        .getByRole("heading", { name: "学习首页", exact: true })
+        .waitFor();
       await copied.unroute("**/api/session-race-test");
     }
     // 当前会话真正过期时应退出；重新登录后恢复，其他教师标签不受影响。
-    await copied.route("**/api/session-expiry-test", (route) => route.fulfill({
-      status: 401, contentType: "application/json", body: '{"detail":"登录已过期，请重新登录"}',
-    }));
+    await copied.route("**/api/session-expiry-test", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: '{"detail":"登录已过期，请重新登录"}',
+      }),
+    );
     await copied.evaluate(async () => {
       const { request } = await import("/src/api.ts");
       await request("/session-expiry-test").catch(() => {});
@@ -341,13 +470,19 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.reload();
     await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
     await copied.close();
-    console.log("PASS 登录回归：复制标签独立、刷新、交叉登录退出、旧401/200响应隔离、当前401重新登录");
+    console.log(
+      "PASS 登录回归：复制标签独立、刷新、交叉登录退出、旧401/200响应隔离、当前401重新登录",
+    );
     const signup = await contexts[0].newPage();
     signup.on("pageerror", (e) => errors.push(e.message));
     await signup.goto(base + "/login");
     await signup.getByRole("link", { name: "教师端", exact: true }).click();
-    await signup.getByRole("heading", { name: "教师登录", exact: true }).waitFor();
-    if (await signup.getByRole("link", { name: "没有账号？注册学生账号" }).count())
+    await signup
+      .getByRole("heading", { name: "教师登录", exact: true })
+      .waitFor();
+    if (
+      await signup.getByRole("link", { name: "没有账号？注册学生账号" }).count()
+    )
       throw Error("教师端不应展示注册入口");
     await signup.getByRole("link", { name: "学生端", exact: true }).click();
     await signup.getByRole("link", { name: "没有账号？注册学生账号" }).click();
@@ -355,25 +490,59 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     const registeredPassword = "browser-registration-" + suffix;
     await signup.getByLabel("用户名", { exact: true }).fill(registeredName);
     await signup.getByLabel("密码", { exact: true }).fill(registeredPassword);
-    await signup.getByLabel("确认密码", { exact: true }).fill(registeredPassword + "x");
-    await signup.getByRole("button", { name: "注册学生账号", exact: true }).click();
-    await signup.getByRole("alert").filter({ hasText: "两次输入的密码不一致" }).waitFor();
-    await signup.getByLabel("确认密码", { exact: true }).fill(registeredPassword);
-    await signup.getByRole("button", { name: "注册学生账号", exact: true }).click();
+    await signup
+      .getByLabel("确认密码", { exact: true })
+      .fill(registeredPassword + "x");
+    await signup
+      .getByRole("button", { name: "注册学生账号", exact: true })
+      .click();
+    await signup
+      .getByRole("alert")
+      .filter({ hasText: "两次输入的密码不一致" })
+      .waitFor();
+    await signup
+      .getByLabel("确认密码", { exact: true })
+      .fill(registeredPassword);
+    await signup
+      .getByRole("button", { name: "注册学生账号", exact: true })
+      .click();
     await signup.getByRole("status").filter({ hasText: "注册成功" }).waitFor();
-    await login(signup, { username: registeredName, password: registeredPassword, role: "student" }, false);
+    await login(
+      signup,
+      {
+        username: registeredName,
+        password: registeredPassword,
+        role: "student",
+      },
+      false,
+    );
     await signup.reload();
-    await signup.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
-    if ((await apiCall(signup, "get", base + "/api/teacher/accounts")).status() !== 403)
+    await signup
+      .getByRole("heading", { name: "学习首页", exact: true })
+      .waitFor();
+    if (
+      (
+        await apiCall(signup, "get", base + "/api/teacher/accounts")
+      ).status() !== 403
+    )
       throw Error("自注册学生越权");
-    const registeredAccounts = await (await apiCall(t, "get", base + "/api/teacher/accounts")).json();
-    if (!registeredAccounts.some((account) => account.username === registeredName && account.role === "student"))
+    const registeredAccounts = await (
+      await apiCall(t, "get", base + "/api/teacher/accounts")
+    ).json();
+    if (
+      !registeredAccounts.some(
+        (account) =>
+          account.username === registeredName && account.role === "student",
+      )
+    )
       throw Error("自注册学生未保存到统一账号库");
     await signup.close();
-    console.log("PASS 学生注册：入口区分、确认密码、真实注册登录刷新、教师可管理、后端拒绝越权");
+    console.log(
+      "PASS 学生注册：入口区分、确认密码、真实注册登录刷新、教师可管理、后端拒绝越权",
+    );
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "PASS browser V0.2: 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
+      "PASS browser 数字教材与V0.2回归：灵活编号、草稿自动保存、知识点发布、内存事件运行/回放/完成记录、私人笔记刷新保持、知识点练习往返、主动反馈； 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
     );
   } finally {
     await browser.close();

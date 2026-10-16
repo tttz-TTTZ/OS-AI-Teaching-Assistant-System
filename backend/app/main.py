@@ -299,3 +299,19 @@ app.include_router(accounts_router)
 from .textbook import router as textbook_router
 
 app.include_router(textbook_router)
+
+from .digital import router as digital_router
+
+app.include_router(digital_router)
+
+from .digital_assets import router as digital_assets_router
+
+app.include_router(digital_assets_router)
+
+from .simulations import router as simulations_router
+
+app.include_router(simulations_router)
+
+from .study import router as study_router
+
+app.include_router(study_router)

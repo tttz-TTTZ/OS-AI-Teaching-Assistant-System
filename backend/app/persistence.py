@@ -63,6 +63,7 @@ def validate_backup(folder: Path) -> dict:
         for table, column in [
             ("documents", "stored_name"),
             ("document_versions", "stored_name"),
+            ("knowledge_assets", "stored_name"),
         ]:
             if table in tables:
                 for row in db.execute(

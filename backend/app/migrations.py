@@ -88,7 +88,7 @@ def _migrate_v2(path: Path) -> None:
         db.close()
 
 
-def migrate(path: Path) -> None:
+def _migrate_v3(path: Path) -> None:
     # 原有V0.2迁移保持不变。后续按版本顺序追加，不能在version=2前提前返回。
     was_v2 = False
     if path.exists() and path.stat().st_size:
@@ -132,3 +132,21 @@ def migrate(path: Path) -> None:
             "INSERT INTO schema_versions VALUES(3)",
         ]:
             db.execute(statement)
+
+
+def migrate(path: Path) -> None:
+    had_v3 = False
+    if path.exists():
+        with sqlite3.connect(path) as db:
+            if db.execute(
+                "SELECT 1 FROM sqlite_master WHERE name='schema_versions'"
+            ).fetchone():
+                had_v3 = bool(
+                    db.execute(
+                        "SELECT 1 FROM schema_versions WHERE version=3"
+                    ).fetchone()
+                )
+    _migrate_v3(path)
+    from .digital_migration import migrate_digital
+
+    migrate_digital(path, backup=had_v3)

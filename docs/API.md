@@ -86,3 +86,30 @@ AI 仅后端读 LLM_API_KEY，兼容 HTTPS Chat Completions 非流式接口；�
 | schema_versions | 迁移标记，防止重复初始化 |
 
 V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图。旧个人资料 owner_id=NULL、旧问答 user_id=NULL，保留不公开。旧 chapter 文本仅用于显示和旧 API 兼容，新的关系使用 ID。历史表中未重建的外键通过写入校验和删除限制维护；不要绕过 API 直接改数据库。
+
+
+## 数字教材增量接口
+
+权限仍使用现有标签Cookie和CSRF；教师接口始终后端鉴权。详细边界见 DIGITAL-TEXTBOOK-DELIVERY.md。
+
+| 方法/路径 | 行为 |
+|---|---|
+| GET /api/sections | 学生只读可见章下已发布小节；教师可管理草稿 |
+| POST /api/teacher/sections，PUT /api/teacher/sections/{id} | 小节编号/标题/排序/发布；不会删除知识点 |
+| GET /api/learning-content，GET /api/learning-content/{id} | 摘要目录与已发布结构化详情；preview=true仅教师 |
+| GET/POST /api/teacher/learning-content，PUT /api/teacher/learning-content/{id} | 教师目录、新建与保存草稿；expected_version冲突409 |
+| POST /api/teacher/learning-content/{id}/{publish,withdraw,archive,restore} | 独立发布动作；restore需revision_id，只恢复新草稿 |
+| GET /api/teacher/learning-content/{id}/history | 不可变修订历史（限最近100条） |
+| POST /api/teacher/learning-assets，GET /api/learning-assets/{id} | 图片上传与授权读取，不提供公开静态路径 |
+| POST /api/learning-content/{id}/run | block_id/revision_id/config生成真实模拟事件，返回运行ID |
+| POST /api/interaction-runs/{id}/complete | 本人运行记录last_step核对，记录观察操作完成 |
+| GET/PUT /api/learning-content/{id}/progress | 本人记录；PUT需revision_id和expected_version |
+| GET /api/my/learning-resume | 本人最近可访问的已保存学习位置 |
+| POST /api/learning-content/{id}/feedback | 主动反馈message，与私人笔记分开 |
+| GET /api/teacher/study/summary | 当前发布修订真实学习计数与主动反馈，无私人笔记 |
+| GET /api/teacher/study/questions，POST/PUT对应题目路径 | 多题型、知识点关联，更新带expected_version |
+| GET /api/study/questions?chapter_id=或knowledge_id= | 最多100题，不返回标准答案/解析 |
+| POST /api/study/submit | request_key/answers/versions，可选knowledge_id/revision_id；本人幂等成绩快照 |
+| GET /api/study/attempts | 本人最近50次成绩及错题；简答correct=null、ungraded计数 |
+
+旧单选接口保留；已由新版管理的知识点/题目不能用旧写接口绕过版本控制。页码自由文本仅是引用说明，不提供未经授权的文件访问能力。

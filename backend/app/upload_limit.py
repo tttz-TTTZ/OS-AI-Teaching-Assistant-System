@@ -16,7 +16,8 @@ class UploadLimitMiddleware:
             scope["type"] == "http"
             and scope["method"] == "POST"
             and (
-                scope["path"] == "/api/materials/upload"
+                scope["path"]
+                in ("/api/materials/upload", "/api/teacher/learning-assets")
                 or (
                     scope["path"].startswith("/api/materials/")
                     and scope["path"].endswith("/replace")
@@ -40,6 +41,13 @@ class UploadLimitMiddleware:
         maximum = (
             PUBLIC_MAX_SIZE if user["role"] == "teacher" else MAX_SIZE
         ) + 1024 * 1024
+        if scope["path"] == "/api/teacher/learning-assets":
+            if user["role"] != "teacher":
+                await JSONResponse({"detail": "仅教师可上传教学图片"}, status_code=403)(
+                    scope, receive, send
+                )
+                return
+            maximum = 11 * 1024 * 1024
         size = 0
         with tempfile.TemporaryFile() as body:
             while True:

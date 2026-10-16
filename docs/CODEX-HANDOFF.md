@@ -1,5 +1,9 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+## 最新进度：知识点数字教材试用升级
+
+先读 [DIGITAL-TEXTBOOK-DELIVERY.md](DIGITAL-TEXTBOOK-DELIVERY.md)。数据库追加V4，保留旧内容和ID；新增来源/页码可修改、结构化内容块、草稿发布修订、受控图片、教学状态机、多题型练习、持久学习记录和主动反馈。依赖新增Pillow。不要根据下方历史交接误认最新代码只支持单段Markdown/单选；不要把当前模板化交互说成完整教案已录入、全部复杂动画已完成。Windows和阿里云仍待实机验收。
+
 ## 先读本文件，再读现有需求
 
 用户正在从聊天中的云端开发转到 Windows VS Code 的 Codex 扩展。请继续同一项目，不另建工程，不换 React，不删除数据库。当前分支 `feat/development-foundation`。用户本地仓库实际位置曾确认为 `D:\A-bishe\OS-AI-Teaching-Assistant-System`；虚拟环境可能在上一级 `D:\A-bishe\.venv`。先检查实际路径/解释器，不盲目假定 `.venv` 在仓库内。

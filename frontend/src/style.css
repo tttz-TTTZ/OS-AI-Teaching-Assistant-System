@@ -688,3 +688,289 @@ header h1 {
   color: #245d50;
   font-weight: 600;
 }
+
+.compact {
+  margin-bottom: 20px;
+}
+.content-workspace {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.content-list {
+  position: sticky;
+  top: 20px;
+  max-height: 90vh;
+  overflow: auto;
+}
+.content-list input,
+.content-list select {
+  width: 100%;
+  margin: 8px 0;
+}
+.content-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #f5f8f8;
+  color: #243d48;
+  margin: 10px 0;
+  padding: 12px;
+}
+.content-item small {
+  display: block;
+  font-weight: normal;
+  margin-top: 7px;
+}
+.content-item.selected {
+  outline: 2px solid #468f80;
+}
+.editor-area fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.editor-area label,
+.content-list form label {
+  display: block;
+  margin: 12px 0;
+}
+.editor-area input:not([type="checkbox"]),
+.editor-area textarea,
+.editor-area select,
+.progress-editor textarea {
+  width: 100%;
+  margin-top: 7px;
+}
+.editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 20px;
+}
+.block-editor {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid #dce6e7;
+  border-radius: 10px;
+  background: #fbfcfc;
+}
+.block-editor .editor {
+  min-height: 110px;
+}
+.editor-area .check,
+.content-list .check {
+  display: flex;
+}
+.publication-bar {
+  border-top: 1px solid #dce6e7;
+  margin-top: 20px;
+  padding-top: 15px;
+}
+.publication-bar pre {
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow: auto;
+}
+.preview-pane {
+  margin-top: 24px;
+  padding: 18px;
+  border: 2px dashed #8fb2aa;
+  border-radius: 10px;
+}
+.learning-objectives {
+  background: #eef6f3;
+  border-left: 4px solid #397d6e;
+  padding: 14px 20px;
+  margin: 20px 0;
+}
+.content-block {
+  scroll-margin-top: 20px;
+  padding: 12px 0 22px;
+  border-bottom: 1px solid #e4ecee;
+}
+.kind-mistake {
+  background: #fff7ec;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 18px;
+}
+.digital-content h3 {
+  margin-bottom: 16px;
+}
+.digital-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+.digital-content figure {
+  margin: 15px 0;
+}
+.digital-content figcaption,
+.source-info {
+  font-size: 14px;
+  color: #60717b;
+}
+.interactive {
+  background: #f2f7f8;
+  border: 1px solid #d9e5e7;
+  border-radius: 10px;
+  padding: 16px;
+}
+.sim-config {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.sim-config label {
+  font-size: 13px;
+  flex: 1 1 110px;
+  max-width: 190px;
+}
+.sim-config input[type="number"] {
+  width: 100%;
+  margin-top: 6px;
+}
+.sim-frame {
+  background: white;
+  border-radius: 8px;
+  padding: 14px;
+  margin: 16px 0;
+}
+.sim-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sim-node {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: #e5eeef;
+  border-radius: 6px;
+  min-width: 65px;
+  overflow-wrap: anywhere;
+}
+.sim-node.active {
+  background: #22675c;
+  color: white;
+}
+.memory-strip {
+  display: flex;
+  gap: 4px;
+  min-height: 110px;
+  overflow: auto;
+}
+.interactive input[type="range"] {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+}
+.interactive small {
+  display: block;
+  margin-top: 12px;
+}
+.event-log {
+  max-height: 240px;
+  overflow: auto;
+}
+.text-button {
+  background: none;
+  color: #25685f;
+  padding: 4px;
+  font-size: 14px;
+  text-align: left;
+}
+.progress-editor {
+  border-top: 1px solid #dce4e8;
+  margin-top: 15px;
+  font-size: 14px;
+}
+.progress-editor .check {
+  display: flex;
+  align-items: flex-start;
+}
+.progress-editor textarea {
+  min-height: 100px;
+}
+.data-chart > div {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 10px;
+  margin: 15px 0;
+  align-items: center;
+}
+.data-chart meter {
+  width: 100%;
+  height: 25px;
+}
+.source-info {
+  margin-top: 25px;
+  padding: 15px;
+  background: #f6f8f9;
+}
+@media (max-width: 1050px) {
+  .content-workspace {
+    grid-template-columns: 1fr;
+  }
+  .content-list {
+    position: static;
+    max-height: 400px;
+  }
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+/* 内容区的侧栏不沿用应用主导航的固定100vh高度。 */
+.digital-reading .readinglinks {
+  width: auto;
+  height: auto;
+  position: static;
+  display: block;
+  padding: 18px;
+  min-width: 0;
+}
+.digital-reading .readingbody {
+  min-width: 0;
+}
+.content-workspace .content-list {
+  width: auto;
+  height: auto;
+}
+.memory-strip .sim-node {
+  padding: 12px 6px;
+  font-size: 14px;
+}
+.compact h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.compact p {
+  margin: 6px 0;
+}
+.editor-area > h2,
+.content-list h2 {
+  margin-top: 0;
+}
+.readinglinks textarea {
+  width: 100%;
+}
+.progress-editor fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}

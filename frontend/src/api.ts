@@ -108,6 +108,9 @@ export const api = {
 };
 
 export interface Chapter {
+  textbook_number?: number | null;
+  pdf_start?: number | null;
+  pdf_end?: number | null;
   id: number;
   title: string;
   description: string;
@@ -219,7 +222,7 @@ export const authApi = {
 
 export type ChapterInput = Pick<
   Chapter,
-  "title" | "description" | "sort_order" | "published" | "course_id"
+  "title" | "description" | "sort_order" | "published" | "course_id" | "textbook_number" | "pdf_start" | "pdf_end"
 >;
 export type KnowledgeInput = Pick<
   Knowledge,
