@@ -1,28 +1,18 @@
-const CONTEXT_KEY = "os:session-context";
-const query = new URLSearchParams(window.location.search);
-if (query.get("new_session") === "1") {
-  sessionStorage.removeItem(CONTEXT_KEY);
-  query.delete("new_session");
-  history.replaceState(
-    null,
-    "",
-    window.location.pathname + (query.size ? "?" + query.toString() : ""),
-  );
-}
-export function sessionContext() {
-  let value = sessionStorage.getItem(CONTEXT_KEY);
-  if (!value) {
-    value = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
-      b.toString(16).padStart(2, "0"),
-    ).join("");
-    sessionStorage.setItem(CONTEXT_KEY, value);
-  }
-  return value;
-}
+import { sessionContext, sessionReady, freshSessionContext } from "./session";
+export { sessionContext } from "./session";
 export function fileUrl(id: number, download = false) {
   return `/api/materials/${id}/file?session_context=${encodeURIComponent(sessionContext())}${download ? "&download=true" : ""}`;
 }
 let csrfToken = "";
+let authRevision = 0;
+export function invalidateAuthRequests() {
+  authRevision += 1;
+  csrfToken = "";
+}
+function checkRevision(revision: number, context: string) {
+  if (revision !== authRevision || context !== sessionContext())
+    throw new DOMException("登录状态已变化，已忽略旧请求", "AbortError");
+}
 export function setCsrfToken(value: string) {
   csrfToken = value;
 }
@@ -57,11 +47,14 @@ export async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  await sessionReady;
+  const revision = authRevision;
+  const context = sessionContext();
   const response = await fetch(`/api${path}`, {
     credentials: "same-origin",
     ...options,
     headers: {
-      "X-Session-Context": sessionContext(),
+      "X-Session-Context": context,
       ...(csrfToken ? { "X-CSRF-Token": csrfToken } : {}),
       ...(options.body instanceof FormData
         ? {}
@@ -69,6 +62,7 @@ export async function request<T>(
       ...options.headers,
     },
   });
+  checkRevision(revision, context);
   if (!response.ok) {
     if (response.status === 401 && path !== "/auth/login")
       window.dispatchEvent(new Event("auth-expired"));
@@ -81,7 +75,9 @@ export async function request<T>(
           : `请求失败（${response.status}）`,
     );
   }
-  return response.status === 204 ? (undefined as T) : response.json();
+  const result = response.status === 204 ? (undefined as T) : await response.json();
+  checkRevision(revision, context);
+  return result;
 }
 export const api = {
   material: (id: number) => request<Material>(`/materials/${id}`),
@@ -204,11 +200,16 @@ export interface User {
 }
 export const authApi = {
   me: () => request<User>("/auth/me"),
-  login: (username: string, password: string) =>
-    request<User>("/auth/login", {
+  login: async (username: string, password: string) => {
+    await sessionReady;
+    // 每次登录独占新 Cookie，哪怕浏览器复制了标签存储也不会覆盖别的账号。
+    invalidateAuthRequests();
+    await freshSessionContext();
+    return request<User>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ username, password }),
-    }),
+    });
+  },
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 };
 

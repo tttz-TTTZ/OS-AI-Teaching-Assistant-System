@@ -27,8 +27,8 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     );
     const pages = await Promise.all(contexts.map((c) => c.newPage()));
     for (const p of pages) p.on("pageerror", (e) => errors.push(e.message));
-    async function login(page, account) {
-      await page.goto(base + "/login");
+    async function login(page, account, navigate = true) {
+      if (navigate) await page.goto(base + "/login");
       await page.getByLabel("用户名").fill(account.username);
       await page.getByLabel("密码", { exact: true }).fill(account.password);
       await page.getByRole("button", { name: "登录", exact: true }).click();
@@ -283,6 +283,63 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await sameBrowserStudent.waitForURL("**/login");
     if ((await apiCall(t, "get", base + "/api/auth/me")).status() !== 200)
       throw Error("other tab logout revoked teacher");
+    // window.open 复制 opener 的 sessionStorage，模拟“复制标签页”。
+    const popupPromise = t.waitForEvent("popup");
+    await t.evaluate(() => window.open("/login", "_blank"));
+    const copied = await popupPromise;
+    copied.on("pageerror", (e) => errors.push(e.message));
+    await copied.getByRole("button", { name: "登录", exact: true }).waitFor();
+    const teacherContext = await t.evaluate(() => sessionStorage.getItem("os:session-context"));
+    const copiedContext = await copied.evaluate(() => sessionStorage.getItem("os:session-context"));
+    if (teacherContext === copiedContext) throw Error("复制标签未分离上下文");
+    await login(copied, accounts[1]);
+    await copied.reload();
+    await copied.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+    await t.reload();
+    await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
+    // 挂起旧身份请求，重新登录后再返回。401 不得清空新登录；200 不得交付旧数据。
+    for (const status of [401, 200]) {
+      let release;
+      const gate = new Promise((resolve) => { release = resolve; });
+      let started;
+      const seen = new Promise((resolve) => { started = resolve; });
+      await copied.route("**/api/session-race-test", async (route) => {
+        started();
+        await gate;
+        await route.fulfill({ status, contentType: "application/json",
+          body: JSON.stringify(status === 401 ? { detail: "旧会话已过期" } : { private: "旧账号数据" }) });
+      });
+      await copied.evaluate(() => {
+        window.raceResult = "pending";
+        import("/src/api.ts").then(({ request }) => request("/session-race-test"))
+          .then(() => { window.raceResult = "unexpected success"; })
+          .catch((e) => { window.raceResult = e.name; });
+      });
+      await seen;
+      await copied.getByRole("button", { name: "退出登录", exact: true }).click();
+      await copied.waitForURL("**/login");
+      await login(copied, status === 401 ? accounts[2] : accounts[1], false);
+      release();
+      await copied.waitForFunction(() => window.raceResult === "AbortError");
+      await copied.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+      await copied.unroute("**/api/session-race-test");
+    }
+    // 当前会话真正过期时应退出；重新登录后恢复，其他教师标签不受影响。
+    await copied.route("**/api/session-expiry-test", (route) => route.fulfill({
+      status: 401, contentType: "application/json", body: '{"detail":"登录已过期，请重新登录"}',
+    }));
+    await copied.evaluate(async () => {
+      const { request } = await import("/src/api.ts");
+      await request("/session-expiry-test").catch(() => {});
+    });
+    await copied.waitForURL("**/login");
+    await login(copied, accounts[1], false);
+    await copied.getByRole("button", { name: "退出登录", exact: true }).click();
+    await copied.waitForURL("**/login");
+    await t.reload();
+    await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
+    await copied.close();
+    console.log("PASS 登录回归：复制标签独立、刷新、交叉登录退出、旧401/200响应隔离、当前401重新登录");
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
       "PASS browser V0.2: 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",

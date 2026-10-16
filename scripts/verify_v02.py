@@ -35,6 +35,9 @@ def run() -> None:
     # 先拒绝端口冲突，避免误连已经运行的个人开发实例。
     for port in (8010, 5174):
         with socket.socket() as probe:
+            # 避免上一轮已退出的服务留下 TIME_WAIT 导致误报；仍拒绝活跃监听。
+            if os.name != "nt":
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 probe.bind(("127.0.0.1", port))
             except OSError as exc:

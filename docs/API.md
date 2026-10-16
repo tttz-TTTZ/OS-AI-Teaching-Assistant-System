@@ -1,6 +1,6 @@
 # V0.2 API 与数据模型
 
-统一 `/api`。JSON 请求及响应；文件上传用 multipart。除 health/login 外，业务接口均需 `os_session` Cookie。Cookie 为 HttpOnly、SameSite=Strict、Path=/api；本地 HTTP 下 Secure=false，配置 COOKIE_SECURE=true 时需 HTTPS。
+统一 `/api`。JSON 请求及响应；文件上传用 multipart。除 health/login 外，业务接口均需会话 Cookie。浏览器通过非敏感 `X-Session-Context` 选择 `os_session_<context>`；文件链接用 `session_context` 查询参数。未传上下文的旧 API 客户端继续使用 `os_session`。选择器本身不能认证，必须同时携带对应 HttpOnly Cookie。Cookie 为 HttpOnly、SameSite=Strict、Path=/api；本地 HTTP 下 Secure=false，配置 COOKIE_SECURE=true 时需 HTTPS。
 
 写操作还需 `X-CSRF-Token`，由登录或 me 响应取得。浏览器前端自动处理。401 表示未登录/会话过期；403 表示角色不足、CSRF/来源校验失败；404 同时用于内容不存在或不可读，避免透露私人资料；422 参数错误；409 章节仍有关联内容。
 
