@@ -45,7 +45,7 @@
 - `auth.py`：`X-Session-Context`或文件链接session_context选择标签Cookie（os_session_<随机selector>）；selector不是凭据，真正令牌只在HttpOnly Cookie。无context的旧API客户端仍用原os_session，保持兼容。新增本人改密并撤销其他会话。
 - 前端`api.ts`：sessionStorage仅保存标签selector，所有fetch带header；fileUrl给PDF/下载链接带selector。`/login?new_session=1`初始化新标签上下文，侧栏有入口。
 - `accounts.py`：普通教师管理学生；显式授权的is_admin教师才能创建/管理教师。创建、搜索、启停、重置密码，停用/重置立即撤销会话，不删用户资料。防止停用自己或停用最后管理员。
-- `manage.py`：保留原交互创建，新增 --admin 与 --grant-existing。没有默认密码、没有开放自注册或自助提权。
+- `manage.py`：保留原交互创建，新增 --admin 与 --grant-existing。没有默认密码或自助提权；2026-10-16 新增学生自注册（/register + /api/auth/register），仅创建 student，教师仍由管理员分配。
 - 前端新增teacher/Accounts和Profile页面，可创建/停用/重置学生账号、本人改密。
 
 ### 资料模块
@@ -60,6 +60,10 @@
 ### 教材目录
 
 `textbook.py`提供plan/apply：教师先预览，应用前自动成套备份，用fingerprint检测并发变化。合并旧“进程与线程/处理机调度”到教材第2章，更新已有知识点/题目/资料的chapter_id，保留内容ID与owner；旧章归档，不删除用户自定义章节。新增安全章。不是按数据库ID直接重编号。教师章节页有预览/确认按钮。
+
+## 学生自注册增量（2026-10-16）
+
+登录页提供学生/教师入口；学生入口有注册链接，教师入口没有。注册密码12–128字符、确认密码、用户名去空格/唯一校验；后端拒绝 role/is_admin 等额外字段，密码继续 Argon2 哈希。注册成功不自动登录，返回学生登录页；不覆盖其他标签会话。登录 expected_role 仅做入口匹配校验，不能改变真实角色。不新增表或迁移，不改既有账号和资料。
 
 ## 验证状态
 

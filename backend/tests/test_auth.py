@@ -396,3 +396,56 @@ def test_legacy_text_write_tracks_chapter_id(clients):
         ).status_code
         == 422
     )
+
+
+def test_student_self_registration(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "registration.db")
+    with TestClient(main.app) as client:
+        body = {"username": "  new-student  ", "password": "registration-test-password"}
+        response = client.post("/api/auth/register", json=body)
+        assert response.status_code == 201, response.text
+        assert response.json()["username"] == "new-student"
+        assert response.json()["role"] == "student"
+        assert "password" not in response.text and "csrf_token" not in response.text
+        assert not response.cookies
+        assert client.get("/api/auth/me").status_code == 401
+        assert client.post("/api/auth/register", json=body).status_code == 409
+        with main.database() as db:
+            user = db.execute("SELECT * FROM users WHERE username='new-student'").fetchone()
+            assert user["role"] == "student" and user["is_admin"] == 0
+            assert user["password_hash"].startswith("$argon2id$")
+            assert user["password_hash"] != body["password"]
+            assert db.execute("SELECT count(*) FROM users").fetchone()[0] == 1
+        login = client.post("/api/auth/login", json={**body, "expected_role": "student"})
+        assert login.status_code == 200
+        client.headers["X-CSRF-Token"] = login.json()["csrf_token"]
+        assert client.get("/api/auth/me").json()["role"] == "student"
+        assert client.post("/api/teacher/chapters", json={"title": "越权"}).status_code == 403
+
+
+def test_registration_cannot_create_teacher_or_invalid_account(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "invalid-registration.db")
+    with TestClient(main.app) as client:
+        body = {"username": "student", "password": "registration-test-password"}
+        for extra in [{"role": "teacher"}, {"is_admin": True}, {"active": True}]:
+            assert client.post("/api/auth/register", json={**body, **extra}).status_code == 422
+        for invalid in [{"username": "   "}, {"password": "short"}, {"password": "x" * 129}]:
+            assert client.post("/api/auth/register", json={**body, **invalid}).status_code == 422
+        assert client.post("/api/auth/register", json=body,
+                           headers={"Origin": "https://evil.example"}).status_code == 403
+        with main.database() as db:
+            assert db.execute("SELECT count(*) FROM users").fetchone()[0] == 0
+
+
+def test_selected_login_portal_enforced_before_session_creation(clients):
+    teacher, student, _ = clients
+    for client, username, wrong_role in [(teacher, "teacher", "student"), (student, "alice", "teacher")]:
+        with main.database() as db:
+            before = db.execute("SELECT count(*) FROM sessions").fetchone()[0]
+        response = client.post("/api/auth/login", json={
+            "username": username, "password": "test-password-12345", "expected_role": wrong_role,
+        })
+        assert response.status_code == 403 and not response.cookies
+        assert client.get("/api/auth/me").json()["username"] == username
+        with main.database() as db:
+            assert db.execute("SELECT count(*) FROM sessions").fetchone()[0] == before

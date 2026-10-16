@@ -668,3 +668,23 @@ header h1 {
   background: #f3f6f7;
   border-radius: 6px;
 }
+
+.login-portals {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+.login-portals a {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid #dce4e8;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.login-portals a[aria-current="page"] {
+  background: #edf5f2;
+  border-color: #529283;
+  color: #245d50;
+  font-weight: 600;
+}

@@ -199,15 +199,19 @@ export interface User {
   is_admin: boolean;
 }
 export const authApi = {
+  register: (username: string, password: string) =>
+    request<{ id: number; username: string; role: "student" }>("/auth/register", {
+      method: "POST", body: JSON.stringify({ username, password }),
+    }),
   me: () => request<User>("/auth/me"),
-  login: async (username: string, password: string) => {
+  login: async (username: string, password: string, expected_role?: "teacher" | "student") => {
     await sessionReady;
     // 每次登录独占新 Cookie，哪怕浏览器复制了标签存储也不会覆盖别的账号。
     invalidateAuthRequests();
     await freshSessionContext();
     return request<User>("/auth/login", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, expected_role }),
     });
   },
   logout: () => request<void>("/auth/logout", { method: "POST" }),

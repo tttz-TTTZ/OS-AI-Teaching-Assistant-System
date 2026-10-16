@@ -29,6 +29,8 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     for (const p of pages) p.on("pageerror", (e) => errors.push(e.message));
     async function login(page, account, navigate = true) {
       if (navigate) await page.goto(base + "/login");
+      await page.getByRole("link", { name: account.role === "teacher" ? "教师端" : "学生端", exact: true }).click();
+      await page.getByRole("heading", { name: account.role === "teacher" ? "教师登录" : "学生登录", exact: true }).waitFor();
       await page.getByLabel("用户名").fill(account.username);
       await page.getByLabel("密码", { exact: true }).fill(account.password);
       await page.getByRole("button", { name: "登录", exact: true }).click();
@@ -340,6 +342,35 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByRole("heading", { name: "账号管理", exact: true }).waitFor();
     await copied.close();
     console.log("PASS 登录回归：复制标签独立、刷新、交叉登录退出、旧401/200响应隔离、当前401重新登录");
+    const signup = await contexts[0].newPage();
+    signup.on("pageerror", (e) => errors.push(e.message));
+    await signup.goto(base + "/login");
+    await signup.getByRole("link", { name: "教师端", exact: true }).click();
+    await signup.getByRole("heading", { name: "教师登录", exact: true }).waitFor();
+    if (await signup.getByRole("link", { name: "没有账号？注册学生账号" }).count())
+      throw Error("教师端不应展示注册入口");
+    await signup.getByRole("link", { name: "学生端", exact: true }).click();
+    await signup.getByRole("link", { name: "没有账号？注册学生账号" }).click();
+    const registeredName = "self-registered-" + suffix;
+    const registeredPassword = "browser-registration-" + suffix;
+    await signup.getByLabel("用户名", { exact: true }).fill(registeredName);
+    await signup.getByLabel("密码", { exact: true }).fill(registeredPassword);
+    await signup.getByLabel("确认密码", { exact: true }).fill(registeredPassword + "x");
+    await signup.getByRole("button", { name: "注册学生账号", exact: true }).click();
+    await signup.getByRole("alert").filter({ hasText: "两次输入的密码不一致" }).waitFor();
+    await signup.getByLabel("确认密码", { exact: true }).fill(registeredPassword);
+    await signup.getByRole("button", { name: "注册学生账号", exact: true }).click();
+    await signup.getByRole("status").filter({ hasText: "注册成功" }).waitFor();
+    await login(signup, { username: registeredName, password: registeredPassword, role: "student" }, false);
+    await signup.reload();
+    await signup.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+    if ((await apiCall(signup, "get", base + "/api/teacher/accounts")).status() !== 403)
+      throw Error("自注册学生越权");
+    const registeredAccounts = await (await apiCall(t, "get", base + "/api/teacher/accounts")).json();
+    if (!registeredAccounts.some((account) => account.username === registeredName && account.role === "student"))
+      throw Error("自注册学生未保存到统一账号库");
+    await signup.close();
+    console.log("PASS 学生注册：入口区分、确认密码、真实注册登录刷新、教师可管理、后端拒绝越权");
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
       "PASS browser V0.2: 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",

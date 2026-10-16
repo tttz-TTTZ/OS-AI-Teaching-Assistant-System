@@ -1,6 +1,6 @@
 # V0.2 API 与数据模型
 
-统一 `/api`。JSON 请求及响应；文件上传用 multipart。除 health/login 外，业务接口均需会话 Cookie。浏览器通过非敏感 `X-Session-Context` 选择 `os_session_<context>`；文件链接用 `session_context` 查询参数。未传上下文的旧 API 客户端继续使用 `os_session`。选择器本身不能认证，必须同时携带对应 HttpOnly Cookie。Cookie 为 HttpOnly、SameSite=Strict、Path=/api；本地 HTTP 下 Secure=false，配置 COOKIE_SECURE=true 时需 HTTPS。
+统一 `/api`。JSON 请求及响应；文件上传用 multipart。除 health/login/register 外，业务接口均需会话 Cookie。浏览器通过非敏感 `X-Session-Context` 选择 `os_session_<context>`；文件链接用 `session_context` 查询参数。未传上下文的旧 API 客户端继续使用 `os_session`。选择器本身不能认证，必须同时携带对应 HttpOnly Cookie。Cookie 为 HttpOnly、SameSite=Strict、Path=/api；本地 HTTP 下 Secure=false，配置 COOKIE_SECURE=true 时需 HTTPS。
 
 写操作还需 `X-CSRF-Token`，由登录或 me 响应取得。浏览器前端自动处理。401 表示未登录/会话过期；403 表示角色不足、CSRF/来源校验失败；404 同时用于内容不存在或不可读，避免透露私人资料；422 参数错误；409 章节仍有关联内容。
 
@@ -9,11 +9,12 @@
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | /api/health | 无需登录；数据库状态和 AI 配置标志，不证明模型可调用 |
+| POST | /api/auth/register | `{"username":"自选用户名","password":"12–128字符密码"}`；201 返回 id/username/role=student，不自动登录；重名409、非法字段/密码422、来源拒绝403 |
 | POST | /api/auth/login | `{"username":"自己的账号","password":"自己的密码"}`，返回 id/username/role/csrf_token，设置 Cookie |
 | GET | /api/auth/me | 同上用户信息，不返回密码哈希或会话令牌 |
 | POST | /api/auth/logout | CSRF 校验；撤销当前服务端会话并清 Cookie，204 |
 
-密码 Argon2id 哈希；会话随机 256 位令牌，数据库只保存 SHA-256 摘要，8 小时过期。角色不能在登录请求中指定。没有开放注册、默认生产账号或教师自助提权接口。账号由本地管理员 manage.py 交互创建。
+密码 Argon2id 哈希；会话随机 256 位令牌，数据库只保存 SHA-256 摘要，8 小时过期。登录可传 expected_role=student/teacher，用于验证账号是否匹配所选入口，匹配失败403，不签发会话；该参数不能赋予角色。学生可匿名调用注册接口，后端固定创建 student，拒绝 role/is_admin 等额外字段。注册不签发 Cookie，不影响其他标签已有会话。教师由管理员 manage.py 或已有管理员账号管理功能创建，不提供教师自注册或默认密码。
 
 ## 学习接口（教师可读草稿，学生仅可读已发布内容）
 

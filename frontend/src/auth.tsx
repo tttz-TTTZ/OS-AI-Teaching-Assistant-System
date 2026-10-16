@@ -11,7 +11,7 @@ type Auth = {
   user: User | null;
   loading: boolean;
   error: string;
-  login: (name: string, password: string) => Promise<void>;
+  login: (name: string, password: string, role?: "teacher" | "student") => Promise<void>;
   logout: () => Promise<void>;
 };
 const Context = createContext<Auth | null>(null);
@@ -56,9 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("auth-expired", expired);
     };
   }, []);
-  async function login(name: string, password: string) {
+  async function login(name: string, password: string, role?: "teacher" | "student") {
     const current = ++revision.current;
-    const u = await authApi.login(name, password);
+    const u = await authApi.login(name, password, role);
     if (current !== revision.current) return;
     assign(u);
     setError("");

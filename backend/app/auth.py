@@ -1,5 +1,6 @@
 """Argon2 密码哈希 + 服务端可撤销会话；无生产默认密码。"""
 
+import sqlite3
 import hashlib
 import os
 import secrets
@@ -9,7 +10,7 @@ from typing import Literal
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Header
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 router = APIRouter(prefix="/api/auth")
 password_hasher = PasswordHasher()
@@ -71,7 +72,7 @@ def require_user(
     request: Request,
     csrf_header: str | None = Header(default=None, alias="X-CSRF-Token"),
 ) -> dict | None:
-    if request.url.path in ("/api/health", "/api/auth/login"):
+    if request.url.path in ("/api/health", "/api/auth/login", "/api/auth/register"):
         return None
     token = request.cookies.get(session_cookie(request), "")
     if not token:
@@ -97,9 +98,34 @@ def teacher(user: dict = Depends(require_user)) -> dict:
     return user
 
 
+class Register(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=12, max_length=128)
+
+    @field_validator("username")
+    @classmethod
+    def clean_username(cls, value: str) -> str:
+        value = value.strip()
+        if not value or any(ord(char) < 32 for char in value):
+            raise ValueError("请输入有效用户名，不能只包含空格或包含控制字符")
+        return value
+
+
+@router.post("/register", status_code=201)
+def register(body: Register, request: Request):
+    check_origin(request)
+    try:
+        user_id = create_user(body.username, body.password, "student")
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "该用户名已被使用，请更换用户名") from None
+    return {"id": user_id, "username": body.username, "role": "student"}
+
+
 class Login(BaseModel):
     username: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=1, max_length=128)
+    expected_role: Literal["teacher", "student"] | None = None
 
 
 @router.post("/login")
@@ -117,6 +143,8 @@ def login(body: Login, request: Request, response: Response):
             valid = False
         if not row or not valid or not row["active"]:
             raise HTTPException(401, "用户名或密码错误")
+        if body.expected_role and row["role"] != body.expected_role:
+            raise HTTPException(403, "账号与所选入口不符，请切换学生端或教师端")
         if password_hasher.check_needs_rehash(row["password_hash"]):
             db.execute(
                 "UPDATE users SET password_hash=? WHERE id=?",

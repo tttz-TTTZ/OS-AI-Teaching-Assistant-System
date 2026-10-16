@@ -139,6 +139,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Login register />} />
       <Route path="/student" element={<Guard role="student" />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Home />} />
