@@ -1422,3 +1422,341 @@ header h1 {
 .module-navigation {
   padding: 16px 22px;
 }
+
+/* 学生知识点：先选课，再在单一阅读区完成一个环节。 */
+.student main:has(.study-workspace) {
+  max-width: none;
+  min-width: 0;
+  padding: 28px 40px;
+}
+.study-workspace {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+.study-heading {
+  margin: 18px 0 24px;
+}
+.study-heading h1 {
+  font-size: 28px;
+  line-height: 1.4;
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.study-heading p {
+  margin: 6px 0;
+}
+.study-card {
+  background: #fff;
+  border: 1px solid #dfe6eb;
+  border-radius: 12px;
+  padding: 28px 32px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+.study-card h2:first-child,
+.study-card h3:first-child {
+  margin-top: 0;
+}
+.study-card p {
+  color: #536979;
+}
+.study-card label {
+  display: grid;
+  gap: 8px;
+}
+.study-card input:not([type="checkbox"]),
+.study-card select,
+.study-card textarea {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.study-catalog-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+.study-section {
+  margin-top: 28px;
+}
+.study-section > h3 {
+  color: #47685f;
+  background: #f1f7f4;
+  padding: 12px 16px;
+  border-radius: 6px;
+}
+.study-point-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1px solid #e8edf0;
+}
+.study-point-row:last-child {
+  border-bottom: 0;
+}
+.study-point-row h3 {
+  font-size: 19px;
+  margin: 4px 0;
+}
+.study-point-row p {
+  margin: 4px 0 0;
+  max-width: 650px;
+}
+.study-point-row small {
+  color: #708479;
+}
+.study-point-row button {
+  flex-shrink: 0;
+}
+.study-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  color: #657b83;
+  font-size: 13px;
+}
+.study-breadcrumb button {
+  padding-left: 0;
+}
+.study-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 22px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid #dae5df;
+}
+.study-tabs button {
+  padding: 12px 24px;
+  background: #eaf0ed;
+  color: #426058;
+}
+.study-tabs button.selected {
+  background: #24665d;
+  color: white;
+}
+.study-tabs .study-practice-link {
+  margin-left: auto;
+  color: #24665d;
+  font-weight: 600;
+  padding: 8px;
+}
+.study-status {
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: #eaf3ed;
+  color: #316054;
+}
+.study-module-tools {
+  display: flex;
+  gap: 20px;
+  align-items: end;
+  padding: 18px 24px;
+}
+.study-module-tools > label:first-child {
+  flex: 1;
+}
+.study-module-tools > span {
+  font-size: 12px;
+  color: #6c7e89;
+  padding-bottom: 12px;
+  white-space: nowrap;
+}
+.study-module-tools .study-font {
+  width: 95px;
+}
+.study-reader {
+  padding: 36px 44px;
+  min-height: 380px;
+}
+.study-reader .content-block {
+  margin: 0;
+  padding-top: 0;
+  border-top: 0;
+  scroll-margin-top: 24px;
+}
+.study-reader .content-block > h3 {
+  font-size: 24px;
+  margin-top: 0;
+}
+.study-reader .digital-content p,
+.study-reader .digital-content li {
+  line-height: 1.95;
+}
+.study-reader .digital-content pre {
+  max-width: 100%;
+  overflow: auto;
+}
+.study-reader .interactive {
+  margin-top: 24px;
+}
+.study-module-list {
+  padding-left: 24px;
+  margin: 20px 0;
+}
+.study-module-list li {
+  padding: 4px 0;
+}
+.study-module-list button {
+  text-align: left;
+}
+.study-workspace .text-button {
+  background: transparent;
+  color: #24665d;
+  padding: 6px 10px;
+}
+.study-next-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0;
+}
+.study-next-bar > span {
+  color: #657982;
+  font-size: 14px;
+}
+.study-more summary {
+  cursor: pointer;
+  color: #426058;
+}
+.study-after {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.study-resource {
+  padding: 20px 0;
+  border-bottom: 1px solid #e8edf0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.study-resource a:first-child {
+  color: #24665d;
+  font-size: 18px;
+}
+.study-resource a:last-child {
+  font-size: 13px;
+}
+.study-notes fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.study-record-options {
+  display: grid;
+  gap: 14px;
+  margin: 22px 0;
+}
+.study-card label.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.study-record-summary {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  background: #f3f7f5;
+  padding: 14px;
+  margin-bottom: 22px;
+  color: #4d6960;
+}
+.study-notes textarea {
+  min-height: 320px;
+  resize: vertical;
+  line-height: 1.8;
+}
+.study-note-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.study-note-actions small {
+  color: #607968;
+}
+.study-feedback summary {
+  cursor: pointer;
+  color: #24665d;
+}
+.study-feedback label {
+  margin: 20px 0;
+}
+.study-feedback textarea {
+  min-height: 160px;
+  resize: vertical;
+}
+@media (max-width: 900px) {
+  .student main:has(.study-workspace) {
+    padding: 20px;
+  }
+  .study-card {
+    padding: 22px;
+  }
+  .study-reader {
+    padding: 26px;
+  }
+  .study-module-tools {
+    flex-wrap: wrap;
+  }
+  .study-module-tools > label:first-child {
+    flex-basis: 100%;
+  }
+  .study-module-tools > span {
+    margin-right: auto;
+  }
+  .study-tabs {
+    flex-wrap: wrap;
+  }
+  .study-tabs button {
+    flex: 1;
+    padding: 10px 14px;
+  }
+  .study-tabs .study-practice-link {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+  }
+}
+@media (max-width: 600px) {
+  .study-heading h1 {
+    font-size: 23px;
+  }
+  .study-point-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .study-card,
+  .study-reader {
+    padding: 20px;
+  }
+  .study-next-bar {
+    flex-wrap: wrap;
+  }
+  .study-next-bar > span {
+    display: none;
+  }
+}
+.study-lesson-heading {
+  margin: 10px 0 14px;
+}
+.study-lesson-heading h1 {
+  font-size: 26px;
+}
+.study-card label.check {
+  margin: 0;
+}
+.study-reader .content-block {
+  border-bottom: 0;
+}

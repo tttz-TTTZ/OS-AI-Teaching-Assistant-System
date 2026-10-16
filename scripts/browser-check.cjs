@@ -281,9 +281,64 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       });
     }
     await s.goto(base + `/student/knowledge?chapter=${cid}`);
+    await s
+      .getByRole("heading", { name: "选择今天要学的知识点", exact: true })
+      .waitFor();
+    await s
+      .getByLabel("搜索本章知识点", { exact: true })
+      .fill("本章不存在的检索词");
+    await s
+      .getByText("没有找到匹配的知识点，请换个关键词。", { exact: true })
+      .waitFor();
+    await s.getByLabel("搜索本章知识点", { exact: true }).fill("");
+    const studentRow = s.locator(".study-point-row").filter({
+      has: s.getByRole("heading", { name: pointTitle, exact: true }),
+    });
+    if (await s.locator("textarea:visible,.interactive:visible").count())
+      throw Error("目录不应混入正文或笔记");
+    if (process.env.BROWSER_SCREENSHOT_DIR)
+      await s.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "student-flow-catalog.png",
+        ),
+      });
+    await studentRow
+      .getByRole("button", { name: "开始学习 →", exact: true })
+      .click();
     await s.getByRole("heading", { name: pointTitle, exact: true }).waitFor();
+    const tasks = s.getByRole("navigation", { name: "知识点学习任务" });
+    await s.getByRole("heading", { name: "学习目标", exact: true }).waitFor();
+    if (await s.locator(".content-block:visible,textarea:visible").count())
+      throw Error("学习概览不应铺开所有模块");
+    await s.getByRole("button", { name: "下一环节 →", exact: true }).click();
+    await s.getByRole("heading", { name: "问题导入", exact: true }).waitFor();
+    await s
+      .getByLabel("本知识点学习导航", { exact: true })
+      .selectOption("explanation");
     await s.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
     await s.getByRole("table").waitFor();
+    if ((await s.locator("pre code").innerText()) !== 'print("FCFS")')
+      throw Error("code rendering");
+    const readerBox = await s
+      .getByRole("region", { name: "当前学习内容", exact: true })
+      .boundingBox();
+    if (
+      readerBox.width < 700 ||
+      (await s.locator(".content-block:visible").count()) !== 1
+    )
+      throw Error("学生阅读应全宽、一次一个模块");
+    if (process.env.BROWSER_SCREENSHOT_DIR)
+      await s.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "student-flow-reading.png",
+        ),
+      });
+    await s
+      .getByLabel("本知识点学习导航", { exact: true })
+      .selectOption({ label: "7. 交互演示 · 交互动画" });
+    const interactionBlock = new URL(s.url()).searchParams.get("block");
     await s.getByRole("button", { name: "生成教学事件", exact: true }).click();
     await s.getByRole("heading", { name: "空闲内存", exact: true }).waitFor();
     for (let step = 0; step < 3; step++)
@@ -303,6 +358,21 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         ),
       });
     }
+    await tasks
+      .getByRole("button", { name: "笔记与反馈", exact: true })
+      .click();
+    await tasks
+      .getByRole("button", { name: "阅读与观察", exact: true })
+      .click();
+    await s
+      .getByRole("button", { name: "已记录观察完成", exact: true })
+      .waitFor();
+    await tasks
+      .getByRole("button", { name: "笔记与反馈", exact: true })
+      .click();
+    await s.getByText("互动：1 项已完成观察", { exact: true }).waitFor();
+    if (await s.locator(".content-block:visible,.interactive:visible").count())
+      throw Error("笔记页不应混入正文与动画");
     await s.getByLabel("标记已阅读", { exact: true }).check();
     await s
       .getByLabel("私人学习笔记", { exact: true })
@@ -315,8 +385,65 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       "浏览器保存的私人笔记"
     )
       throw Error("学习笔记刷新丢失");
-    if ((await s.locator("pre code").innerText()) !== 'print("FCFS")')
-      throw Error("code rendering");
+    if (process.env.BROWSER_SCREENSHOT_DIR)
+      await s.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "student-flow-notes.png",
+        ),
+      });
+    // A failed database write must keep the student's text and block navigation away.
+    await s
+      .getByLabel("私人学习笔记", { exact: true })
+      .fill("断网后仍然保留的私人笔记");
+    await s.route("**/api/learning-content/*/progress", (r) =>
+      r.request().method() === "PUT"
+        ? r.fulfill({
+            status: 503,
+            contentType: "application/json",
+            body: JSON.stringify({ detail: "验收模拟保存失败" }),
+          })
+        : r.continue(),
+    );
+    await s.getByRole("link", { name: "练习本知识点 →", exact: true }).click();
+    await s
+      .getByRole("alert")
+      .filter({ hasText: "验收模拟保存失败" })
+      .waitFor();
+    if (
+      !s.url().includes("/student/knowledge") ||
+      (await s.getByLabel("私人学习笔记", { exact: true }).inputValue()) !==
+        "断网后仍然保留的私人笔记"
+    )
+      throw Error("保存失败不得离开或清空笔记");
+    await s.unroute("**/api/learning-content/*/progress");
+    s.once("dialog", (dialog) => dialog.accept());
+    await s.reload();
+    await s
+      .getByRole("status")
+      .filter({ hasText: "已恢复本标签未保存的学习记录" })
+      .waitFor();
+    if (
+      (await s.getByLabel("私人学习笔记", { exact: true }).inputValue()) !==
+      "断网后仍然保留的私人笔记"
+    )
+      throw Error("未保存笔记刷新恢复失败");
+    await s.getByRole("button", { name: "保存学习记录", exact: true }).click();
+    await s.getByRole("status").filter({ hasText: "学习记录已保存" }).waitFor();
+    await tasks
+      .getByRole("button", { name: "阅读与观察", exact: true })
+      .click();
+    if (
+      (await s.getByLabel("本知识点学习导航", { exact: true }).inputValue()) !==
+      interactionBlock
+    )
+      throw Error("切换任务应保留阅读位置");
+    await tasks.getByRole("button", { name: "相关资料", exact: true }).click();
+    await s
+      .getByRole("heading", { name: "本知识点相关资料", exact: true })
+      .waitFor();
+    if (await s.locator("textarea:visible,.interactive:visible").count())
+      throw Error("资料页不应混入笔记和动画");
     if (
       (await (
         await apiCall(s, "get", base + `/api/materials/${did}/file`)
@@ -420,11 +547,23 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByRole("button", { name: "保存题目" }).click();
     await t.getByRole("status").filter({ hasText: "练习题已保存" }).waitFor();
     await s.goto(base + `/student/knowledge?chapter=${cid}&point=${kid}`);
+    const returnModule = await s
+      .getByLabel("本知识点学习导航", { exact: true })
+      .inputValue();
     await s.getByRole("link", { name: "练习本知识点 →", exact: true }).click();
     await s.getByLabel("A. 正确选项", { exact: true }).check();
     await s.getByRole("button", { name: "提交练习", exact: true }).click();
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();
     await s.getByRole("link", { name: "返回原知识点 →", exact: true }).click();
+    if (
+      (await s.getByLabel("本知识点学习导航", { exact: true }).inputValue()) !==
+      returnModule
+    )
+      throw Error("练习返回应保持原阅读模块");
+    await s
+      .getByRole("navigation", { name: "知识点学习任务" })
+      .getByRole("button", { name: "笔记与反馈", exact: true })
+      .click();
     await s.getByText("练习：已完成作答", { exact: true }).waitFor();
     await s.getByText("给教师反馈本知识点", { exact: true }).click();
     await s
@@ -457,6 +596,37 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await b.setViewportSize({ width: 640, height: 800 });
     await b.goto(base + "/student/dashboard");
     await b.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
+    await b.goto(base + `/student/knowledge?point=${kid}&block=explanation`);
+    await b.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
+    if (new URL(b.url()).searchParams.get("chapter") !== String(cid))
+      throw Error("仅有知识点ID的链接应补齐章节");
+    if (
+      await b.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth + 1,
+      )
+    )
+      throw Error("窄屏知识点阅读横向溢出");
+    if (process.env.BROWSER_SCREENSHOT_DIR)
+      await b.screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "student-flow-narrow.png",
+        ),
+      });
+    await b
+      .getByRole("navigation", { name: "知识点学习任务" })
+      .getByRole("button", { name: "笔记与反馈", exact: true })
+      .click();
+    if (await b.getByLabel("私人学习笔记", { exact: true }).inputValue())
+      throw Error("其他学生不能读到私人笔记");
+    await b.goto(base + `/student/knowledge?chapter=${cid}&point=999999`);
+    await b
+      .getByRole("heading", { name: "暂时无法打开这个知识点", exact: true })
+      .waitFor();
+    await b.getByRole("button", { name: "返回课程目录", exact: true }).click();
+    await b
+      .getByRole("heading", { name: "选择今天要学的知识点", exact: true })
+      .waitFor();
     // 同一个浏览器上下文中开第二个普通标签，独立账号并刷新。
     await t.goto(base + "/teacher/accounts");
     const createdName = "browser-student-" + suffix;
@@ -642,7 +812,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     );
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "PASS browser 教师分步流程：独立章节/小节表单、批量标题规划、全宽单模块编辑、跨步骤保存、刷新草稿恢复、整页预览发布；数字教材与V0.2回归：灵活编号、草稿自动保存、知识点发布、内存事件运行/回放/完成记录、私人笔记刷新保持、知识点练习往返、主动反馈； 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
+      "PASS browser 学生学习流程：独立目录、单模块全宽阅读、教学动画、分离资料与笔记、保存失败保护与刷新草稿恢复、练习往返；教师分步流程：独立章节/小节表单、批量标题规划、全宽单模块编辑、跨步骤保存、刷新草稿恢复、整页预览发布；数字教材与V0.2回归：灵活编号、草稿自动保存、知识点发布、内存事件运行/回放/完成记录、私人笔记刷新保持、知识点练习往返、主动反馈； 两角色登录/刷新/路由，教师章节知识点编辑与发布，公共资料关联/撤回，私人文件越权与AI引用，FCFS/练习，教师题目，错误提示，退出撤销，窄屏；同浏览器双标签独立登录/刷新/退出、账号创建；无JS异常",
     );
   } finally {
     await browser.close();

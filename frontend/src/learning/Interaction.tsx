@@ -101,12 +101,14 @@ export default function Interaction({
   block,
   preview = false,
   onComplete,
+  active = true,
 }: {
   point: number;
   revision: number;
   block: ContentBlock;
   preview?: boolean;
   onComplete?: () => void;
+  active?: boolean;
 }) {
   const [config, setConfig] = useState<SimConfig>(block.config!);
   const [trace, setTrace] = useState<Trace>();
@@ -117,7 +119,10 @@ export default function Interaction({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   useEffect(() => {
-    if (!playing || !trace) return;
+    if (!active) setPlaying(false);
+  }, [active]);
+  useEffect(() => {
+    if (!active || !playing || !trace) return;
     const timer = setInterval(
       () =>
         setIndex((i) => {
@@ -130,7 +135,7 @@ export default function Interaction({
       1000 / speed,
     );
     return () => clearInterval(timer);
-  }, [playing, trace, speed]);
+  }, [active, playing, trace, speed]);
   function change(c: SimConfig) {
     setConfig(c);
     setTrace(undefined);

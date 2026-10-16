@@ -1,5 +1,7 @@
 # 数字教材知识点模块：首轮可试用升级
 
+**学生学习界面后续改版：** 已由三栏同屏改为独立目录、全宽逐模块阅读，以及资料/笔记任务，最新操作见 [STUDENT-LEARNING-UX.md](STUDENT-LEARNING-UX.md)。
+
 **后续教师操作改版：** 同屏编辑现已改成分步整页工作区，最新操作见 [TEACHER-AUTHORING-UX.md](TEACHER-AUTHORING-UX.md)。下文描述的旧入口位置不再适用，内容与权限能力保留。
 
 日期：2026-10-16（北京时间）。依据：KNOWLEDGE-LEARNING-SPEC.md，及用户最新要求“章节、页码尚未校对，需要自由修改；先升级尝试”。
