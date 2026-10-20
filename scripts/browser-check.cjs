@@ -519,6 +519,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       cid,
     });
     await require("./personal-browser.cjs").verifyPersonal({ t, s, b, base, studentName: accounts[1].username, cid, apiCall });
+    await s.getByRole("link", { name: "返回首页", exact: false }).click();
     await s.getByRole("link", { name: "章节练习", exact: true }).click();
     await s.getByLabel("选择章节").selectOption("1");
     await s.getByLabel("A. 管理系统资源", { exact: true }).check();
@@ -526,13 +527,11 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();
     await s.getByRole("link", { name: "智能问答", exact: true }).click();
     await s.getByRole("heading", { name: "操作系统 · 智能问答", exact: true }).waitFor();
-    await s.getByRole("link", { name: "基础问答（兼容）", exact: true }).click();
-    await s.getByLabel("输入问题").fill("解释进程");
-    await s.getByRole("button", { name: "发送问题", exact: true }).click();
-    await s
-      .getByRole("alert")
-      .filter({ hasText: "尚未配置 AI 服务" })
-      .waitFor();
+    if (await s.getByRole("link", { name: "基础问答（兼容）", exact: true }).count()) throw Error("旧基础问答入口未移除");
+    if (await s.getByRole("navigation", { name: "笔记本导航" }).count()) throw Error("顶部栏目未移除");
+    await s.goto(base + "/student/basic-chat");
+    await s.waitForURL("**/student/ai-chat");
+    await s.getByRole("heading", { name: "操作系统 · 智能问答", exact: true }).waitFor();
     // 取消发布后学生不能通过直链访问已看过的文件。
     const meta = await (
       await apiCall(t, "get", base + "/api/teacher/documents")

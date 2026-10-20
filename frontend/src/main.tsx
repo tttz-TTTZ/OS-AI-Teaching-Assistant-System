@@ -19,7 +19,6 @@ import Lab, { ExperimentRunPage } from "./pages/Lab";
 import ExperimentEditor, {
   TeacherExperiments,
 } from "./pages/teacher/Experiments";
-import Chat from "./pages/Chat";
 import Practice from "./pages/Practice";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
@@ -166,7 +165,10 @@ function App() {
         <Route path="experiments/:experimentId" element={<Lab />} />
         <Route path="experiment-runs/:runId" element={<ExperimentRunPage />} />
         <Route path="ai-chat" element={<LearningNotebook />} />
-        <Route path="basic-chat" element={<Chat />} />
+        <Route
+          path="basic-chat"
+          element={<Navigate to="/student/ai-chat" replace />}
+        />
         <Route path="practice" element={<Practice />} />
         <Route path="profile" element={<Profile />} />
       </Route>

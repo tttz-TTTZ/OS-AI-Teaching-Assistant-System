@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LearningModule, personalApi } from "../personal";
 import Markdown from "../Markdown";
+import MindMap from "./MindMap";
 import { SimConfig, Trace } from "../digital";
 import { ConfigFields } from "./Interaction";
 export default function PersonalModule({
@@ -66,22 +67,6 @@ export default function PersonalModule({
     );
     return () => clearInterval(timer);
   }, [playing, frames.length]);
-  function tree(parent: string | null, depth = 0): React.ReactNode {
-    if (depth > 60) return null;
-    return (
-      <ul>
-        {module.nodes
-          .filter((n) => n.parent === parent)
-          .map((n) => (
-            <li key={n.id}>
-              <span>{n.label}</span>
-              {module.nodes.some((c) => c.parent === n.id) &&
-                tree(n.id, depth + 1)}
-            </li>
-          ))}
-      </ul>
-    );
-  }
   return (
     <article className="personal-module">
       <h2>{module.title}</h2>
@@ -133,9 +118,7 @@ export default function PersonalModule({
         </section>
       )}
       {module.mode === "map" && (
-        <div className="personal-mindmap" aria-label="个人思维导图">
-          {tree(null)}
-        </div>
+        <MindMap module={module} job={job} index={index} />
       )}
       {module.mode === "code" && (
         <section>

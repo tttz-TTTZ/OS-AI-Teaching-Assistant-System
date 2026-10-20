@@ -1,4 +1,5 @@
 const path = require("node:path");
+const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.route("**/api/student/personal/status", (r) =>
@@ -65,6 +66,23 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .getByLabel("个人思维导图")
     .getByText("资源管理", { exact: true })
     .waitFor();
+  const mapId = Number(new URL(s.url()).searchParams.get("job"));
+  const mapRegion = s.getByRole("region", { name: "个人思维导图", exact: true });
+  await mapRegion.getByRole("img").waitFor();
+  for (const format of ["PNG", "SVG", "XMind"]) {
+    const downloaded = s.waitForEvent("download");
+    await mapRegion.getByRole(format === "XMind" ? "link" : "button", { name: "下载 " + format, exact: true }).click();
+    const file = await downloaded;
+    if (await file.failure()) throw Error("导图下载失败：" + format);
+    const data = fs.readFileSync(await file.path());
+    if (format === "PNG" && data.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a") throw Error("PNG 图片无效");
+    if (format === "SVG" && (!data.toString().includes("资源管理") || !data.toString().includes("<svg"))) throw Error("SVG 未保留导图");
+    if (format === "XMind" && data.subarray(0, 2).toString() !== "PK") throw Error("XMind 并非压缩包");
+  }
+  if ((await apiCall(b, "get", base + `/api/student/personal/jobs/${mapId}/modules/0/mindmap.xmind`)).status() !== 404) throw Error("XMind 导出越权");
+  await s.reload();
+  await s.getByRole("region", { name: "个人思维导图", exact: true }).getByRole("img").waitFor();
+  if (process.env.BROWSER_SCREENSHOT_DIR) await s.screenshot({ path: path.join(process.env.BROWSER_SCREENSHOT_DIR, "mindmap-workspace.png"), fullPage: true });
   await studio
     .getByRole("button", { name: "代码讲解", exact: true })
     .click();

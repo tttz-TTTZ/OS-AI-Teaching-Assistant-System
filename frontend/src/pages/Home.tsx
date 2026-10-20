@@ -84,7 +84,7 @@ export default function Home() {
       <Notice error={error || failure} />
       <div className="statusbar">
         {health
-          ? `后端正常 · 数据库 ${health.database} · ${health.personal_ai_configured === undefined ? "后端版本较旧，请更新并重启后端以启用自主学习" : `智能问答工作台 / AI自测：${health.personal_ai_configured ? "已配置DeepSeek" : "尚未配置DeepSeek"}`} · 基础问答（兼容）：${(health.chat_ai_configured ?? health.ai_configured) ? "已配置" : "尚未配置"}`
+          ? `后端正常 · 数据库 ${health.database} · ${health.personal_ai_configured === undefined ? "后端版本较旧，请更新并重启后端以启用自主学习" : `智能问答工作台 / AI自测：${health.personal_ai_configured ? "已配置DeepSeek" : "尚未配置DeepSeek"}`}`
           : "正在检查服务…"}
         <span>
           {" "}

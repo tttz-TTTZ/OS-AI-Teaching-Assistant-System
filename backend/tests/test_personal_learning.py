@@ -381,3 +381,45 @@ def test_flashcards_generate_persist_and_reject_invalid_deck(clients, monkeypatc
             source_quote="操作系统管理资源并提供服务",
             cards=[],
         )
+
+
+def test_xmind_export_saved_tree_and_access_control(clients, monkeypatch):
+    t, a, b = clients
+    config, _ = prepared(a)
+    calls = []
+    fake_model(monkeypatch, calls)
+    job = a.post(BASE + "/generate", json=config).json()
+    path = BASE + f'/jobs/{job["id"]}/modules/2/mindmap.xmind'
+    response = a.get(path)
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.headers["content-disposition"].endswith('.xmind"')
+    with ZipFile(BytesIO(response.content)) as archive:
+        assert set(archive.namelist()) == {
+            "content.json",
+            "metadata.json",
+            "manifest.json",
+        }
+        sheet = json.loads(archive.read("content.json"))[0]
+        root = sheet["rootTopic"]
+        assert root["title"] == "进程与线程"
+        assert root["children"]["attached"][0]["title"] == "资源共享"
+        assert root["children"]["attached"][0]["id"] == "child"
+    assert "XMind" in calls[0]["system_prompt"]
+    assert b.get(path).status_code == 404
+    assert t.get(path).status_code == 403
+    assert a.get(path.replace("modules/2", "modules/0")).status_code == 422
+    assert a.get(path.replace("modules/2", "modules/-1")).status_code == 404
+    assert a.get(path.replace("modules/2", "modules/999")).status_code == 404
+    assert TestClient(main.app).get(path).status_code == 401
+
+
+@pytest.mark.parametrize("bad_parent", ["", "missing", "child"])
+def test_map_rejects_disconnected_or_cyclic_nodes(bad_parent):
+    module = generated(
+        type("Task", (), {"kind": "learning", "modes": ["map"]})(),
+        {"chunks": [{"ref": "r", "text": TEXT}]},
+    )["modules"][0]
+    module["nodes"][1]["parent"] = bad_parent
+    with pytest.raises(ValueError):
+        ai.Module.model_validate(module)

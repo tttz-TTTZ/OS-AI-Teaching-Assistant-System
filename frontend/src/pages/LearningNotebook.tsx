@@ -406,28 +406,10 @@ export default function LearningNotebook() {
   return (
     <div className="learning-notebook">
       <header className="notebook-topbar">
-        <div>
-          <Link
-            className="notebook-home"
-            to="/student/dashboard"
-            aria-label="返回学习首页"
-          >
-            OS
-          </Link>
-          <h1>操作系统 · 智能问答</h1>
-          <span className="notebook-version">学习笔记本</span>
-        </div>
-        <nav aria-label="笔记本导航">
-          <Link to="/student/dashboard">学习首页</Link>
-          <Link to="/student/knowledge">知识点学习</Link>
-          <Link to="/student/basic-chat">基础问答（兼容）</Link>
-          <Link to="/student/practice">章节练习</Link>
-          <Link to="/student/ai-practice">我的 AI 练习</Link>
-          <Link to="/student/profile">个人账号</Link>
-          <button className="secondary" onClick={newTopic} disabled={busy}>
-            ＋ 新话题
-          </button>
-        </nav>
+        <h1>操作系统 · 智能问答</h1>
+        <Link className="notebook-return" to="/student/dashboard">
+          ← 返回首页
+        </Link>
       </header>
       <div className="notebook-panel-switches">
         <button
@@ -669,7 +651,9 @@ export default function LearningNotebook() {
                   ? "我的学习笔记"
                   : "学习与分析"}
             </h2>
-            <span>{status?.configured ? "AI 已配置" : "AI 待配置"}</span>
+            <button className="secondary" onClick={newTopic} disabled={busy}>
+              ＋ 新话题
+            </button>
           </div>
           <div className="notebook-answer" ref={answerRef} aria-live="polite">
             {error && (
