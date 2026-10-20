@@ -1,5 +1,9 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+## 最新：PPT来源与AI数字教案备课
+
+新增受限旧PPT当前版本文字解析，复用出题来源；教师从公共/私有资料或粘贴文字准备一个章内授课范围，DeepSeek建议不固定数量的小节和知识点教案。目录审核、整页正文审核、修改保存、版本校验、批量未发布入库、继续现有编辑器和发布流程；不覆盖旧章/节/正文。V7新增ai_lesson_jobs，迁移前成套备份，已有依赖不变。模型调用沿用DEEPSEEK_*。查看 [AI-LESSON-PREPARATION.md](AI-LESSON-PREPARATION.md)。当前真实DeepSeek及用户原始PPT兼容性仍需实测；文本提取不能冒充图片OCR或全保真播放。
+
 ## 最新：DeepSeek辅助出题
 
 已实现教师选资料/私有专用上传、文字PDF/PPTX/TXT摘录预览、DeepSeek JSON候选、来源核对、自动填写现有编辑器、审核入库草稿与显式发布。V6追加任务/候选表，备份后迁移；新增pypdf。配置使用DEEPSEEK_*，原智能问答LLM_*不变。当前无真实模型密钥，验证为HTTP契约模拟与浏览器模拟，不能声称真实出题质量已验收。详细操作、权限和限制见 [AI-QUESTION-GENERATION.md](AI-QUESTION-GENERATION.md)。

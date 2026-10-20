@@ -7,6 +7,7 @@ export default function Dashboard() {
       description="从目录开始，逐个补内容，检查完再发布。"
     >
       <div className="teacher-start">
+        <section className="authoring-card"><h2>已有授课课件？</h2><p>提取课件文字，AI建议小节和完整教案，审核后追加草稿。</p><Link className="button" to="/teacher/ai-lessons">从课件备课 →</Link></section>
         {[
           [
             "01",

@@ -288,7 +288,7 @@ export default function AIQuestions() {
                 />
               </label>
               <p>
-                可选择最多5份。TXT、文字PDF、PPTX可用；旧PPT请另存为PPTX。扫描图片需先OCR。不会自动读取整个400页课件。
+                可选择最多5份。TXT、文字PDF、PPTX和可解析的旧PPT均可用，旧PPT无需先转换；图片文字需OCR。不会自动读取整个400页课件。
               </p>
               <div className="ai-source-list">
                 {documents.map((d) => (
@@ -353,7 +353,7 @@ export default function AIQuestions() {
                     {chosen[source.document_id]?.title ||
                       `资料#${source.document_id}`}
                   </strong>
-                  {["pdf", "pptx"].includes(
+                  {["pdf", "pptx", "ppt"].includes(
                     chosen[source.document_id]?.file_type || "",
                   ) && (
                     <>

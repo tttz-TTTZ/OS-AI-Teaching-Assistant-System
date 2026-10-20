@@ -24,6 +24,7 @@ import Practice from "./pages/Practice";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import TeacherChapters, { SectionForm } from "./pages/teacher/Chapters";
+import AILessons from "./pages/teacher/AILessons";
 import CourseOutline, { PlanKnowledge } from "./pages/teacher/CourseOutline";
 import LearningFeedback from "./pages/teacher/LearningFeedback";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
@@ -164,6 +165,7 @@ function App() {
         <Route path="sections/:sectionId/edit" element={<SectionForm />} />
         <Route path="learning-feedback" element={<LearningFeedback />} />
         <Route path="knowledge" element={<CourseOutline library />} />
+        <Route path="ai-lessons" element={<AILessons />} />
         <Route path="knowledge/new" element={<PlanKnowledge />} />
         <Route path="knowledge/:pointId/:step" element={<TeacherKnowledge />} />
         <Route path="experiments" element={<TeacherExperiments />} />

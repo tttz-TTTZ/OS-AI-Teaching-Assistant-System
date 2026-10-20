@@ -44,10 +44,11 @@ def excerpts(body: SourcesInput, user):
         kind = material["file_type"] or "text"
         pages = []
         total = 1
-        if kind == "pptx":
+        if kind in ("pptx", "ppt"):
             from .presentations import inspect_pptx
+            from .legacy_ppt import inspect_ppt
 
-            data = inspect_pptx(
+            data = (inspect_ppt if kind == "ppt" else inspect_pptx)(
                 target,
                 selected.start_page - 1,
                 selected.end_page - selected.start_page + 1,
@@ -58,6 +59,8 @@ def excerpts(body: SourcesInput, user):
                     422, f'“{material["title"]}”只有{total}页，请调整范围'
                 )
             pages = [(p["number"], p["text"]) for p in data["slides"]]
+            if kind == "ppt":
+                warnings.append("旧PPT仅提取当前幻灯片中的文本，不含图片文字、动画语义和部分图表；请核对摘录")
             if any(p["truncated"] for p in data["slides"]):
                 warnings.append("部分幻灯片文字已按阅读限制截取")
         elif kind == "pdf":

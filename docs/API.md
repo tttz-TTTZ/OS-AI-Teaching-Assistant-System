@@ -151,3 +151,7 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 新增教师专用 `/api/teacher/ai-questions`：GET status/jobs/jobs/{id}/drafts/{id}；POST sources/preview、generate、drafts/{id}/import、drafts/{id}/reject；PUT drafts/{id}。生成请求带来源范围、预览fingerprint、章节/知识点、题型、数量1–10、难度、补充要求和request_key。候选修改/审核带expected_version，导入需reviewed=true且question.published=false。所有候选/任务只给创建教师，学生403、其他教师404；来源沿用资料授权；409用于指纹/版本/并发任务冲突。
 
 新增ai_question_jobs、ai_question_drafts与V6标记，旧题库不变。完整字段、DeepSeek配置、失败状态与测试边界见 AI-QUESTION-GENERATION.md。
+
+## AI课件备课（V7）
+
+教师 `/api/teacher/ai-lessons`：POST `/generate`、GET `/jobs`、GET/PUT `/jobs/{id}`、POST `/jobs/{id}/import`。复用 `/api/teacher/ai-questions/sources/preview`，支持可解析旧PPT/PPTX/文字PDF/TXT。任务本人可读，写操作需CSRF，学生403、他人任务404；保存和入库需expected_version，入库需reviewed=true，只追加草稿。请求体及Windows验收见 [AI-LESSON-PREPARATION.md](AI-LESSON-PREPARATION.md)。

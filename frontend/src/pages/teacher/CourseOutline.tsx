@@ -87,6 +87,7 @@ export default function CourseOutline({
     >
       <Notice error={error} />
       <div className="authoring-toolbar">
+        <Link className="button" to="/teacher/ai-lessons">从课件智能准备目录与教案</Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
             ＋ 新建章节

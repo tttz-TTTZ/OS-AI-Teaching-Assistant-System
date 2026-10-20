@@ -138,6 +138,7 @@ def migrate(path: Path) -> None:
     had_v3 = False
     had_v4 = False
     had_v5 = False
+    had_v6 = False
     if path.exists():
         with sqlite3.connect(path) as db:
             if db.execute(
@@ -158,6 +159,11 @@ def migrate(path: Path) -> None:
                         "SELECT 1 FROM schema_versions WHERE version=5"
                     ).fetchone()
                 )
+                had_v6 = bool(
+                    db.execute(
+                        "SELECT 1 FROM schema_versions WHERE version=6"
+                    ).fetchone()
+                )
     _migrate_v3(path)
     from .digital_migration import migrate_digital
 
@@ -169,3 +175,6 @@ def migrate(path: Path) -> None:
     from .ai_question_migration import migrate_ai_questions
 
     migrate_ai_questions(path, backup=had_v5)
+    from .ai_lesson_migration import migrate_ai_lessons
+
+    migrate_ai_lessons(path, backup=had_v6)
