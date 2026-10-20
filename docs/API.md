@@ -113,3 +113,27 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 | GET /api/study/attempts | 本人最近50次成绩及错题；简答correct=null、ungraded计数 |
 
 旧单选接口保留；已由新版管理的知识点/题目不能用旧写接口绕过版本控制。页码自由文本仅是引用说明，不提供未经授权的文件访问能力。
+
+
+## V5 教学实验
+
+写操作继续需要会话与 CSRF。教师接口必须 teacher；学生运行记录只允许本人。具体模型、流程与边界见 EXPERIMENT-PLATFORM.md。
+
+| 方法与路径 | 用途 |
+|---|---|
+| GET /api/experiment-templates | 已登录获取三种调度模板 |
+| GET/POST /api/teacher/experiments | 教师列表/新建草稿 |
+| GET/PUT /api/teacher/experiments/{id} | 教师读取/保存，更新携带 edit_version |
+| POST /api/teacher/experiments/{id}/preview | 试运行已保存示例，携带 edit_version |
+| POST /api/teacher/experiments/{id}/publish | 检查当前教师试运行、内容完整、课程章节发布后发布 |
+| POST /api/teacher/experiments/{id}/withdraw | 撤回，携带 edit_version |
+| GET /api/experiments | 已发布可见实验；可选 knowledge_id、algorithm |
+| GET /api/experiments/{id} | 可见发布修订 |
+| POST /api/experiments/{id}/runs | 学生运行并保存；processes、quantum、revision_id |
+| GET /api/my/experiment-runs | 本人最近记录，可选 experiment_id、limit(1–100，默认20) |
+| GET /api/my/experiment-runs/{id} | 本人输入、结果、教学快照与观察 |
+| PUT /api/my/experiment-runs/{id}/observation | observation 非空，最多5000字；保存观察不自动评分 |
+
+实验草稿字段：title、algorithm(fcfs/sjf/rr)、chapter_id、knowledge_ids、objectives、instructions、tasks、reference、defaults({processes:[{pid,arrival,burst}],quantum})、edit_version。保存追加不可变修订，发布指针单独修改。学生运行只用当前发布修订；版本变更409，未发布/撤回404，跨用户记录404，学生教师写接口403。
+
+新增 experiments、experiment_revisions、experiment_previews、experiment_runs；V5 迁移只追加表与索引。备份/恢复包含这些表。

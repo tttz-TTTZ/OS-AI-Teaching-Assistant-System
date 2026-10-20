@@ -1760,3 +1760,113 @@ header h1 {
 .study-reader .content-block {
   border-bottom: 0;
 }
+
+/* 实验教学沿用整页分步工作区，输入、回放、观察分开。 */
+.experiment-list {
+  display: grid;
+  gap: 20px;
+  margin: 24px 0;
+}
+.experiment-list .experiment-card {
+  margin-bottom: 0;
+}
+.experiment-card h2 {
+  margin: 10px 0;
+}
+.experiment-filters {
+  display: grid;
+  gap: 16px;
+}
+.experiment-steps {
+  grid-template-columns: repeat(4, 1fr);
+}
+.schedule-input {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.schedule-input td input {
+  width: 100%;
+  min-width: 80px;
+  margin: 0;
+}
+.schedule-input .tablewrap {
+  margin: 20px 0;
+}
+.schedule-input .quantum-field {
+  max-width: 260px;
+  margin-top: 20px;
+}
+.schedule-result .metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.schedule-result .metrics b {
+  background: #edf5f1;
+  color: #305d52;
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+.schedule-frame {
+  padding: 20px;
+  border-radius: 8px;
+  background: #f0f6f5;
+  margin: 20px 0;
+}
+.schedule-frame h3 {
+  margin-top: 0;
+}
+.schedule-result .timeline {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 18px 0;
+  padding: 4px;
+}
+.schedule-result .timeline button {
+  color: #173c34;
+  border: 1px solid #b8d4c8;
+  border-radius: 5px;
+  padding: 10px;
+}
+.schedule-result .timeline button.active {
+  outline: 3px solid #24665d;
+  outline-offset: -3px;
+}
+.schedule-result .timeline .idle {
+  background: #edf0f2;
+  color: #596b76;
+}
+.schedule-result input[type="range"] {
+  width: 100%;
+}
+.experiment-run-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #e3eae7;
+  padding: 12px 0;
+}
+.experiment-workspace textarea {
+  margin-bottom: 20px;
+}
+@media (max-width: 700px) {
+  .schedule-input .tablewrap {
+    overflow-x: auto;
+  }
+  .schedule-input table {
+    min-width: 520px;
+  }
+  .experiment-steps {
+    display: flex;
+    overflow-x: auto;
+  }
+  .experiment-steps button {
+    flex: 0 0 auto;
+  }
+}

@@ -489,12 +489,16 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .getByRole("button", { name: "移入回收站", exact: true })
       .click();
     await privateRow.waitFor({ state: "detached" });
-    await s.getByRole("link", { name: "算法实验", exact: true }).click();
-    await s.getByRole("button", { name: "示例 2（含空闲）" }).click();
-    await s.getByRole("button", { name: "运行 FCFS", exact: true }).click();
-    await s.getByText("平均等待 0.00", { exact: true }).waitFor();
-    if ((await s.getByText("CPU 空闲", { exact: true }).count()) !== 2)
-      throw Error("FCFS timeline");
+    await require("./experiment-browser.cjs").verifyExperiments({
+      t,
+      s,
+      b,
+      base,
+      cid,
+      kid,
+      suffix,
+      apiCall,
+    });
     await s.getByRole("link", { name: "章节练习", exact: true }).click();
     await s.getByLabel("选择章节").selectOption("1");
     await s.getByLabel("A. 管理系统资源", { exact: true }).check();

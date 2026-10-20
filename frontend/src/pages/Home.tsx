@@ -118,8 +118,8 @@ export default function Home() {
           </section>
           <div className="grid spaced">
             <Link className="panel card" to="/student/experiments">
-              <h2>FCFS 算法实验</h2>
-              <p>编辑进程，比较等待时间，观察 CPU 空闲。</p>
+              <h2>算法实验库</h2>
+              <p>选择教师发布的 FCFS、SJF 或 RR 实验，运行并记录观察。</p>
               <span>动手运行 →</span>
             </Link>
             <Link className="panel card" to="/student/practice">

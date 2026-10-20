@@ -15,7 +15,10 @@ import { courses } from "./api";
 import Home from "./pages/Home";
 import Materials from "./pages/Materials";
 import Knowledge from "./pages/Knowledge";
-import Lab from "./pages/Lab";
+import Lab, { ExperimentRunPage } from "./pages/Lab";
+import ExperimentEditor, {
+  TeacherExperiments,
+} from "./pages/teacher/Experiments";
 import Chat from "./pages/Chat";
 import Practice from "./pages/Practice";
 import Login from "./pages/Login";
@@ -41,6 +44,7 @@ const teacher = [
   ["dashboard", "教师工作台"],
   ["chapters", "课程目录"],
   ["knowledge", "知识点内容"],
+  ["experiments", "算法实验管理"],
   ["materials", "公共资料"],
   ["questions", "练习题管理"],
   ["accounts", "账号管理"],
@@ -143,6 +147,8 @@ function App() {
         <Route path="materials" element={<Materials />} />
         <Route path="knowledge" element={<Knowledge />} />
         <Route path="experiments" element={<Lab />} />
+        <Route path="experiments/:experimentId" element={<Lab />} />
+        <Route path="experiment-runs/:runId" element={<ExperimentRunPage />} />
         <Route path="ai-chat" element={<Chat />} />
         <Route path="practice" element={<Practice />} />
         <Route path="profile" element={<Profile />} />
@@ -159,6 +165,12 @@ function App() {
         <Route path="knowledge" element={<CourseOutline library />} />
         <Route path="knowledge/new" element={<PlanKnowledge />} />
         <Route path="knowledge/:pointId/:step" element={<TeacherKnowledge />} />
+        <Route path="experiments" element={<TeacherExperiments />} />
+        <Route path="experiments/new" element={<ExperimentEditor />} />
+        <Route
+          path="experiments/:experimentId/:step"
+          element={<ExperimentEditor />}
+        />
         <Route path="questions" element={<TeacherQuestions />} />
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="accounts" element={<Accounts />} />

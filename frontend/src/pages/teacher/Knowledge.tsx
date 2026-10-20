@@ -554,6 +554,19 @@ export default function Knowledge() {
                   />
                   关联 FCFS 实验
                 </label>
+                <p>
+                  上项保留旧版 FCFS
+                  分类入口。要配置完整实验及多算法关联，请进入实验管理。
+                </p>
+                <Link
+                  className="button secondary"
+                  to={`/teacher/experiments/new?knowledge=${id}`}
+                >
+                  为本知识点建立教学实验 →
+                </Link>
+                <Link className="textlink" to="/teacher/experiments">
+                  管理已有算法实验 →
+                </Link>
                 <div className="related-task">
                   <h3>关联练习和课程资料</h3>
                   <p>

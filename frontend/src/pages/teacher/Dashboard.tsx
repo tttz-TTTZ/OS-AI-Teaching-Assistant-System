@@ -44,6 +44,7 @@ export default function Dashboard() {
         <h2>其他常用工作</h2>
         <div className="support-links">
           <Link to="/teacher/materials">上传公共资料 →</Link>
+          <Link to="/teacher/experiments">维护算法实验 →</Link>
           <Link to="/teacher/questions">维护练习题库 →</Link>
           <Link to="/teacher/learning-feedback">查看学习反馈 →</Link>
           <Link to="/teacher/accounts">管理学生账号 →</Link>

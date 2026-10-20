@@ -7,6 +7,7 @@ import { useAuth } from "../auth";
 import ContentView from "../learning/ContentView";
 import Markdown from "../Markdown";
 import { studyApi } from "../study";
+import { Experiment, experimentApi } from "../experiments";
 
 type View = "read" | "resources" | "notes";
 const views: [View, string][] = [
@@ -28,6 +29,23 @@ export default function Knowledge() {
   const [items, setItems] = useState<Content[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [detail, setDetail] = useState<Content>();
+  const [experiments, setExperiments] = useState<Experiment[]>([]);
+  useEffect(() => {
+    let active = true;
+    setExperiments([]);
+    if (requested)
+      experimentApi
+        .list(requested)
+        .then((rows) => {
+          if (active) setExperiments(rows);
+        })
+        .catch((e) => {
+          if (active) setFailure(e.message);
+        });
+    return () => {
+      active = false;
+    };
+  }, [requested]);
   const [progress, setProgress] = useState<Progress>();
   const [failure, setFailure] = useState("");
   const [loading, setLoading] = useState(false);
@@ -315,8 +333,11 @@ export default function Knowledge() {
       kind: b.kind,
     })) || []),
   ];
-  const active = modules.some((b) => b.id === params.get("block"))
-    ? params.get("block")!
+  // Derive the first rendered module from the loaded record too, so navigation
+  // never briefly points to the overview while the URL is being canonicalized.
+  const selectedBlock = params.get("block") || progress?.position || "overview";
+  const active = modules.some((b) => b.id === selectedBlock)
+    ? selectedBlock
     : "overview";
   const moduleIndex = modules.findIndex((b) => b.id === active);
   const index = items.findIndex((p) => p.id === detail?.id);
@@ -347,6 +368,22 @@ export default function Knowledge() {
       ));
   }
 
+  function experimentLinks() {
+    return experiments.map((experiment) => {
+      const to = `/student/experiments/${experiment.id}?from=${detail?.id}&block=${encodeURIComponent(active)}`;
+      return (
+        <p key={experiment.id}>
+          <Link
+            className="textlink"
+            to={to}
+            onClick={(e) => void follow(e, to)}
+          >
+            {experiment.title} · 进入完整实验 →
+          </Link>
+        </p>
+      );
+    });
+  }
   return (
     <div className="study-workspace">
       {!requested ? (
@@ -539,6 +576,15 @@ export default function Knowledge() {
                           </li>
                         ))}
                       </ol>
+                      {!!experiments.length && (
+                        <section className="learning-objectives">
+                          <h3>配套算法实验</h3>
+                          <p>
+                            先读内容，再用完整实验修改输入、运行并记录观察。
+                          </p>
+                          {experimentLinks()}
+                        </section>
+                      )}
                       {!detail.blocks.length && (
                         <p>本知识点暂无正文模块，可先查看相关资料。</p>
                       )}
@@ -582,10 +628,12 @@ export default function Knowledge() {
                     </button>
                     {detail.lab && (
                       <Link
-                        to="/student/experiments"
-                        onClick={(e) => void follow(e, "/student/experiments")}
+                        to="/student/experiments?algorithm=fcfs"
+                        onClick={(e) =>
+                          void follow(e, "/student/experiments?algorithm=fcfs")
+                        }
                       >
-                        进入 FCFS 算法实验 →
+                        查看 FCFS 实验 →
                       </Link>
                     )}
                     {index >= 0 && index < items.length - 1 && (
@@ -654,15 +702,24 @@ export default function Knowledge() {
                       );
                     })}
                     {!detail.related?.length && <p>暂无关联知识点</p>}
-                    {detail.lab && (
+                    {!!experiments.length && (
+                      <>
+                        <h3>配套算法实验</h3>
+                        {experimentLinks()}
+                      </>
+                    )}
+                    {detail.lab && !experiments.length && (
                       <p>
                         <Link
-                          to="/student/experiments"
+                          to="/student/experiments?algorithm=fcfs"
                           onClick={(e) =>
-                            void follow(e, "/student/experiments")
+                            void follow(
+                              e,
+                              "/student/experiments?algorithm=fcfs",
+                            )
                           }
                         >
-                          运行 FCFS →
+                          查看 FCFS 实验 →
                         </Link>
                       </p>
                     )}
