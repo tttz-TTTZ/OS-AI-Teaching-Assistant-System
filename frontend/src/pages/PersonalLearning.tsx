@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Chapter, courseApi, documentApi, Material } from "../api";
 import { digitalApi, Section } from "../digital";
 import { useAuth } from "../auth";
@@ -23,6 +23,7 @@ export default function PersonalLearning({
   practice?: boolean;
 }) {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
   const jobId = Number(params.get("job"));
   const { user } = useAuth();
   const [chapters, setChapters] = useState<Chapter[]>([]),
@@ -207,6 +208,14 @@ export default function PersonalLearning({
   }
   function continueWith(kind: "learning" | "practice") {
     if (!job) return;
+    if (kind === "learning") {
+      sessionStorage.setItem(
+        `notebook-followup:${user?.id}:${job.id}`,
+        followup || job.config.weakness,
+      );
+      navigate(`/student/ai-chat?job=${job.id}`);
+      return;
+    }
     setConfig({
       ...job.config,
       kind,
@@ -288,9 +297,9 @@ export default function PersonalLearning({
       <div className="authoring-toolbar">
         <Link
           className={practice ? "button secondary" : "button"}
-          to="/student/knowledge"
+          to="/student/ai-chat"
         >
-          自主学习
+          智能问答学习
         </Link>
         <Link className="button secondary" to="/student/practice">
           教师正式练习
@@ -301,7 +310,7 @@ export default function PersonalLearning({
         >
           我的 AI 练习
         </Link>
-        <Link to="/student/course-reading">历史课程内容</Link>
+        <Link to="/student/knowledge">课程知识点</Link>
         {jobId > 0 && (
           <button disabled={busy} onClick={newLearning}>
             新建个人学习 / 自测

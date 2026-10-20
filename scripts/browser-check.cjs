@@ -118,7 +118,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
           "teacher-flow-outline.png",
         ),
       });
-    await t.goto(base + "/teacher/knowledge");
+    await t.getByRole("link", { name: "知识点内容", exact: true }).click();
     await t
       .getByRole("heading", { name: "选择知识点，开始编写", exact: true })
       .waitFor();
@@ -282,7 +282,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         ),
       });
     }
-    await s.goto(base + `/student/course-reading?chapter=${cid}`);
+    await s.goto(base + `/student/knowledge?chapter=${cid}`);
     await s
       .getByRole("heading", { name: "选择今天要学的知识点", exact: true })
       .waitFor();
@@ -413,7 +413,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .filter({ hasText: "验收模拟保存失败" })
       .waitFor();
     if (
-      !s.url().includes("/student/course-reading") ||
+      !s.url().includes("/student/knowledge") ||
       (await s.getByLabel("私人学习笔记", { exact: true }).inputValue()) !==
         "断网后仍然保留的私人笔记"
     )
@@ -525,6 +525,8 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await s.getByRole("button", { name: "提交练习", exact: true }).click();
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();
     await s.getByRole("link", { name: "智能问答", exact: true }).click();
+    await s.getByRole("heading", { name: "操作系统 · 智能问答", exact: true }).waitFor();
+    await s.getByRole("link", { name: "基础问答（兼容）", exact: true }).click();
     await s.getByLabel("输入问题").fill("解释进程");
     await s.getByRole("button", { name: "发送问题", exact: true }).click();
     await s
@@ -570,7 +572,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存题目" }).click();
     await t.getByRole("status").filter({ hasText: "练习题已保存" }).waitFor();
-    await s.goto(base + `/student/course-reading?chapter=${cid}&point=${kid}`);
+    await s.goto(base + `/student/knowledge?chapter=${cid}&point=${kid}`);
     const returnModule = await s
       .getByLabel("本知识点学习导航", { exact: true })
       .inputValue();
@@ -620,7 +622,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await b.setViewportSize({ width: 640, height: 800 });
     await b.goto(base + "/student/dashboard");
     await b.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
-    await b.goto(base + `/student/course-reading?point=${kid}&block=explanation`);
+    await b.goto(base + `/student/knowledge?point=${kid}&block=explanation`);
     await b.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
     if (new URL(b.url()).searchParams.get("chapter") !== String(cid))
       throw Error("仅有知识点ID的链接应补齐章节");
@@ -643,7 +645,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .click();
     if (await b.getByLabel("私人学习笔记", { exact: true }).inputValue())
       throw Error("其他学生不能读到私人笔记");
-    await b.goto(base + `/student/course-reading?chapter=${cid}&point=999999`);
+    await b.goto(base + `/student/knowledge?chapter=${cid}&point=999999`);
     await b
       .getByRole("heading", { name: "暂时无法打开这个知识点", exact: true })
       .waitFor();

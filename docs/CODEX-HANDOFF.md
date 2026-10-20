@@ -1,5 +1,7 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+> 2026-10-20 最新调整：[知识点与智能问答入口分工](KNOWLEDGE-AND-AI-WORKSPACES.md)。三栏 AI 笔记本移到「智能问答」；教师人工维护和发布正式知识点，学生在「知识点学习」阅读。下文“教师只提供资料、不备课”和旧入口描述属于历史决定，冲突时以最新说明为准。原教师 AI 自动备课写接口仍停用。
+
 ## 最新：学生学习笔记本三栏工作台与闪卡
 
 主入口LearningNotebook.tsx：左侧公共/个人来源与真实上传，中间检索后生成/阅读/追问，右侧Studio工具和个人成果。复用V8权限/检索/任务，新增flashcards模式和3–20张翻面卡，保存在原JSON，无新迁移或依赖。教师已发布算法实验先用，AI概念演示单列；不加入教学视频/音频，不执行任意AI动画脚本。个人AI测验沿用独立作答页。旧PersonalLearning.tsx继续服务ai-practice，带point旧链接仍兼容旧教材。首页health新增chat_ai_configured、personal_ai_configured、platform_revision，保留ai_configured原聊天含义，分别显示两种配置并提示旧后端。完整说明见 [LEARNING-NOTEBOOK.md](LEARNING-NOTEBOOK.md)。

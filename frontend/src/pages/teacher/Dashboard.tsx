@@ -3,47 +3,53 @@ import { AuthoringPage } from "./Authoring";
 export default function Dashboard() {
   return (
     <AuthoringPage
-      title="课程资料与教学管理"
-      description="本轮职责调整：教师不再制作AI教案，负责公共资料、整套章节目录和正式练习；学生自主选择学习内容与方式。"
+      title="今天准备哪一部分课程？"
+      description="从目录开始，逐个补内容，检查完再发布。"
     >
       <div className="teacher-start">
         {[
           [
+            "01",
             "chapters",
-            "把控课程目录",
-            "维护大章、小节、编号和发布状态；小节数量不固定。",
+            "先规划课程目录",
+            "建立章节、小节和知识点标题，正文可以之后再写。",
+            "规划目录 →",
           ],
           [
-            "materials",
-            "提供公共学习资料",
-            "上传、替换、关联和发布授课PPT及教材资料。",
+            "02",
+            "knowledge",
+            "再编写知识点内容",
+            "选一个知识点，整页编写目标、正文、图片和互动。",
+            "选择知识点 →",
           ],
           [
-            "questions",
-            "维护教师正式练习",
-            "人工录题或AI辅助出题，经教师审核后发布。",
+            "03",
+            "knowledge",
+            "最后预览与发布",
+            "进入知识点的“预览发布”，检查完整效果后推送学生。",
+            "检查待发布内容 →",
           ],
-        ].map(([path, title, description]) => (
-          <section className="authoring-card" key={path}>
+        ].map(([number, path, title, description, action]) => (
+          <section className="authoring-card start-task" key={number}>
+            <span className="task-number">{number}</span>
             <h2>{title}</h2>
             <p>{description}</p>
             <Link className="button" to={"/teacher/" + path}>
-              进入管理 →
+              {action}
             </Link>
           </section>
         ))}
       </div>
       <section className="authoring-card">
-        <h2>其他管理</h2>
+        <h2>其他常用工作</h2>
         <div className="support-links">
-          <Link to="/teacher/ai-questions">AI辅助准备正式练习</Link>
-          <Link to="/teacher/experiments">维护算法实验</Link>
-          <Link to="/teacher/accounts">管理学生账号</Link>
-          <Link to="/teacher/knowledge">历史内容维护（兼容）</Link>
+          <Link to="/teacher/materials">上传公共资料 →</Link>
+          <Link to="/teacher/experiments">维护算法实验 →</Link>
+          <Link to="/teacher/ai-questions">用AI准备候选题 →</Link>
+          <Link to="/teacher/questions">维护练习题库 →</Link>
+          <Link to="/teacher/learning-feedback">查看学习反馈 →</Link>
+          <Link to="/teacher/accounts">管理学生账号 →</Link>
         </div>
-        <p>
-          学生个人生成内容和AI自测默认仅本人可见，不混入教师题库或正式成绩。已有教材及历史记录保留。
-        </p>
       </section>
     </AuthoringPage>
   );

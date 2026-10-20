@@ -46,6 +46,7 @@ const student = [
 const teacher = [
   ["dashboard", "教师工作台"],
   ["chapters", "课程目录"],
+  ["knowledge", "知识点内容"],
   ["experiments", "算法实验管理"],
   ["materials", "公共资料"],
   ["questions", "练习题管理"],
@@ -53,10 +54,10 @@ const teacher = [
 ];
 function PersonalKnowledge() {
   const location = useLocation();
-  return new URLSearchParams(location.search).has("point") ? (
-    <Knowledge />
+  return new URLSearchParams(location.search).has("job") ? (
+    <Navigate to={`/student/ai-chat${location.search}`} replace />
   ) : (
-    <LearningNotebook />
+    <Knowledge />
   );
 }
 function Guard({ role }: { role: "student" | "teacher" }) {
@@ -76,9 +77,7 @@ function Layout({ role }: { role: "student" | "teacher" }) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const notebook =
-    role === "student" &&
-    location.pathname === "/student/knowledge" &&
-    !new URLSearchParams(location.search).has("point");
+    role === "student" && location.pathname === "/student/ai-chat";
   const [error, setError] = useState("");
   const [courseTitle, setCourseTitle] = useState("正在加载课程…");
   useEffect(() => {
@@ -166,7 +165,8 @@ function App() {
         <Route path="experiments" element={<Lab />} />
         <Route path="experiments/:experimentId" element={<Lab />} />
         <Route path="experiment-runs/:runId" element={<ExperimentRunPage />} />
-        <Route path="ai-chat" element={<Chat />} />
+        <Route path="ai-chat" element={<LearningNotebook />} />
+        <Route path="basic-chat" element={<Chat />} />
         <Route path="practice" element={<Practice />} />
         <Route path="profile" element={<Profile />} />
       </Route>

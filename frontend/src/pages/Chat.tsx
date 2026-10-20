@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { api, courseApi, Health } from "../api";
 import { Page, Notice } from "../components";
 type Message = { role: "user" | "assistant"; text: string };
@@ -43,7 +44,10 @@ export default function Chat() {
     }
   }
   return (
-    <Page title="智能问答">
+    <Page title="基础问答（兼容）">
+      <p>
+        <Link to="/student/ai-chat">进入智能问答学习工作台 →</Link>
+      </p>
       <section className="panel">
         <div className="toolbar">
           <h2>课程 AI 助教</h2>

@@ -24,9 +24,9 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       body: result,
     });
   });
-  await s.goto(base + `/student/knowledge?chapter=${cid}`);
+  await s.goto(base + `/student/ai-chat?chapter=${cid}`);
   await s
-    .getByRole("heading", { name: "操作系统 · 学习笔记本", exact: true })
+    .getByRole("heading", { name: "操作系统 · 智能问答", exact: true })
     .waitFor();
   for (const region of ["学习来源", "学习对话", "学习工具"])
     await s.getByRole("region", { name: region, exact: true }).waitFor();
@@ -156,7 +156,12 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     ).status() !== 404
   )
     throw Error("个人自测成绩泄露");
+  await s.getByLabel("我还不理解的地方").fill("请再解释互斥的条件");
+  await s.getByRole("button", { name: "带着疑问继续学习", exact: true }).click();
+  await s.waitForURL("**/student/ai-chat?job=" + quiz);
+  await s.waitForFunction(() => document.querySelector('[aria-label="提问或创作学习内容"]')?.value === "请再解释互斥的条件");
   await s.goto(base + `/student/knowledge?job=${flashId}`);
+  await s.waitForURL("**/student/ai-chat?job=" + flashId);
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   await s.setViewportSize({ width: 390, height: 844 });
   if (process.env.BROWSER_SCREENSHOT_DIR)
@@ -180,7 +185,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.unroute("**/api/student/personal/generate");
   await t.goto(base + "/teacher/dashboard");
   await t
-    .getByRole("heading", { name: "课程资料与教学管理", exact: true })
+    .getByRole("heading", { name: "今天准备哪一部分课程？", exact: true })
     .waitFor();
   console.log(
     "PASS Notebook学习工作台模拟联调：三栏来源/对话/Studio、个人上传、导图/代码/闪卡翻面、教师算法入口、AI概念动画、笔记收藏刷新、自测作答与隔离、桌面与窄屏（未调用真实模型）",

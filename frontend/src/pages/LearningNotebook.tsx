@@ -194,7 +194,9 @@ export default function LearningNotebook() {
         setNote(j.note);
         setBookmarked(!!j.bookmarked);
         setEvidence(j.sources);
-        setPrompt("");
+        const followupKey = `notebook-followup:${user?.id}:${j.id}`;
+        setPrompt(sessionStorage.getItem(followupKey) || "");
+        sessionStorage.removeItem(followupKey);
         const prior: PersonalJob[] = [];
         let parent = j.config.parent_id;
         const visited = new Set<number>([j.id]);
@@ -412,11 +414,13 @@ export default function LearningNotebook() {
           >
             OS
           </Link>
-          <h1>操作系统 · 学习笔记本</h1>
-          <span className="notebook-version">自主学习版</span>
+          <h1>操作系统 · 智能问答</h1>
+          <span className="notebook-version">学习笔记本</span>
         </div>
         <nav aria-label="笔记本导航">
           <Link to="/student/dashboard">学习首页</Link>
+          <Link to="/student/knowledge">知识点学习</Link>
+          <Link to="/student/basic-chat">基础问答（兼容）</Link>
           <Link to="/student/practice">章节练习</Link>
           <Link to="/student/ai-practice">我的 AI 练习</Link>
           <Link to="/student/profile">个人账号</Link>
