@@ -499,6 +499,15 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       suffix,
       apiCall,
     });
+    await require("./presentation-browser.cjs").verifyPresentations({
+      t,
+      s,
+      b,
+      base,
+      cid,
+      suffix,
+      apiCall,
+    });
     await s.getByRole("link", { name: "章节练习", exact: true }).click();
     await s.getByLabel("选择章节").selectOption("1");
     await s.getByLabel("A. 管理系统资源", { exact: true }).check();

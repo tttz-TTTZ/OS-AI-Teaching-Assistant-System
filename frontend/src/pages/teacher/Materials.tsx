@@ -10,7 +10,12 @@ import {
 } from "../../api";
 import { Page, Notice } from "../../components";
 import { useRemote, Publish, Status } from "./shared";
-const PUBLIC_LIMIT = 150 * 1024 * 1024;
+import {
+  materialAccept,
+  materialFileError,
+  publicFileHint,
+} from "../../materialFiles";
+import PresentationPreview from "../../learning/PresentationPreview";
 export default function Materials() {
   const [q, setQ] = useState("");
   const [filterChapter, setFilterChapter] = useState("");
@@ -45,6 +50,7 @@ export default function Materials() {
     { id: number; original_name: string; created_at: string }[]
   >([]);
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>();
   const [success, setSuccess] = useState("");
   useEffect(() => {
     void items.refresh();
@@ -68,9 +74,9 @@ export default function Materials() {
     setSuccess("");
   }
   function valid(file: File) {
-    const max = /\.pdf$/i.test(file.name) ? PUBLIC_LIMIT : 10 * 1024 * 1024;
-    if (!/\.(pdf|txt)$/i.test(file.name) || !file.size || file.size > max) {
-      items.setError("公共PDF最大150 MiB，UTF-8 TXT最大10 MiB；文件不能为空");
+    const error = materialFileError(file, true);
+    if (error) {
+      items.setError(error);
       return false;
     }
     return true;
@@ -79,12 +85,14 @@ export default function Materials() {
     e.preventDefault();
     if (!file || !valid(file)) return;
     const form = e.currentTarget;
+    setUploadProgress(0);
     setBusy(true);
     setSuccess("");
     try {
       const m = await teacherApi.uploadPublic(
         file,
         uploadChapter ? Number(uploadChapter) : null,
+        setUploadProgress,
       );
       form.reset();
       setFile(undefined);
@@ -95,6 +103,7 @@ export default function Materials() {
       items.setError((e as Error).message);
     } finally {
       setBusy(false);
+      setUploadProgress(undefined);
     }
   }
   async function save(e: FormEvent) {
@@ -148,31 +157,47 @@ export default function Materials() {
   async function replace(e: FormEvent) {
     e.preventDefault();
     if (!selected || !replacement || !valid(replacement)) return;
+    setUploadProgress(0);
     setBusy(true);
     try {
-      const m = await documentApi.replace(selected.id, replacement);
+      const m = await documentApi.replace(
+        selected.id,
+        replacement,
+        setUploadProgress,
+      );
       edit({ ...m, knowledge_ids: links });
       await finish("新版本已保存，旧文件留存；已取消发布，请检查后重新发布");
     } catch (e) {
       items.setError((e as Error).message);
     } finally {
       setBusy(false);
+      setUploadProgress(undefined);
     }
   }
   return (
     <Page title="公共资料管理">
       <p>
-        教师和学生使用同一套资料数据。公开PDF上限150 MiB，TXT上限10
-        MiB；上传/替换默认为草稿。删除进入可恢复的回收站。
+        {publicFileHint}
+        。上传/替换默认为草稿，检查后发布；删除进入可恢复的回收站。
       </p>
       <Notice error={items.error || chapters.error || knowledge.error} />
+      {busy && uploadProgress !== undefined && (
+        <div role="status" className="upload-progress">
+          <progress max="100" value={uploadProgress} />
+          <span>
+            {uploadProgress < 100
+              ? `正在上传 ${uploadProgress}%`
+              : "文件已发送，服务器正在校验并保存，请勿关闭页面…"}
+          </span>
+        </div>
+      )}
       {success && (
         <p className="feedback" role="status">
           {success}
         </p>
       )}
       <section className="panel">
-        <h2>上传公共 PDF / TXT</h2>
+        <h2>上传公共课件与资料</h2>
         <form className="upload" onSubmit={upload}>
           <label>
             资料文件
@@ -180,7 +205,7 @@ export default function Materials() {
               aria-label="公共资料文件"
               type="file"
               required
-              accept=".pdf,.txt"
+              accept={materialAccept}
               onChange={(e) => setFile(e.target.files?.[0])}
             />
           </label>
@@ -202,6 +227,15 @@ export default function Materials() {
           <button disabled={busy}>上传公共资料</button>
         </form>
       </section>
+      {selected && ["ppt", "pptx"].includes(selected.file_type || "") && (
+        <details
+          className="teacher-presentation"
+          key={selected.id + ":" + selected.sha256}
+        >
+          <summary>预览课件文字（原件可下载）</summary>
+          <PresentationPreview material={selected} />
+        </details>
+      )}
       <div className="management spaced">
         <section className="panel">
           <h2>资料列表</h2>
@@ -437,7 +471,7 @@ export default function Materials() {
                 <input
                   aria-label="替换公共文件"
                   type="file"
-                  accept=".pdf,.txt"
+                  accept={materialAccept}
                   required
                   onChange={(e) => setReplacement(e.target.files?.[0])}
                 />

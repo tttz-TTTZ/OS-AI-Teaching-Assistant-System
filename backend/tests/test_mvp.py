@@ -151,11 +151,14 @@ def test_restart_idempotent(client):
         assert len(again.get("/api/chapters").json()) == 7
 
 
-def test_request_body_limit(client):
+def test_request_body_limit(client, monkeypatch):
+    from app import files
+
+    monkeypatch.setattr(files, "PERSONAL_PRESENTATION_MAX_SIZE", 1024 * 1024)
     assert (
         client.post(
             "/api/materials/upload",
-            content=b"x" * (11 * 1024 * 1024 + 1),
+            content=b"x" * (2 * 1024 * 1024 + 1),
             headers={"Content-Type": "multipart/form-data; boundary=x"},
         ).status_code
         == 413

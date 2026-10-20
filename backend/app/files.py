@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import uuid
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from .auth import require_user
 from .access import read_document, visible_chapter, writable_document
@@ -14,6 +14,8 @@ from .persistence import checked_file, storage_lock
 router = APIRouter(prefix="/api/materials")
 MAX_SIZE = 10 * 1024 * 1024
 PUBLIC_MAX_SIZE = 150 * 1024 * 1024
+PUBLIC_PRESENTATION_MAX_SIZE = 500 * 1024 * 1024
+PERSONAL_PRESENTATION_MAX_SIZE = 50 * 1024 * 1024
 
 
 def db_path():
@@ -57,11 +59,20 @@ async def store_upload(
                 writable_document(original, user)
             category = original["category"]
         suffix = Path(file.filename or "").suffix.lower()
-        if suffix not in (".pdf", ".txt"):
-            raise HTTPException(415, "仅支持 PDF 和 UTF-8 TXT 文件")
-        maximum = (
-            PUBLIC_MAX_SIZE if category == "public" and suffix == ".pdf" else MAX_SIZE
-        )
+        if suffix not in (".pdf", ".txt", ".ppt", ".pptx"):
+            raise HTTPException(415, "仅支持 PDF、UTF-8 TXT、PPT 和 PPTX 文件")
+        if suffix in (".ppt", ".pptx"):
+            maximum = (
+                PUBLIC_PRESENTATION_MAX_SIZE
+                if category == "public"
+                else PERSONAL_PRESENTATION_MAX_SIZE
+            )
+        else:
+            maximum = (
+                PUBLIC_MAX_SIZE
+                if category == "public" and suffix == ".pdf"
+                else MAX_SIZE
+            )
         incoming = db_path().parent / ".incoming"
         incoming.mkdir(parents=True, exist_ok=True)
         with tempfile.NamedTemporaryFile(dir=incoming, delete=False) as out:
@@ -81,6 +92,17 @@ async def store_upload(
             with stage.open("rb") as source:
                 if source.read(5) != b"%PDF-":
                     raise HTTPException(415, "PDF 文件头无效")
+        elif suffix == ".pptx":
+            from .presentations import inspect_pptx
+
+            preview = inspect_pptx(stage)
+            content = "\n\n".join(
+                f"第{p['number']}页\n{p['text']}" for p in preview["slides"]
+            )[:50000]
+        elif suffix == ".ppt":
+            from .presentations import validate_ppt
+
+            validate_ppt(stage)
         else:
             try:
                 content = stage.read_text(encoding="utf-8-sig")
@@ -259,15 +281,47 @@ def download(
         raise HTTPException(404, "文件不存在") from None
     return FileResponse(
         target,
-        media_type=(
-            "application/pdf"
-            if material["file_type"] == "pdf"
-            else "text/plain; charset=utf-8"
-        ),
+        media_type={
+            "pdf": "application/pdf",
+            "txt": "text/plain; charset=utf-8",
+            "ppt": "application/vnd.ms-powerpoint",
+            "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        }.get(material["file_type"], "application/octet-stream"),
         filename=material["original_name"],
-        content_disposition_type="attachment" if download else "inline",
+        content_disposition_type=(
+            "attachment"
+            if download or material["file_type"] in ("ppt", "pptx")
+            else "inline"
+        ),
         headers={
             "X-Content-Type-Options": "nosniff",
             "Cache-Control": "private, no-store",
         },
+    )
+
+
+@router.get("/{material_id}/slides")
+def slides(
+    material_id: int,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=20),
+    user: dict = Depends(require_user),
+):
+    with database() as db:
+        material = read_document(db, material_id, user)
+    if material["file_type"] != "pptx":
+        raise HTTPException(
+            415, "仅PPTX支持文字分页，旧PPT请下载后用PowerPoint/WPS打开"
+        )
+    try:
+        target = checked_file(storage(), material["stored_name"])
+    except (ValueError, TypeError):
+        raise HTTPException(404, "文件不存在") from None
+    from .presentations import inspect_pptx
+
+    from fastapi.responses import JSONResponse
+
+    return JSONResponse(
+        inspect_pptx(target, offset, limit),
+        headers={"Cache-Control": "private, no-store"},
     )

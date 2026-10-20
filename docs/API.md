@@ -137,3 +137,10 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 实验草稿字段：title、algorithm(fcfs/sjf/rr)、chapter_id、knowledge_ids、objectives、instructions、tasks、reference、defaults({processes:[{pid,arrival,burst}],quantum})、edit_version。保存追加不可变修订，发布指针单独修改。学生运行只用当前发布修订；版本变更409，未发布/撤回404，跨用户记录404，学生教师写接口403。
 
 新增 experiments、experiment_revisions、experiment_previews、experiment_runs；V5 迁移只追加表与索引。备份/恢复包含这些表。
+
+
+## 大课件接口补充
+
+资料 upload/replace 现在接受 .pdf/.txt/.ppt/.pptx。公共PPT/PPTX最大500 MiB，个人50 MiB；PDF原150/10 MiB、TXT10 MiB保持。原文件下载对PPT/PPTX使用附件响应与对应Office MIME。
+
+`GET /api/materials/{id}/slides?offset=0&limit=10`：仅PPTX，返回 `{total,offset,slides:[{number,title,text,truncated}]}`。limit范围1–20；文字页不含原排版/图片/动画。与资料详情同样授权：草稿/撤回/他人个人文件404，旧PPT文字预览415。`/api/config` 追加 public_presentation_upload_limit_bytes、personal_presentation_upload_limit_bytes。完整边界见 PRESENTATION-MATERIALS.md。

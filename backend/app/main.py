@@ -282,11 +282,18 @@ async def no_api_cache(request, call_next):
 
 @app.get("/api/config")
 def configuration():
-    from .files import PUBLIC_MAX_SIZE, MAX_SIZE
+    from .files import (
+        PUBLIC_MAX_SIZE,
+        MAX_SIZE,
+        PUBLIC_PRESENTATION_MAX_SIZE,
+        PERSONAL_PRESENTATION_MAX_SIZE,
+    )
 
     return {
         "public_upload_limit_bytes": PUBLIC_MAX_SIZE,
         "personal_upload_limit_bytes": MAX_SIZE,
+        "public_presentation_upload_limit_bytes": PUBLIC_PRESENTATION_MAX_SIZE,
+        "personal_presentation_upload_limit_bytes": PERSONAL_PRESENTATION_MAX_SIZE,
         "storage": "persistent-filesystem",
         "auth": "tab-context-cookie",
     }

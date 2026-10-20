@@ -1,3 +1,9 @@
+import {
+  materialAccept,
+  materialFileError,
+  personalFileHint,
+} from "../materialFiles";
+import PresentationPreview from "../learning/PresentationPreview";
 import { fileUrl } from "../api";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
@@ -19,6 +25,7 @@ export default function Materials() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>();
   const [category, setCategory] = useState("all");
   const [offset, setOffset] = useState(0);
   const [file, setFile] = useState<File>();
@@ -50,18 +57,16 @@ export default function Materials() {
     e.preventDefault();
     if (!file) return;
     setError("");
-    if (
-      !/\.(pdf|txt)$/i.test(file.name) ||
-      file.size > 10 * 1024 * 1024 ||
-      !file.size
-    ) {
-      setError("请选择非空 PDF 或 UTF-8 TXT，最大 10 MB");
+    const failure = materialFileError(file);
+    if (failure) {
+      setError(failure);
       return;
     }
+    setUploadProgress(0);
     setBusy(true);
     const form = e.currentTarget;
     try {
-      await courseApi.upload(file, chapter);
+      await courseApi.upload(file, chapter, setUploadProgress);
       setFile(undefined);
       form.reset();
       setChapter("");
@@ -70,6 +75,7 @@ export default function Materials() {
       setError((e as Error).message);
     } finally {
       setBusy(false);
+      setUploadProgress(undefined);
     }
   }
   async function remove(m: Material) {
@@ -90,15 +96,25 @@ export default function Materials() {
       <p className="hint">
         公共资料由教师发布；个人资料仅本人可读取、下载和删除。文件仅用于可信本地学习。
       </p>
+      {busy && uploadProgress !== undefined && (
+        <div role="status" className="upload-progress">
+          <progress max="100" value={uploadProgress} />
+          <span>
+            {uploadProgress < 100
+              ? `正在上传 ${uploadProgress}%`
+              : "文件已发送，正在校验保存…"}
+          </span>
+        </div>
+      )}
       <section className="panel">
         <h2>上传个人资料</h2>
         <form onSubmit={upload} className="upload">
           <label>
-            文件（PDF / UTF-8 TXT，≤10 MB）
+            {personalFileHint}
             <input
               aria-label="上传资料"
               type="file"
-              accept=".pdf,.txt"
+              accept={materialAccept}
               required
               onChange={(e) => setFile(e.target.files?.[0])}
             />
@@ -285,9 +301,13 @@ export default function Materials() {
               关闭详情
             </button>
           </div>
-          <pre>
-            {view.content || "此文件未提取正文，请点击列表中的查看或下载。"}
-          </pre>
+          {["ppt", "pptx"].includes(view.file_type || "") ? (
+            <PresentationPreview material={view} />
+          ) : (
+            <pre>
+              {view.content || "此文件未提取正文，请点击列表中的查看或下载。"}
+            </pre>
+          )}
         </section>
       )}
     </Page>

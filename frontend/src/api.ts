@@ -75,9 +75,71 @@ export async function request<T>(
           : `请求失败（${response.status}）`,
     );
   }
-  const result = response.status === 204 ? (undefined as T) : await response.json();
+  const result =
+    response.status === 204 ? (undefined as T) : await response.json();
   checkRevision(revision, context);
   return result;
+}
+// Upload progress includes transfer only; onload confirms server validation/storage.
+export async function uploadFile<T>(
+  path: string,
+  body: FormData,
+  onProgress?: (percent: number) => void,
+): Promise<T> {
+  if (!onProgress) return request<T>(path, { method: "POST", body });
+  await sessionReady;
+  const revision = authRevision,
+    context = sessionContext();
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `/api${path}`);
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("X-Session-Context", context);
+    if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable)
+        onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onerror = () =>
+      reject(
+        new Error(
+          "上传连接中断，请确认网络后重试；如不确定是否已保存，先刷新资料列表。",
+        ),
+      );
+    xhr.onabort = () => reject(new Error("上传已取消"));
+    xhr.onload = () => {
+      try {
+        checkRevision(revision, context);
+        let data: any;
+        try {
+          data = JSON.parse(xhr.responseText);
+        } catch {
+          if (xhr.status >= 200 && xhr.status < 300)
+            throw new Error(
+              "上传服务未返回有效结果，请确认后端和代理配置，再刷新资料列表检查是否已保存。",
+            );
+          data = {};
+        }
+        if (xhr.status === 401) window.dispatchEvent(new Event("auth-expired"));
+        if (xhr.status < 200 || xhr.status >= 300) {
+          const detail =
+            typeof data.detail === "string"
+              ? data.detail
+              : Array.isArray(data.detail)
+                ? data.detail.map((e: { msg: string }) => e.msg).join("；")
+                : xhr.status === 413
+                  ? "上传被服务器拒绝：文件过大，请检查应用或反向代理的上传上限"
+                  : `上传失败（${xhr.status}）`;
+          reject(new Error(detail));
+          return;
+        }
+        resolve(data as T);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    xhr.send(body);
+  });
 }
 export const api = {
   material: (id: number) => request<Material>(`/materials/${id}`),
@@ -172,14 +234,15 @@ export const courseApi = {
     request<Knowledge[]>(`/knowledge?chapter_id=${id}`),
   detail: (id: number) => request<Knowledge>(`/knowledge/${id}`),
   health: () => request<Health>("/health"),
-  upload: (file: File, chapter: string) => {
+  upload: (
+    file: File,
+    chapter: string,
+    onProgress?: (percent: number) => void,
+  ) => {
     const data = new FormData();
     data.append("file", file);
     if (chapter) data.append("chapter_id", chapter);
-    return request<Material>("/materials/upload", {
-      method: "POST",
-      body: data,
-    });
+    return uploadFile<Material>("/materials/upload", data, onProgress);
   },
   fcfs: (processes: Process[]) =>
     request<Schedule>("/labs/fcfs", {
@@ -203,11 +266,19 @@ export interface User {
 }
 export const authApi = {
   register: (username: string, password: string) =>
-    request<{ id: number; username: string; role: "student" }>("/auth/register", {
-      method: "POST", body: JSON.stringify({ username, password }),
-    }),
+    request<{ id: number; username: string; role: "student" }>(
+      "/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      },
+    ),
   me: () => request<User>("/auth/me"),
-  login: async (username: string, password: string, expected_role?: "teacher" | "student") => {
+  login: async (
+    username: string,
+    password: string,
+    expected_role?: "teacher" | "student",
+  ) => {
     await sessionReady;
     // 每次登录独占新 Cookie，哪怕浏览器复制了标签存储也不会覆盖别的账号。
     invalidateAuthRequests();
@@ -222,7 +293,14 @@ export const authApi = {
 
 export type ChapterInput = Pick<
   Chapter,
-  "title" | "description" | "sort_order" | "published" | "course_id" | "textbook_number" | "pdf_start" | "pdf_end"
+  | "title"
+  | "description"
+  | "sort_order"
+  | "published"
+  | "course_id"
+  | "textbook_number"
+  | "pdf_start"
+  | "pdf_end"
 >;
 export type KnowledgeInput = Pick<
   Knowledge,
@@ -268,15 +346,16 @@ export const teacherApi = {
       source_url?: string;
     },
   ) => save<Material>("/teacher/documents", body, id),
-  uploadPublic: (file: File, chapter_id: number | null) => {
+  uploadPublic: (
+    file: File,
+    chapter_id: number | null,
+    onProgress?: (percent: number) => void,
+  ) => {
     const data = new FormData();
     data.append("file", file);
     data.append("category", "public");
     if (chapter_id !== null) data.append("chapter_id", String(chapter_id));
-    return request<Material>("/materials/upload", {
-      method: "POST",
-      body: data,
-    });
+    return uploadFile<Material>("/materials/upload", data, onProgress);
   },
   questions: () => request<ManagedQuestion[]>("/teacher/questions"),
   saveQuestion: (body: Omit<ManagedQuestion, "id">, id?: number) =>
@@ -314,13 +393,10 @@ export const documentApi = {
     ),
   restore: (id: number) =>
     request<Material>(`/materials/${id}/restore`, { method: "POST" }),
-  replace: (id: number, file: File) => {
+  replace: (id: number, file: File, onProgress?: (percent: number) => void) => {
     const data = new FormData();
     data.append("file", file);
-    return request<Material>(`/materials/${id}/replace`, {
-      method: "POST",
-      body: data,
-    });
+    return uploadFile<Material>(`/materials/${id}/replace`, data, onProgress);
   },
   versions: (id: number) =>
     request<{ id: number; original_name: string; created_at: string }[]>(

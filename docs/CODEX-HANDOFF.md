@@ -1,5 +1,9 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+## 最新：大课件上传与文字分页
+
+PPT/PPTX公共上限500 MiB、个人50 MiB，PDF150/10和TXT10保持；新增XHR上传进度、PPTX受控文字分页与正确附件MIME。原文件、权限、版本、备份继续沿用，无新迁移，新增olefile依赖。操作和实测边界见 [PRESENTATION-MATERIALS.md](PRESENTATION-MATERIALS.md)。不要声称能在网页完整播放PPT动画或已配置阿里云上传上限。
+
 ## 最新：实验平台与 V5 迁移
 
 已新增 FCFS/SJF/RR 教学实验管理、教师分步试运行发布、学生运行/事件回放/本人观察历史、知识点多实验关联。详情见 [EXPERIMENT-PLATFORM.md](EXPERIMENT-PLATFORM.md)。首次启动后端自动备份并追加 V5；不删除旧数据。没有新增依赖。初始实验库为空，由教师审核并发布；不按旧 FCFS 单页操作指引指导用户。

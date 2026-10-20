@@ -28,7 +28,7 @@ class UploadLimitMiddleware:
             await self.app(scope, receive, send)
             return
         from .auth import require_user
-        from .files import PUBLIC_MAX_SIZE, MAX_SIZE
+        from .files import PUBLIC_PRESENTATION_MAX_SIZE, PERSONAL_PRESENTATION_MAX_SIZE
 
         request = Request(scope)
         try:
@@ -39,7 +39,9 @@ class UploadLimitMiddleware:
             )
             return
         maximum = (
-            PUBLIC_MAX_SIZE if user["role"] == "teacher" else MAX_SIZE
+            PUBLIC_PRESENTATION_MAX_SIZE
+            if user["role"] == "teacher"
+            else PERSONAL_PRESENTATION_MAX_SIZE
         ) + 1024 * 1024
         if scope["path"] == "/api/teacher/learning-assets":
             if user["role"] != "teacher":

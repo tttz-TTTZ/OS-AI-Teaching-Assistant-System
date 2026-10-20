@@ -74,6 +74,7 @@ def run() -> None:
                 "API_PROXY_TARGET": "http://127.0.0.1:8010",
                 "APP_TEST_BASE_URL": "http://127.0.0.1:5174",
                 "TEST_ACCOUNTS_FILE": str(account_file),
+                "TEST_PYTHON": sys.executable,
             }
         )
         if not env.get("BROWSER_EXECUTABLE") and Path("/usr/bin/chromium").exists():

@@ -26,3 +26,5 @@ typing_extensions==4.16.0
 uvicorn==0.34.2
 
 Pillow==12.3.0
+
+olefile==0.47
