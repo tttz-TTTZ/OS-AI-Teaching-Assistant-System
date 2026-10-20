@@ -1,5 +1,9 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+## 当前定位：教师提供资料/目录，学生自主学习与个人AI练习
+
+本轮用户明确取消教师备课职责。教师工作台/目录已调整；旧AI备课写接口410、历史只读，旧教材与记录保留兼容。学生主入口 `/student/knowledge` 为个人生成工作区，可多选六种学习方式；`/student/ai-practice` 为按薄弱点的个人自测，`/student/practice` 继续教师正式练习，二者数据和成绩隔离。支持带本人错题上下文继续学习、笔记收藏和历史。课件按页索引+中英文关键词检索的轻量RAG，没有向量库或OCR；400页PPTX可检索后半部分。AI动画采用现有计算模板或明确标识的概念分步图，不执行任意AI脚本。V8新增资料索引、个人任务和个人作答三表，备份后迁移，无新增依赖，DEEPSEEK_*复用并可配置PERSONAL_AI_DAILY_LIMIT。以 [STUDENT-AUTONOMOUS-LEARNING.md](STUDENT-AUTONOMOUS-LEARNING.md) 为准，历史备课文档不再作为产品方向。
+
 ## 最新：PPT来源与AI数字教案备课
 
 新增受限旧PPT当前版本文字解析，复用出题来源；教师从公共/私有资料或粘贴文字准备一个章内授课范围，DeepSeek建议不固定数量的小节和知识点教案。目录审核、整页正文审核、修改保存、版本校验、批量未发布入库、继续现有编辑器和发布流程；不覆盖旧章/节/正文。V7新增ai_lesson_jobs，迁移前成套备份，已有依赖不变。模型调用沿用DEEPSEEK_*。查看 [AI-LESSON-PREPARATION.md](AI-LESSON-PREPARATION.md)。当前真实DeepSeek及用户原始PPT兼容性仍需实测；文本提取不能冒充图片OCR或全保真播放。

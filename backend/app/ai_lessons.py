@@ -15,6 +15,13 @@ from .ai_questions import provider_settings, call_deepseek
 router = APIRouter(prefix="/api/teacher/ai-lessons")
 
 
+def retired_preparation(user=Depends(teacher)):
+    raise HTTPException(
+        410,
+        "职责已调整：教师维护目录和公共资料，备课生成已停用；学习内容由学生在自主学习工作区生成。历史备课任务保留只读。",
+    )
+
+
 class LessonBlock(BaseModel):
     model_config = ConfigDict(extra="forbid")
     kind: Literal[
@@ -144,7 +151,7 @@ def detail(ident: int, user=Depends(teacher)):
 
 
 @router.post("/generate")
-async def generate(body: GenerateLesson, user=Depends(teacher)):
+async def generate(body: GenerateLesson, user=Depends(retired_preparation)):
     _, _, model = provider_settings()
     with database() as db:
         chapter = visible_chapter(db, body.chapter_id, user)
@@ -256,7 +263,7 @@ def editable(db, ident, body, user):
 
 
 @router.put("/jobs/{ident}")
-def save(ident: int, body: ReviewLesson, user=Depends(teacher)):
+def save(ident: int, body: ReviewLesson, user=Depends(retired_preparation)):
     with database() as db:
         db.execute("BEGIN IMMEDIATE")
         editable(db, ident, body, user)
@@ -268,7 +275,7 @@ def save(ident: int, body: ReviewLesson, user=Depends(teacher)):
 
 
 @router.post("/jobs/{ident}/import")
-def import_plan(ident: int, body: ReviewLesson, user=Depends(teacher)):
+def import_plan(ident: int, body: ReviewLesson, user=Depends(retired_preparation)):
     if not body.reviewed:
         raise HTTPException(422, "请先核对目录、教案和资料引用")
     with database() as db:

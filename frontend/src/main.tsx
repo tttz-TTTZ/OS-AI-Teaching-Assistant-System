@@ -24,7 +24,7 @@ import Practice from "./pages/Practice";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import TeacherChapters, { SectionForm } from "./pages/teacher/Chapters";
-import AILessons from "./pages/teacher/AILessons";
+import PersonalLearning from "./pages/PersonalLearning";
 import CourseOutline, { PlanKnowledge } from "./pages/teacher/CourseOutline";
 import LearningFeedback from "./pages/teacher/LearningFeedback";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
@@ -45,12 +45,19 @@ const student = [
 const teacher = [
   ["dashboard", "教师工作台"],
   ["chapters", "课程目录"],
-  ["knowledge", "知识点内容"],
   ["experiments", "算法实验管理"],
   ["materials", "公共资料"],
   ["questions", "练习题管理"],
   ["accounts", "账号管理"],
 ];
+function PersonalKnowledge() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).has("point") ? (
+    <Knowledge />
+  ) : (
+    <PersonalLearning />
+  );
+}
 function Guard({ role }: { role: "student" | "teacher" }) {
   const { user, loading } = useAuth();
   if (loading) return <p className="empty">正在恢复登录状态…</p>;
@@ -147,7 +154,9 @@ function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="materials" element={<Materials />} />
-        <Route path="knowledge" element={<Knowledge />} />
+        <Route path="knowledge" element={<PersonalKnowledge />} />
+        <Route path="course-reading" element={<Knowledge />} />
+        <Route path="ai-practice" element={<PersonalLearning practice />} />
         <Route path="experiments" element={<Lab />} />
         <Route path="experiments/:experimentId" element={<Lab />} />
         <Route path="experiment-runs/:runId" element={<ExperimentRunPage />} />
@@ -165,7 +174,10 @@ function App() {
         <Route path="sections/:sectionId/edit" element={<SectionForm />} />
         <Route path="learning-feedback" element={<LearningFeedback />} />
         <Route path="knowledge" element={<CourseOutline library />} />
-        <Route path="ai-lessons" element={<AILessons />} />
+        <Route
+          path="ai-lessons"
+          element={<Navigate to="/teacher/chapters" replace />}
+        />
         <Route path="knowledge/new" element={<PlanKnowledge />} />
         <Route path="knowledge/:pointId/:step" element={<TeacherKnowledge />} />
         <Route path="experiments" element={<TeacherExperiments />} />

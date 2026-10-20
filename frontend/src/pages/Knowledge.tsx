@@ -692,7 +692,7 @@ export default function Knowledge() {
                   <section className="study-card">
                     <h2>关联学习</h2>
                     {detail.related?.map((p) => {
-                      const to = `/student/knowledge?chapter=${p.chapter_id}&point=${p.id}`;
+                      const to = `/student/course-reading?chapter=${p.chapter_id}&point=${p.id}`;
                       return (
                         <p key={p.id}>
                           <Link to={to} onClick={(e) => void follow(e, to)}>

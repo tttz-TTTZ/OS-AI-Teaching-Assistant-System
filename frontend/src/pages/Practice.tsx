@@ -118,6 +118,7 @@ export default function Practice() {
   }
   return (
     <Page title="章节练习">
+      <nav className="authoring-toolbar" aria-label="练习来源"><span className="button">教师正式练习</span><Link className="button secondary" to="/student/ai-practice">我的 AI 练习（按薄弱点生成）</Link></nav>
       <section className="panel">
         {point ? (
           <>

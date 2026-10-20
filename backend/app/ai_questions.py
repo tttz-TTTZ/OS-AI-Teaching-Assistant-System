@@ -52,7 +52,7 @@ def provider_settings():
     if not key:
         raise HTTPException(
             503,
-            "尚未配置DeepSeek出题服务，请在后端.env设置DEEPSEEK_API_KEY并重启；不要在网页填写密钥",
+            "尚未配置DeepSeek服务，请在后端.env设置DEEPSEEK_API_KEY并重启；不要在网页填写密钥",
         )
     if urlparse(base).scheme != "https" or not urlparse(base).netloc:
         raise HTTPException(503, "DEEPSEEK_BASE_URL必须为HTTPS地址")

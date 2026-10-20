@@ -93,132 +93,6 @@ def mock_generation(monkeypatch, calls):
     monkeypatch.setattr(ai_lessons, "call_deepseek", fake)
 
 
-def test_lesson_workflow_privacy_version_and_no_publish(clients, monkeypatch, tmp_path):
-    t, s, o = clients
-    body, preview = prepare(t)
-    calls = []
-    mock_generation(monkeypatch, calls)
-    assert s.post("/api/teacher/ai-lessons/generate", json=body).status_code == 403
-    assert o.post("/api/teacher/ai-lessons/generate", json=body).status_code == 404
-    r = t.post("/api/teacher/ai-lessons/generate", json=body)
-    assert r.status_code == 200, r.text
-    j = r.json()
-    assert [len(s["points"]) for s in j["plan"]["sections"]] == [1, 2]
-    assert (
-        "system_prompt" in calls[0]
-        and calls[0]["payload"]["sources"] == preview["chunks"]
-    )
-    assert t.post("/api/teacher/ai-lessons/generate", json=body).json()["id"] == j["id"]
-    assert len(calls) == 1
-    assert o.get(f'/api/teacher/ai-lessons/jobs/{j["id"]}').status_code == 404
-    assert s.get(f'/api/teacher/ai-lessons/jobs/{j["id"]}').status_code == 403
-    j["plan"]["sections"][0]["points"][0]["title"] = "人工修改知识点"
-    review = {"plan": j["plan"], "expected_version": 0}
-    saved = t.put(f'/api/teacher/ai-lessons/jobs/{j["id"]}', json=review)
-    assert saved.status_code == 200, saved.text
-    assert saved.json()["version"] == 1
-    assert t.get(f'/api/teacher/ai-lessons/jobs/{j["id"]}').json()["plan"] == j["plan"]
-    assert (
-        t.put(f'/api/teacher/ai-lessons/jobs/{j["id"]}', json=review).status_code == 409
-    )
-    review["expected_version"] = 1
-    assert (
-        t.post(
-            f'/api/teacher/ai-lessons/jobs/{j["id"]}/import', json=review
-        ).status_code
-        == 422
-    )
-    review["reviewed"] = True
-    imported = t.post(f'/api/teacher/ai-lessons/jobs/{j["id"]}/import', json=review)
-    assert imported.status_code == 200, imported.text
-    assert len(imported.json()["imported"]) == 3
-    pid = imported.json()["imported"][0]["id"]
-    assert (
-        t.post(
-            f'/api/teacher/ai-lessons/jobs/{j["id"]}/import', json=review
-        ).status_code
-        == 409
-    )
-    detail = t.get(f"/api/teacher/learning-content/{pid}").json()
-    assert detail["title"] == "人工修改知识点" and not detail["published"]
-    assert TEXT in [b["text"] for b in detail["blocks"]]
-    assert "物理页" in detail["source_note"]
-    assert s.get(f"/api/learning-content/{pid}").status_code == 404
-    # 发布小节再发布知识点，学生才可读；复用正式发布权限和修订校验。
-    sid = detail["section_id"]
-    section = next(x for x in t.get("/api/sections").json() if x["id"] == sid)
-    assert (
-        t.put(
-            f"/api/teacher/sections/{sid}", json={**section, "published": True}
-        ).status_code
-        == 200
-    )
-    assert (
-        t.post(
-            f"/api/teacher/learning-content/{pid}/publish",
-            json={"expected_version": detail["edit_version"]},
-        ).status_code
-        == 200
-    )
-    assert s.get(f"/api/learning-content/{pid}").status_code == 200
-    backup_data(main.DB_PATH, tmp_path / "backup")
-    restored = restore_data(tmp_path / "backup", tmp_path / "restored")
-    with sqlite3.connect(restored) as db:
-        assert (
-            db.execute(
-                "SELECT status FROM ai_lesson_jobs WHERE id=?", (j["id"],)
-            ).fetchone()[0]
-            == "imported"
-        )
-
-
-def test_forged_sources_failure_and_fingerprint(clients, monkeypatch):
-    t, _, _ = clients
-    body, preview = prepare(t)
-    body["fingerprint"] = "0" * 64
-    assert t.post("/api/teacher/ai-lessons/generate", json=body).status_code == 409
-    body["fingerprint"] = preview["fingerprint"]
-
-    async def forged(*args, **kwargs):
-        plan = generated(preview)
-        plan["sections"][0]["points"][0][
-            "source_quote"
-        ] = "这是一段不存在于课件中的伪造出处"
-        return plan
-
-    monkeypatch.setattr(ai_lessons, "call_deepseek", forged)
-    assert t.post("/api/teacher/ai-lessons/generate", json=body).status_code == 422
-    assert t.get("/api/teacher/ai-lessons/jobs").json()[0]["status"] == "failed"
-
-
-def test_append_existing_section_duplicate_and_atomic_rollback(clients, monkeypatch):
-    t, _, _ = clients
-    body, _ = prepare(t)
-    mock_generation(monkeypatch, [])
-    j = t.post("/api/teacher/ai-lessons/generate", json=body).json()
-    sid = t.post(
-        "/api/teacher/sections",
-        json={"chapter_id": 1, "title": "教师已有小节", "published": True},
-    ).json()["id"]
-    j["plan"]["sections"][0]["section_id"] = sid
-    bad = copy.deepcopy(j["plan"])
-    bad["sections"][1]["title"] = "教师已有小节"
-    before = len(t.get("/api/teacher/learning-content").json())
-    url = f'/api/teacher/ai-lessons/jobs/{j["id"]}/import'
-    assert (
-        t.post(
-            url, json={"plan": bad, "expected_version": 0, "reviewed": True}
-        ).status_code
-        == 409
-    )
-    assert len(t.get("/api/teacher/learning-content").json()) == before
-    r = t.post(url, json={"plan": j["plan"], "expected_version": 0, "reviewed": True})
-    assert r.status_code == 200, r.text
-    assert r.json()["imported"][0]["section_id"] == sid
-    section = next(x for x in t.get("/api/sections").json() if x["id"] == sid)
-    assert section["title"] == "教师已有小节" and section["published"]
-
-
 def rec(kind, payload=b"", flags=0):
     return struct.pack("<HHI", flags, kind, len(payload)) + payload
 
@@ -304,65 +178,36 @@ def test_v7_backup_and_repeat_migration_preserves_data(clients):
     assert t.get("/api/teacher/learning-content").json() == before
 
 
-def test_lesson_wrong_section_and_version_no_changes(clients, monkeypatch):
-    t, _, _ = clients
-    body, _ = prepare(t)
-    mock_generation(monkeypatch, [])
-    j = t.post("/api/teacher/ai-lessons/generate", json=body).json()
-    sid = t.post(
-        "/api/teacher/sections", json={"chapter_id": 2, "title": "跨章小节"}
-    ).json()["id"]
-    j["plan"]["sections"][0]["section_id"] = sid
-    assert (
-        t.put(
-            f'/api/teacher/ai-lessons/jobs/{j["id"]}',
-            json={"plan": j["plan"], "expected_version": 0},
-        ).status_code
-        == 422
-    )
-    assert t.get(f'/api/teacher/ai-lessons/jobs/{j["id"]}').json()["version"] == 0
-
-
-def test_existing_section_auto_match_order_limit_and_long_note(clients, monkeypatch):
-    t, _, _ = clients
-    body, _ = prepare(t)
-    sid = t.post(
-        "/api/teacher/sections", json={"chapter_id": 1, "title": "系统概观（候选）"}
-    ).json()["id"]
-    existing = t.post(
-        "/api/teacher/learning-content",
-        json={
-            "chapter_id": 1,
-            "section_id": sid,
-            "title": "已有知识点",
-            "sort_order": 100000,
-        },
-    ).json()
-    mock_generation(monkeypatch, [])
-    j = t.post("/api/teacher/ai-lessons/generate", json=body).json()
-    assert j["plan"]["sections"][0]["section_id"] == sid
-    j["plan"]["sections"][0]["points"][0]["teaching_note"] = "待教师核对" * 600
-    url = f'/api/teacher/ai-lessons/jobs/{j["id"]}/import'
-    review = {"plan": j["plan"], "expected_version": 0, "reviewed": True}
-    assert t.post(url, json=review).status_code == 422
-    assert t.get(f'/api/teacher/ai-lessons/jobs/{j["id"]}').json()["status"] == "ready"
-    updated = {
-        **existing,
-        "expected_version": existing["edit_version"],
-        "sort_order": 10,
+def test_teacher_preparation_retired_without_deleting_history(clients):
+    t, s, other = clients
+    body, preview = prepare(t)
+    assert t.post("/api/teacher/ai-lessons/generate", json=body).status_code == 410
+    assert s.post("/api/teacher/ai-lessons/generate", json=body).status_code == 403
+    with main.database() as db:
+        user = db.execute("SELECT id FROM users WHERE username='teacher'").fetchone()[0]
+        ident = db.execute(
+            "INSERT INTO ai_lesson_jobs(user_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,?,?,?,?,?,'ready')",
+            (
+                user,
+                "retired-history-000001",
+                "hash",
+                json.dumps(body),
+                json.dumps(preview),
+                "old-test-model",
+            ),
+        ).lastrowid
+    assert t.get(f"/api/teacher/ai-lessons/jobs/{ident}").status_code == 200
+    assert other.get(f"/api/teacher/ai-lessons/jobs/{ident}").status_code == 404
+    review = {
+        "plan": {"chapter_id": 1, "sections": generated(preview)["sections"]},
+        "expected_version": 0,
+        "reviewed": True,
     }
-    from app.digital import Content
-
-    updated = {k: v for k, v in updated.items() if k in Content.model_fields}
     assert (
-        t.put(
-            f'/api/teacher/learning-content/{existing["id"]}', json=updated
-        ).status_code
-        == 200
+        t.put(f"/api/teacher/ai-lessons/jobs/{ident}", json=review).status_code == 410
     )
-    imported = t.post(url, json=review)
-    assert imported.status_code == 200, imported.text
-    pid = imported.json()["imported"][0]["id"]
-    point = t.get(f"/api/teacher/learning-content/{pid}").json()
-    assert point["sort_order"] == 20
-    assert len(point["source_note"]) <= 3000 and "完整核对提示" in point["source_note"]
+    assert (
+        t.post(f"/api/teacher/ai-lessons/jobs/{ident}/import", json=review).status_code
+        == 410
+    )
+    assert t.get(f"/api/teacher/ai-lessons/jobs/{ident}").json()["status"] == "ready"

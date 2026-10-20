@@ -97,6 +97,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByLabel("发布小节", { exact: true }).check();
     await t.getByRole("button", { name: "保存小节", exact: true }).click();
     await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.goto(base + `/teacher/knowledge?chapter=${cid}`);
     await t.getByRole("link", { name: "＋ 添加本节标题", exact: true }).click();
     await t
       .getByLabel("知识点标题", { exact: true })
@@ -105,6 +106,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .getByRole("button", { name: "保存标题，建立目录", exact: true })
       .click();
     await t.waitForURL("**/teacher/chapters?chapter=*");
+    await t.goto(base + `/teacher/knowledge?chapter=${cid}`);
     await t.getByText("预先规划的标题一", { exact: true }).waitFor();
     await t.getByText("预先规划的标题二", { exact: true }).waitFor();
     if (await t.locator("textarea:visible").count())
@@ -116,7 +118,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
           "teacher-flow-outline.png",
         ),
       });
-    await t.getByRole("link", { name: "知识点内容", exact: true }).click();
+    await t.goto(base + "/teacher/knowledge");
     await t
       .getByRole("heading", { name: "选择知识点，开始编写", exact: true })
       .waitFor();
@@ -280,7 +282,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         ),
       });
     }
-    await s.goto(base + `/student/knowledge?chapter=${cid}`);
+    await s.goto(base + `/student/course-reading?chapter=${cid}`);
     await s
       .getByRole("heading", { name: "选择今天要学的知识点", exact: true })
       .waitFor();
@@ -411,7 +413,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .filter({ hasText: "验收模拟保存失败" })
       .waitFor();
     if (
-      !s.url().includes("/student/knowledge") ||
+      !s.url().includes("/student/course-reading") ||
       (await s.getByLabel("私人学习笔记", { exact: true }).inputValue()) !==
         "断网后仍然保留的私人笔记"
     )
@@ -516,7 +518,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       apiCall,
       cid,
     });
-    await require("./ai-lesson-browser.cjs").verifyAILessons({ t, s, base, teacherName: accounts[0].username, cid, apiCall });
+    await require("./personal-browser.cjs").verifyPersonal({ t, s, b, base, studentName: accounts[1].username, cid, apiCall });
     await s.getByRole("link", { name: "章节练习", exact: true }).click();
     await s.getByLabel("选择章节").selectOption("1");
     await s.getByLabel("A. 管理系统资源", { exact: true }).check();
@@ -568,7 +570,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await t.getByLabel(/^发布给学生/).check();
     await t.getByRole("button", { name: "保存题目" }).click();
     await t.getByRole("status").filter({ hasText: "练习题已保存" }).waitFor();
-    await s.goto(base + `/student/knowledge?chapter=${cid}&point=${kid}`);
+    await s.goto(base + `/student/course-reading?chapter=${cid}&point=${kid}`);
     const returnModule = await s
       .getByLabel("本知识点学习导航", { exact: true })
       .inputValue();
@@ -618,7 +620,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     await b.setViewportSize({ width: 640, height: 800 });
     await b.goto(base + "/student/dashboard");
     await b.getByRole("heading", { name: "学习首页", exact: true }).waitFor();
-    await b.goto(base + `/student/knowledge?point=${kid}&block=explanation`);
+    await b.goto(base + `/student/course-reading?point=${kid}&block=explanation`);
     await b.getByRole("heading", { name: "测试概念", exact: true }).waitFor();
     if (new URL(b.url()).searchParams.get("chapter") !== String(cid))
       throw Error("仅有知识点ID的链接应补齐章节");
@@ -641,7 +643,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       .click();
     if (await b.getByLabel("私人学习笔记", { exact: true }).inputValue())
       throw Error("其他学生不能读到私人笔记");
-    await b.goto(base + `/student/knowledge?chapter=${cid}&point=999999`);
+    await b.goto(base + `/student/course-reading?chapter=${cid}&point=999999`);
     await b
       .getByRole("heading", { name: "暂时无法打开这个知识点", exact: true })
       .waitFor();

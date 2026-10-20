@@ -47,6 +47,7 @@ export default function Home() {
   }, []);
   return (
     <Page title="学习首页">
+      <section className="authoring-card"><h2>按自己的需求学习</h2><p>教师提供资料和目录，你选择讲解、导图、代码、动画或复习，也可描述薄弱点生成个人练习。</p><div className="row-actions"><Link className="button" to="/student/knowledge">开始自主学习</Link><Link className="button secondary" to="/student/ai-practice">生成我的薄弱点练习</Link></div></section>
       <section className="coursebrief">
         <div>
           <span className="badge">

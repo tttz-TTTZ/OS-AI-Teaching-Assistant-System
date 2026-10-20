@@ -154,4 +154,12 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 
 ## AI课件备课（V7）
 
+本轮已停用写接口：POST generate、PUT jobs/{id}、POST jobs/{id}/import对教师返回410；历史GET仍按本人授权保留。以下描述仅为历史协议，现行学生协议见V8。
+
 教师 `/api/teacher/ai-lessons`：POST `/generate`、GET `/jobs`、GET/PUT `/jobs/{id}`、POST `/jobs/{id}/import`。复用 `/api/teacher/ai-questions/sources/preview`，支持可解析旧PPT/PPTX/文字PDF/TXT。任务本人可读，写操作需CSRF，学生403、他人任务404；保存和入库需expected_version，入库需reviewed=true，只追加草稿。请求体及Windows验收见 [AI-LESSON-PREPARATION.md](AI-LESSON-PREPARATION.md)。
+
+## 学生自主学习与个人AI自测（V8）
+
+`/api/student/personal`：GET status/jobs/jobs/{id}/jobs/{id}/attempts；POST sources/preview、generate、jobs/{id}/simulate、jobs/{id}/submit；PUT jobs/{id}/note。所有接口只允许学生，写请求需CSRF；教师403，其他学生记录404。来源每次授权后检索，签名不匹配409。生成带chapter_id、可选section_id、sources、topic、weakness、level、kind、modes、question_kinds、count、parent_id、fingerprint、request_key。个人笔记需expected_version；个人自测答案提交幂等，题目答案在提交前隐藏，个人结果不写入教师study_attempts。
+
+V8新增document_ai_indexes、personal_ai_jobs、personal_ai_attempts，备份后追加迁移。完整字段、限制、职责变更与Windows步骤见 [STUDENT-AUTONOMOUS-LEARNING.md](STUDENT-AUTONOMOUS-LEARNING.md)。

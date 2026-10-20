@@ -76,6 +76,68 @@ export default function CourseOutline({
         </div>
       ));
   }
+  if (!library)
+    return (
+      <AuthoringPage
+        title="课程章节与资料范围"
+        description="职责调整：教师不再备课生成教案，只把控章节目录、提供公共资料并维护正式练习；学生自主选择学习方式生成个人内容。"
+      >
+        <Notice error={error} />
+        <div className="authoring-toolbar">
+          <Link className="button" to="/teacher/chapters/new">
+            ＋ 新建章节
+          </Link>
+          <Link className="button secondary" to="/teacher/materials">
+            上传 / 发布公共资料
+          </Link>
+          <Link to="/teacher/questions">维护正式练习</Link>
+        </div>
+        {loading ? (
+          <p>正在读取课程目录…</p>
+        ) : (
+          chapters
+            .filter((c) => !chapterId || c.id === chapterId)
+            .map((c) => (
+              <section className="authoring-card outline-chapter" key={c.id}>
+                <h2>{c.title}</h2>
+                <p>
+                  {c.published ? "已发布" : "草稿"} ·
+                  小节数量自由，不要求教师填写知识点正文
+                </p>
+                <div className="row-actions">
+                  <Link to={`/teacher/chapters/${c.id}/edit`}>编辑章节</Link>
+                  <Link to={`/teacher/sections/new?chapter=${c.id}`}>
+                    ＋ 添加小节
+                  </Link>
+                </div>
+                {sections
+                  .filter((s) => s.chapter_id === c.id)
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map((s) => (
+                    <div className="outline-point" key={s.id}>
+                      <span>
+                        {s.code} {s.title} · {s.published ? "已发布" : "草稿"}
+                      </span>
+                      <Link to={`/teacher/sections/${s.id}/edit`}>
+                        修改小节
+                      </Link>
+                    </div>
+                  ))}
+              </section>
+            ))
+        )}
+        {chapterId > 0 && <Link to="/teacher/chapters">查看全部章节</Link>}
+        <details className="authoring-card">
+          <summary>历史内容兼容说明</summary>
+          <p>已有知识点和学生学习记录保留，不再作为必须由教师备课的流程。</p>
+          <Link
+            to={`/teacher/knowledge${chapterId ? "?chapter=" + chapterId : ""}`}
+          >
+            查看历史内容维护
+          </Link>
+        </details>
+      </AuthoringPage>
+    );
   return (
     <AuthoringPage
       title={library ? "选择知识点，开始编写" : "先把课程目录规划好"}
@@ -87,7 +149,9 @@ export default function CourseOutline({
     >
       <Notice error={error} />
       <div className="authoring-toolbar">
-        <Link className="button" to="/teacher/ai-lessons">从课件智能准备目录与教案</Link>
+        <p>
+          历史内容维护（可选）：旧内容保留；本轮主流程由学生自主生成，教师不再承担备课。
+        </p>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
             ＋ 新建章节

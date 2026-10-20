@@ -334,3 +334,7 @@ app.include_router(ai_questions_router)
 from .ai_lessons import router as ai_lessons_router
 
 app.include_router(ai_lessons_router)
+
+from .personal_learning import router as personal_learning_router
+
+app.include_router(personal_learning_router)

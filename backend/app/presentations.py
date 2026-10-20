@@ -75,10 +75,19 @@ def slide_names(book):
 
 def slide_text(book, name, number):
     root = xml_part(book, name)
-    paragraphs = [
-        "".join(t.text or "" for t in p.findall(".//a:t", NS)).strip()
-        for p in root.findall(".//a:p", NS)
-    ]
+
+    def paragraph_text(paragraph):
+        parts = []
+        for node in paragraph.iter():
+            if node.tag == "{" + NS["a"] + "}t":
+                parts.append(node.text or "")
+            elif node.tag == "{" + NS["a"] + "}br":
+                parts.append("\n")
+            elif node.tag == "{" + NS["a"] + "}tab":
+                parts.append("\t")
+        return "".join(parts).rstrip()
+
+    paragraphs = [paragraph_text(p) for p in root.findall(".//a:p", NS)]
     text = "\n".join(p for p in paragraphs if p)
     return {
         "number": number,
