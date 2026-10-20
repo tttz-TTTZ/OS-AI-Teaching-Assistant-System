@@ -28,3 +28,5 @@ uvicorn==0.34.2
 Pillow==12.3.0
 
 olefile==0.47
+
+pypdf==6.21.1

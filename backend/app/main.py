@@ -326,3 +326,7 @@ app.include_router(study_router)
 from .experiments import router as experiments_router
 
 app.include_router(experiments_router)
+
+from .ai_questions import router as ai_questions_router
+
+app.include_router(ai_questions_router)

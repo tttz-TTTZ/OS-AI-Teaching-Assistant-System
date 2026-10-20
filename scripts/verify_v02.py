@@ -70,6 +70,7 @@ def run() -> None:
             {
                 "LLM_MODE": "openai",
                 "LLM_API_KEY": "",
+                "DEEPSEEK_API_KEY": "",
                 "APP_ORIGINS": "http://127.0.0.1:5174",
                 "API_PROXY_TARGET": "http://127.0.0.1:8010",
                 "APP_TEST_BASE_URL": "http://127.0.0.1:5174",

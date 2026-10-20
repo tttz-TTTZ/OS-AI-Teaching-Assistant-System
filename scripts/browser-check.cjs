@@ -508,6 +508,14 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       suffix,
       apiCall,
     });
+    await require("./ai-question-browser.cjs").verifyAIQuestions({
+      t,
+      s,
+      base,
+      teacherName: accounts[0].username,
+      apiCall,
+      cid,
+    });
     await s.getByRole("link", { name: "章节练习", exact: true }).click();
     await s.getByLabel("选择章节").selectOption("1");
     await s.getByLabel("A. 管理系统资源", { exact: true }).check();

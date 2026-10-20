@@ -28,6 +28,7 @@ import CourseOutline, { PlanKnowledge } from "./pages/teacher/CourseOutline";
 import LearningFeedback from "./pages/teacher/LearningFeedback";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
 import TeacherQuestions from "./pages/teacher/Questions";
+import AIQuestions from "./pages/teacher/AIQuestions";
 import TeacherMaterials from "./pages/teacher/Materials";
 import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
@@ -172,6 +173,7 @@ function App() {
           element={<ExperimentEditor />}
         />
         <Route path="questions" element={<TeacherQuestions />} />
+        <Route path="ai-questions" element={<AIQuestions />} />
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="profile" element={<Profile />} />

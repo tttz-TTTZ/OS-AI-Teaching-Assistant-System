@@ -1,9 +1,11 @@
 import { FormEvent, useEffect, useState, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Chapter, teacherApi } from "../../api";
 import { Content, digitalApi } from "../../digital";
 import { StudyQuestion, studyApi, typeNames } from "../../study";
-import { Page, Notice } from "../../components";
+import { Notice } from "../../components";
+import { AuthoringPage } from "./Authoring";
+import { AIDraft, aiQuestionApi } from "../../aiQuestions";
 const empty = (): StudyQuestion => ({
   chapter_id: 0,
   prompt: "",
@@ -20,7 +22,36 @@ export default function Questions() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [points, setPoints] = useState<Content[]>([]);
   const [form, setForm] = useState(empty);
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const [draft, setDraft] = useState<AIDraft>();
+  const [reviewed, setReviewed] = useState(false);
+  const [lastAIJob, setLastAIJob] = useState<number>();
+  const aiId = Number(params.get("aiDraft"));
+  useEffect(() => {
+    let active = true;
+    setDraft(undefined);
+    setReviewed(false);
+    if (aiId)
+      aiQuestionApi
+        .draft(aiId)
+        .then((value) => {
+          if (!active) return;
+          if (value.status !== "pending") {
+            setError("该候选题已处理，请返回AI任务记录查看。");
+            return;
+          }
+          setDraft(value);
+          setLastAIJob(value.job_id);
+          setForm({ ...value.question, published: false });
+          setMessage("已自动填写候选题，请核对题干、答案、解析与资料依据。");
+        })
+        .catch((e) => {
+          if (active) setError(e.message);
+        });
+    return () => {
+      active = false;
+    };
+  }, [aiId]);
   const initialized = useRef(false);
   useEffect(() => {
     const selected = points.find(
@@ -73,10 +104,26 @@ export default function Questions() {
     setError("");
     setMessage("");
     try {
-      await studyApi.save(form);
-      await refresh();
-      setForm(empty());
-      setMessage("练习题已保存");
+      if (draft) {
+        const saved = await aiQuestionApi.import(
+          draft,
+          { ...form, published: false },
+          reviewed,
+        );
+        await refresh();
+        setForm(saved);
+        setParams({});
+        setDraft(undefined);
+        setReviewed(false);
+        setMessage(
+          "已审核并存入题库草稿；学生尚不可见。需要发布时，请勾选发布给学生，再保存题目。",
+        );
+      } else {
+        await studyApi.save(form);
+        await refresh();
+        setForm(empty());
+        setMessage("练习题已保存");
+      }
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -93,17 +140,56 @@ export default function Questions() {
     </select>
   );
   return (
-    <Page title="练习题管理">
-      <p>
-        同一题库支持知识点关联。多选完全匹配计分；简答提供参考答案，暂不自动评分。
-      </p>
+    <AuthoringPage title={aiId ? "核对并修改这道题" : "练习题管理"}>
+      {!aiId && (
+        <>
+          <p>
+            同一题库支持知识点关联。多选完全匹配计分；简答提供参考答案，暂不自动评分。
+          </p>
+          <p>
+            <Link className="button" to="/teacher/ai-questions">
+              使用DeepSeek辅助出题 →
+            </Link>
+          </p>
+        </>
+      )}
+      {draft && (
+        <section className="panel ai-review-evidence">
+          <h2>AI候选题审核 · #{draft.id}</h2>
+          <p>
+            模型 {draft.model} · 来源：{draft.source?.title} · 第
+            {draft.source?.page}页
+          </p>
+          <blockquote>{draft.source_quote}</blockquote>
+          <details>
+            <summary>查看当时发送的原文摘录</summary>
+            <pre className="ai-source-text">{draft.source?.text}</pre>
+          </details>
+          <p>
+            引用存在不代表答案一定正确。请逐项检查；审核后只保存为题库草稿。
+          </p>
+          <Link to={`/teacher/ai-questions?step=review&job=${draft.job_id}`}>
+            返回本批候选题 →
+          </Link>
+        </section>
+      )}
       <Notice error={error} />
       {message && (
         <p role="status" className="feedback">
           {message}
         </p>
       )}
-      <div className="management">
+      {lastAIJob && !draft && (
+        <p>
+          <Link
+            className="button secondary"
+            to={`/teacher/ai-questions?step=review&job=${lastAIJob}`}
+          >
+            继续审核本批候选题 →
+          </Link>
+        </p>
+      )}
+      <div className={"management" + (aiId ? " ai-review" : "")}>
         <section className="panel">
           <h2>课程题库</h2>
           {questions.map((q) => (
@@ -122,9 +208,17 @@ export default function Questions() {
           ))}
         </section>
         <section className="panel editor-area">
-          <h2>{form.id ? "编辑题目" : "新增题目"}</h2>
+          <h2>
+            {aiId
+              ? draft
+                ? "修改并审核候选题"
+                : "正在读取AI候选题…"
+              : form.id
+                ? "编辑题目"
+                : "新增题目"}
+          </h2>
           <form onSubmit={save}>
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy || (!!aiId && !draft)}>
               <label>
                 所属章节
                 <select
@@ -337,22 +431,65 @@ export default function Questions() {
                     ))}
                 </select>
               </label>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={form.published}
-                  onChange={(e) =>
-                    setForm({ ...form, published: e.target.checked })
-                  }
-                />
-                发布给学生
-              </label>
+              {!draft && (
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={form.published}
+                    onChange={(e) =>
+                      setForm({ ...form, published: e.target.checked })
+                    }
+                  />
+                  发布给学生
+                </label>
+              )}
+              {draft && (
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={reviewed}
+                    onChange={(e) => setReviewed(e.target.checked)}
+                  />
+                  我已核对题干、选项、答案、解析和资料依据
+                </label>
+              )}
               <div className="toolbar">
-                <button disabled={busy}>保存题目</button>
+                <button disabled={busy || (!!draft && !reviewed)}>
+                  {draft ? "审核通过，存为题库草稿" : "保存题目"}
+                </button>
+                {draft && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      setError("");
+                      try {
+                        const result = await aiQuestionApi.save(draft, {
+                          ...form,
+                          published: false,
+                        });
+                        setDraft({ ...draft, version: result.version });
+                        setMessage("候选修改已保存，仍未加入题库");
+                      } catch (e) {
+                        setError((e as Error).message);
+                      } finally {
+                        setBusy(false);
+                      }
+                    }}
+                  >
+                    保存候选修改
+                  </button>
+                )}
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() => setForm(empty())}
+                  onClick={() => {
+                    setForm(empty());
+                    setDraft(undefined);
+                    setParams({});
+                  }}
                 >
                   新建 / 取消编辑
                 </button>
@@ -361,6 +498,6 @@ export default function Questions() {
           </form>
         </section>
       </div>
-    </Page>
+    </AuthoringPage>
   );
 }

@@ -144,3 +144,10 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 资料 upload/replace 现在接受 .pdf/.txt/.ppt/.pptx。公共PPT/PPTX最大500 MiB，个人50 MiB；PDF原150/10 MiB、TXT10 MiB保持。原文件下载对PPT/PPTX使用附件响应与对应Office MIME。
 
 `GET /api/materials/{id}/slides?offset=0&limit=10`：仅PPTX，返回 `{total,offset,slides:[{number,title,text,truncated}]}`。limit范围1–20；文字页不含原排版/图片/动画。与资料详情同样授权：草稿/撤回/他人个人文件404，旧PPT文字预览415。`/api/config` 追加 public_presentation_upload_limit_bytes、personal_presentation_upload_limit_bytes。完整边界见 PRESENTATION-MATERIALS.md。
+
+
+## V6 DeepSeek辅助出题
+
+新增教师专用 `/api/teacher/ai-questions`：GET status/jobs/jobs/{id}/drafts/{id}；POST sources/preview、generate、drafts/{id}/import、drafts/{id}/reject；PUT drafts/{id}。生成请求带来源范围、预览fingerprint、章节/知识点、题型、数量1–10、难度、补充要求和request_key。候选修改/审核带expected_version，导入需reviewed=true且question.published=false。所有候选/任务只给创建教师，学生403、其他教师404；来源沿用资料授权；409用于指纹/版本/并发任务冲突。
+
+新增ai_question_jobs、ai_question_drafts与V6标记，旧题库不变。完整字段、DeepSeek配置、失败状态与测试边界见 AI-QUESTION-GENERATION.md。
