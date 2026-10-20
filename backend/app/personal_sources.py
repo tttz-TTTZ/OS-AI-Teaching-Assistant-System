@@ -29,6 +29,7 @@ class Retrieval(BaseModel):
     sources: list[PersonalSource] = Field(min_length=1, max_length=5)
     topic: str = Field(min_length=1, max_length=1000)
     weakness: str = Field(default="", max_length=2000)
+    source_overview: bool = False
 
 
 def index_document(document, user):
@@ -160,7 +161,7 @@ def retrieve(body: Retrieval, user):
                 "部分长页仅索引前4000字，请核对代码是否完整；必要时缩小或补充文字资料"
             )
     query = terms(body.topic + " " + body.weakness)
-    if not query or not pool:
+    if (not query and not body.source_overview) or not pool:
         raise HTTPException(422, "请输入具体学习主题，并选择有文字的资料范围")
     counts = [terms(c["text"]) for c in pool]
     frequency = {term: sum(term in c for c in counts) for term in query}
@@ -173,7 +174,21 @@ def retrieve(body: Retrieval, user):
         for c in counts
     ]
     best = sorted(range(len(pool)), key=lambda i: (-scores[i], i))[:8]
-    if not any(scores):
+    if body.source_overview:
+        # Round-robin across documents: one large file cannot consume every excerpt.
+        groups = [
+            [i for i, c in enumerate(pool) if c["document_id"] == selected.document_id]
+            for selected in body.sources
+        ]
+        best = []
+        while any(groups) and len(best) < 8:
+            for group in groups:
+                if group and len(best) < 8:
+                    best.append(group.pop(0))
+        warnings.append(
+            "资料概览：本次从已选页码范围依次选取最多8个文字片段，不代表已阅读全部课件；长资料请缩小页码范围分批学习。"
+        )
+    elif not any(scores):
         raise HTTPException(
             422,
             "所选资料没有检索到主题关键词，请改用课件中的术语、调整页码范围或补充资料；未调用AI盲目生成",
@@ -190,7 +205,7 @@ def retrieve(body: Retrieval, user):
         raise HTTPException(422, "相关资料文字不足，请补充学习资料")
     fingerprint = hashlib.sha256(
         json.dumps(
-            [signatures, body.topic, body.weakness, chunks],
+            [signatures, body.topic, body.weakness, body.source_overview, chunks],
             sort_keys=True,
             ensure_ascii=False,
         ).encode()

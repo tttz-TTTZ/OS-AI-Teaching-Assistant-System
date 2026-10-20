@@ -34,6 +34,7 @@ export interface PersonalConfig {
   section_id: number | null;
   sources: PersonalSource[];
   topic: string;
+  source_overview?: boolean;
   weakness: string;
   level: string;
   kind: "learning" | "practice";

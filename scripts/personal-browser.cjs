@@ -25,6 +25,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       body: result,
     });
   });
+  await s.route("**/api/student/personal/jobs", r => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({detail: "测试：历史暂时不可用"}) }));
   await s.goto(base + `/student/ai-chat?chapter=${cid}`);
   await s
     .getByRole("heading", { name: "操作系统 · 智能问答", exact: true })
@@ -44,13 +45,13 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .getByRole("status")
     .filter({ hasText: "资料已保存到本人账号" })
     .waitFor();
-  await s
-    .getByLabel("提问或创作学习内容", { exact: true })
-    .fill("分析进程与线程的资源共享");
+  // No typed topic: selecting sources then clicking Explain must still work.
+  await s.getByLabel("提问或创作学习内容", { exact: true }).fill("");
   await s.getByRole("button", { name: "发送学习问题", exact: true }).click();
   await s
     .getByRole("heading", { name: "explain个人学习", exact: true })
     .waitFor();
+  await s.unroute("**/api/student/personal/jobs");
   const learning = Number(new URL(s.url()).searchParams.get("job"));
   if (
     (
@@ -91,9 +92,15 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     !(await s.locator("pre.personal-code").innerText()).includes("\n    return")
   )
     throw Error("笔记本代码缩进丢失");
+  // A persisted failed result can be returned with HTTP 200 on an idempotent replay.
+  // It must show the error and offer an explicit retry, never pretend to be success.
+  const savedLearning = await (await apiCall(s, "get", base + `/api/student/personal/jobs/${learning}`)).json();
+  await s.route("**/api/student/personal/generate", r => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...savedLearning, status: "failed", error: "测试：DeepSeek正文不是有效JSON" }) }), { times: 1 });
   await studio
     .getByRole("button", { name: "知识闪卡", exact: true })
     .click();
+  await s.getByRole("alert").filter({ hasText: "测试：DeepSeek正文不是有效JSON" }).waitFor();
+  await s.getByRole("button", { name: "确认历史任务后重新生成（可能计费）", exact: true }).click();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   await s.getByRole("button", { name: "显示答案", exact: true }).click();
   await s
@@ -108,24 +115,9 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   const flashId = Number(new URL(s.url()).searchParams.get("job"));
   await s.reload();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
-  await studio
-    .getByRole("button", { name: "算法动画", exact: true })
-    .click();
-  await s
-    .getByRole("heading", { name: "教师已发布的算法实验", exact: true })
-    .waitFor();
-  if (
-    !(await s.getByRole("link", { name: "进入算法实验", exact: true }).count())
-  )
-    throw Error("没有关联教师已发布实验");
-  await s
-    .getByRole("button", { name: "生成 AI 概念演示", exact: true })
-    .click();
-  await s
-    .getByRole("heading", { name: "AI概念分步演示", exact: true })
-    .waitFor();
-  await s.getByRole("button", { name: "下一步", exact: true }).click();
-  await s.getByRole("heading", { name: "获得资源", exact: true }).waitFor();
+  if (await studio.getByRole("button", { name: "算法动画", exact: true }).count()) throw Error("智能问答动画入口未移除");
+  await studio.getByRole("button", { name: "复习总结", exact: true }).click();
+  await s.getByRole("heading", { name: "summary个人学习", exact: true }).waitFor();
   if (process.env.BROWSER_SCREENSHOT_DIR)
     await s.screenshot({
       path: path.join(
@@ -145,7 +137,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .waitFor();
   await s.reload();
   await s
-    .getByRole("heading", { name: "animation个人学习", exact: true })
+    .getByRole("heading", { name: "summary个人学习", exact: true })
     .waitFor();
   await s.getByRole("button", { name: "＋ 个人笔记", exact: true }).click();
   if (
@@ -206,7 +198,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .getByRole("heading", { name: "今天准备哪一部分课程？", exact: true })
     .waitFor();
   console.log(
-    "PASS Notebook学习工作台模拟联调：三栏来源/对话/Studio、个人上传、导图/代码/闪卡翻面、教师算法入口、AI概念动画、笔记收藏刷新、自测作答与隔离、桌面与窄屏（未调用真实模型）",
+    "PASS Notebook学习工作台模拟联调：三栏来源/对话/Studio、个人上传、导图/代码/闪卡翻面、移除动画入口、笔记收藏刷新、自测作答与隔离、桌面与窄屏（未调用真实模型）",
   );
 }
 module.exports = { verifyPersonal };

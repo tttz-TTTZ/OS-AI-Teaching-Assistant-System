@@ -13,12 +13,11 @@ import {
   PersonalSource,
   PersonalSummary,
 } from "../personal";
-import { Experiment, experimentApi } from "../experiments";
 import PersonalModule from "../learning/PersonalModule";
 import { materialAccept, materialFileError } from "../materialFiles";
 
 const studio: {
-  mode: Mode | "practice" | "experiments";
+  mode: Mode | "practice";
   symbol: string;
   label: string;
   hint: string;
@@ -50,12 +49,6 @@ const studio: {
     hint: "提炼重点与易错点",
   },
   { mode: "deep", symbol: "析", label: "深入分析", hint: "进一步解释原理" },
-  {
-    mode: "experiments",
-    symbol: "动",
-    label: "算法动画",
-    hint: "教师实验与AI概念演示",
-  },
 ];
 
 export default function LearningNotebook() {
@@ -92,9 +85,8 @@ export default function LearningNotebook() {
     [message, setMessage] = useState(""),
     [progress, setProgress] = useState<number>();
   const [moduleIndex, setModuleIndex] = useState(0),
-    [view, setView] = useState<"learn" | "experiments" | "notes">("learn");
-  const [experiments, setExperiments] = useState<Experiment[]>([]),
-    [note, setNote] = useState(""),
+    [view, setView] = useState<"learn" | "notes">("learn");
+  const [note, setNote] = useState(""),
     [bookmarked, setBookmarked] = useState(false);
   const [leftOpen, setLeftOpen] = useState(true),
     [rightOpen, setRightOpen] = useState(true);
@@ -103,6 +95,7 @@ export default function LearningNotebook() {
     fileInput = useRef<HTMLInputElement>(null),
     answerRef = useRef<HTMLDivElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
+  const [generationStage, setGenerationStage] = useState("");
   useEffect(() => {
     const saved = sessionStorage.getItem(`notebook-source-tab:${user?.id}`);
     if (saved === "personal" || saved === "public") setCategory(saved);
@@ -119,25 +112,30 @@ export default function LearningNotebook() {
   );
   useEffect(() => {
     let alive = true;
-    Promise.all([
+    // Optional data failures must not disable all AI tools.
+    Promise.allSettled([
       courseApi.chapters(),
       digitalApi.sections(),
       personalApi.status(),
       personalApi.jobs(),
-      experimentApi.list(),
-    ])
-      .then(([cs, ss, state, hs, es]) => {
-        if (!alive) return;
-        setChapters(cs);
-        setSections(ss);
-        setStatus(state);
-        setHistory(hs);
-        setExperiments(es);
-        setChapter((c) => c || cs[0]?.id || 0);
-      })
-      .catch((e) => {
-        if (alive) setError(e.message);
-      });
+    ]).then(([cs, ss, state, hs]) => {
+      if (!alive) return;
+      const failures: string[] = [];
+      if (cs.status === "fulfilled") {
+        setChapters(cs.value);
+        setChapter((c) => c || cs.value[0]?.id || 0);
+      } else failures.push("课程目录加载失败：" + cs.reason.message);
+      if (ss.status === "fulfilled") setSections(ss.value);
+      else failures.push("小节目录加载失败：" + ss.reason.message);
+      if (state.status === "fulfilled") setStatus(state.value);
+      else
+        failures.push(
+          "AI状态加载失败，点击工具时会重新检查：" + state.reason.message,
+        );
+      if (hs.status === "fulfilled") setHistory(hs.value);
+      else failures.push("历史成果加载失败，不影响生成：" + hs.reason.message);
+      if (failures.length) setError(failures.join("；"));
+    });
     return () => {
       alive = false;
     };
@@ -243,14 +241,12 @@ export default function LearningNotebook() {
     sources,
     topic:
       job?.config.topic ||
-      [
-        sections.find((s) => s.id === section)?.title ||
-          chapters.find((c) => c.id === chapter)?.title,
-        prompt.trim(),
-      ]
-        .filter(Boolean)
-        .join("：")
+      prompt.trim() ||
+      sources
+        .map((source) => selectedTitle(source.document_id))
+        .join("、")
         .slice(0, 1000),
+    source_overview: !prompt.trim() && (job?.config.source_overview ?? !job),
     weakness: job ? prompt.trim() : "",
     level,
     kind: mode === "practice" ? "practice" : "learning",
@@ -260,6 +256,7 @@ export default function LearningNotebook() {
     parent_id: job?.status === "ready" ? job.id : null,
   });
   async function create(mode: Mode | "practice" = "explain", retry = false) {
+    if (busy || uploading || loading) return;
     if (noteDirty && !window.confirm("笔记尚未保存，确定先生成新内容吗？"))
       return;
     if (!chapter || !sources.length) {
@@ -273,12 +270,6 @@ export default function LearningNotebook() {
       setError("请先输入你想学习的主题。");
       return;
     }
-    if (!status?.configured) {
-      setError(
-        "自主学习AI尚未配置，请联系平台管理员。教师算法实验仍可直接使用。",
-      );
-      return;
-    }
     const token = epoch.current;
     setBusy(true);
     setError("");
@@ -286,16 +277,34 @@ export default function LearningNotebook() {
     setView("learn");
     if (retry) requestKey.current = "";
     try {
+      setGenerationStage("正在检查 AI 服务…");
+      const state = await personalApi.status();
+      if (token !== epoch.current) return;
+      setStatus(state);
+      if (!state.configured)
+        throw new Error(
+          "尚未配置 DeepSeek：请在后端 .env 设置 DEEPSEEK_API_KEY 并重启后端，密钥不要填在网页或聊天中。",
+        );
+      setGenerationStage("正在解析资料与检索依据…");
       const ev = await personalApi.preview(body);
       if (token !== epoch.current) return;
       setEvidence(ev);
       requestKey.current ||= crypto.randomUUID();
+      setGenerationStage(
+        `正在生成${mode === "practice" ? "测验" : modeNames[mode]}，请稍候…`,
+      );
       const result = await personalApi.generate(body, ev, requestKey.current);
       if (token !== epoch.current) return;
+      if (result.status !== "ready")
+        throw new Error(
+          result.error ||
+            "任务尚未完成，请先查看历史任务状态，再决定是否重新生成。",
+        );
       requestKey.current = "";
-      const updatedHistory = await personalApi.jobs();
-      if (token !== epoch.current) return;
-      setHistory(updatedHistory);
+      setHistory((old) => [
+        { ...result, config_json: JSON.stringify(result.config) },
+        ...old.filter((h) => h.id !== result.id),
+      ]);
       setParams({ chapter: String(chapter), job: String(result.id) });
       setJob(result);
       setPrompt("");
@@ -310,6 +319,7 @@ export default function LearningNotebook() {
       }
     } finally {
       setBusy(false);
+      setGenerationStage("");
     }
   }
   async function upload(file?: File) {
@@ -644,13 +654,7 @@ export default function LearningNotebook() {
           aria-label="学习对话"
         >
           <div className="notebook-pane-title">
-            <h2>
-              {view === "experiments"
-                ? "算法动画与实验"
-                : view === "notes"
-                  ? "我的学习笔记"
-                  : "学习与分析"}
-            </h2>
+            <h2>{view === "notes" ? "我的学习笔记" : "学习与分析"}</h2>
             <button className="secondary" onClick={newTopic} disabled={busy}>
               ＋ 新话题
             </button>
@@ -668,44 +672,6 @@ export default function LearningNotebook() {
             )}
             {loading ? (
               <p>正在恢复学习内容…</p>
-            ) : view === "experiments" ? (
-              <div className="notebook-experiments">
-                <h3>教师已发布的算法实验</h3>
-                <p>
-                  先使用可运行、可回放的实验。AI概念演示另行生成，不等同于算法验证。
-                </p>
-                {experiments
-                  .filter((e) => e.chapter_id === chapter)
-                  .map((e) => (
-                    <article key={e.id}>
-                      <h4>{e.title}</h4>
-                      <p>{e.objectives}</p>
-                      <Link
-                        className="button"
-                        to={`/student/experiments/${e.id}`}
-                      >
-                        进入算法实验
-                      </Link>
-                    </article>
-                  ))}
-                {!experiments.some((e) => e.chapter_id === chapter) && (
-                  <p>本章暂无已发布实验，可查看全课程实验库。</p>
-                )}
-                <div className="row-actions">
-                  <Link className="button secondary" to="/student/experiments">
-                    全部算法实验
-                  </Link>
-                  <button
-                    disabled={busy || !status?.configured}
-                    onClick={() => create("animation")}
-                  >
-                    生成 AI 概念演示
-                  </button>
-                </div>
-                <p>
-                  复杂动画生成与调试将在后续专项迭代，当前不会执行任意AI脚本。
-                </p>
-              </div>
             ) : view === "notes" && job ? (
               <div className="notebook-notes">
                 <h3>{job.body.title} · 个人笔记</h3>
@@ -929,17 +895,11 @@ export default function LearningNotebook() {
             <div>
               <span>
                 {sources.length}个来源 ·{" "}
-                {busy ? "正在检索并生成…" : "Ctrl / ⌘ + Enter 发送"}
+                {busy ? generationStage : "Ctrl / ⌘ + Enter 发送"}
               </span>
               <button
                 aria-label="发送学习问题"
-                disabled={
-                  busy ||
-                  uploading ||
-                  !status?.configured ||
-                  !sources.length ||
-                  !chapter
-                }
+                disabled={busy || uploading || loading}
                 onClick={() => create("explain")}
               >
                 {busy ? "生成中…" : "发送 ↑"}
@@ -947,7 +907,8 @@ export default function LearningNotebook() {
             </div>
             {!status?.configured && (
               <small>
-                生成内容需要平台配置AI服务；来源管理和教师算法实验仍可使用。
+                尚未检测到已配置的
+                DeepSeek。点击工具可重新检查并查看具体原因；来源管理仍可使用。
               </small>
             )}
             {error && requestKey.current && (
@@ -971,7 +932,7 @@ export default function LearningNotebook() {
               <span>Studio</span>
             </div>
             <p className="notebook-studio-hint">
-              根据左侧来源和你的问题制作，生成后自动保存在本人账号。
+              先勾选左侧资料。无需填写主题即可概览所选资料；填写具体问题时按问题检索。生成后自动保存在本人账号。
             </p>
             <div className="notebook-tools">
               {studio.map((tool) => (
@@ -979,17 +940,8 @@ export default function LearningNotebook() {
                   key={tool.mode}
                   className={`notebook-tool tool-${tool.mode}`}
                   title={tool.hint}
-                  disabled={
-                    busy ||
-                    uploading ||
-                    (tool.mode !== "experiments" &&
-                      (!status?.configured || !sources.length || !chapter))
-                  }
-                  onClick={() =>
-                    tool.mode === "experiments"
-                      ? setView("experiments")
-                      : create(tool.mode)
-                  }
+                  disabled={busy || uploading || loading}
+                  onClick={() => create(tool.mode)}
                 >
                   <span aria-hidden="true">{tool.symbol}</span>
                   <strong>{tool.label}</strong>
@@ -998,7 +950,7 @@ export default function LearningNotebook() {
             </div>
             <p className="notebook-cost">
               AI生成可能计费，每日最多{status?.daily_limit || 20}
-              次，不自动重试。教师实验无需调用模型。
+              次，不自动重试。算法实验请从首页进入独立板块。
             </p>
             <div className="notebook-pane-title notebook-results-title">
               <h3>我的学习成果</h3>

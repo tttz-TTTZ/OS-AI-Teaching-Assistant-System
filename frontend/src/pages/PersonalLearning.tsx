@@ -546,27 +546,33 @@ export default function PersonalLearning({
                 <>
                   <p>学习方式可以多选，全部都可选；若内容较大可分批生成。</p>
                   <div className="personal-options">
-                    {Object.entries(modeNames).map(([m, label]) => (
-                      <label className="check" key={m}>
-                        <input
-                          type="checkbox"
-                          checked={config.modes.includes(m as Mode)}
-                          onChange={(e) =>
-                            change({
-                              modes: e.target.checked
-                                ? [...config.modes, m as Mode]
-                                : config.modes.filter((x) => x !== m),
-                            })
-                          }
-                        />
-                        {label}
-                      </label>
-                    ))}
+                    {Object.entries(modeNames)
+                      .filter(([m]) => m !== "animation")
+                      .map(([m, label]) => (
+                        <label className="check" key={m}>
+                          <input
+                            type="checkbox"
+                            checked={config.modes.includes(m as Mode)}
+                            onChange={(e) =>
+                              change({
+                                modes: e.target.checked
+                                  ? [...config.modes, m as Mode]
+                                  : config.modes.filter((x) => x !== m),
+                              })
+                            }
+                          />
+                          {label}
+                        </label>
+                      ))}
                   </div>
                   <button
                     className="secondary"
                     onClick={() =>
-                      change({ modes: Object.keys(modeNames) as Mode[] })
+                      change({
+                        modes: Object.keys(modeNames).filter(
+                          (m) => m !== "animation",
+                        ) as Mode[],
+                      })
                     }
                   >
                     选择全部学习方式

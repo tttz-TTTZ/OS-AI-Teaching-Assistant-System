@@ -423,3 +423,80 @@ def test_map_rejects_disconnected_or_cyclic_nodes(bad_parent):
     module["nodes"][1]["parent"] = bad_parent
     with pytest.raises(ValueError):
         ai.Module.model_validate(module)
+
+
+@pytest.mark.parametrize(
+    "mode,style",
+    [("explain", "json"), ("flashcards", "fenced"), ("practice", "blocks")],
+)
+def test_student_features_through_real_http_adapter(clients, monkeypatch, mode, style):
+    import httpx
+    from app import ai_questions
+
+    t, a, b = clients
+    config, _ = prepared(a, kind="practice" if mode == "practice" else "learning")
+    config["modes"] = ["explain" if mode == "practice" else mode]
+    config["topic"] = "第一份课件"
+    config["source_overview"] = True
+    preview = a.post(BASE + "/sources/preview", json=config)
+    assert preview.status_code == 200, preview.text
+    assert "资料概览" in "".join(preview.json()["warnings"])
+    config["fingerprint"] = preview.json()["fingerprint"]
+    original = httpx.AsyncClient
+
+    def handler(request):
+        payload = json.loads(request.content)
+        user = json.loads(payload["messages"][1]["content"])
+        assert user["source_overview"] is True
+        output = generated(
+            ai.Generation.model_validate(config), {"chunks": user["sources"]}
+        )
+        if mode == "flashcards":
+            assert "front/back" in payload["messages"][0]["content"]
+            output["modules"][0]["cards"] = [
+                {"front": f"回忆问题{i}", "back": "操作系统管理资源并提供服务"}
+                for i in range(3)
+            ]
+        text = json.dumps(output, ensure_ascii=False)
+        content = (
+            text
+            if style == "json"
+            else (
+                "```json\n" + text + "\n```"
+                if style == "fenced"
+                else [{"type": "text", "text": text}]
+            )
+        )
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"finish_reason": "stop", "message": {"content": content}}]
+            },
+        )
+
+    monkeypatch.setattr(
+        ai_questions.httpx,
+        "AsyncClient",
+        lambda **kw: original(transport=httpx.MockTransport(handler), **kw),
+    )
+    response = a.post(BASE + "/generate", json=config)
+    assert response.status_code == 200, response.text
+    job = response.json()
+    assert job["status"] == "ready"
+    assert a.get(BASE + f'/jobs/{job["id"]}').json()["status"] == "ready"
+    assert b.get(BASE + f'/jobs/{job["id"]}').status_code == 404
+    if mode == "practice":
+        assert "correct" not in job["body"]["questions"][0]
+        result = a.post(
+            BASE + f'/jobs/{job["id"]}/submit',
+            json={
+                "answers": {0: 0, 1: [0, 1], 2: 0, 3: "进程有独立地址空间", 4: [0, 1]},
+                "request_key": "http-adapter-quiz-0001",
+            },
+        )
+        assert result.status_code == 200, result.text
+        assert result.json()["score"] == 4
+    elif mode == "flashcards":
+        assert len(job["body"]["modules"][0]["cards"]) == 3
+    else:
+        assert job["body"]["modules"][0]["text"]
