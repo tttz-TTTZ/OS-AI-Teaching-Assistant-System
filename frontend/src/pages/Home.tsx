@@ -47,7 +47,21 @@ export default function Home() {
   }, []);
   return (
     <Page title="学习首页">
-      <section className="authoring-card"><h2>按自己的需求学习</h2><p>教师提供资料和目录，你选择讲解、导图、代码、动画或复习，也可描述薄弱点生成个人练习。</p><div className="row-actions"><Link className="button" to="/student/knowledge">开始自主学习</Link><Link className="button secondary" to="/student/ai-practice">生成我的薄弱点练习</Link></div></section>
+      <p className="badge">学生自主学习版 · V8</p>
+      <section className="authoring-card">
+        <h2>按自己的需求学习</h2>
+        <p>
+          教师提供资料和目录，你选择讲解、导图、代码、动画或复习，也可描述薄弱点生成个人练习。
+        </p>
+        <div className="row-actions">
+          <Link className="button" to="/student/knowledge">
+            开始自主学习
+          </Link>
+          <Link className="button secondary" to="/student/ai-practice">
+            生成我的薄弱点练习
+          </Link>
+        </div>
+      </section>
       <section className="coursebrief">
         <div>
           <span className="badge">
@@ -70,7 +84,7 @@ export default function Home() {
       <Notice error={error || failure} />
       <div className="statusbar">
         {health
-          ? `后端正常 · 数据库 ${health.database} · ${health.ai_configured ? "AI 已配置（可用性以调用为准）" : "尚未配置 AI 服务"}`
+          ? `后端正常 · 数据库 ${health.database} · ${health.personal_ai_configured === undefined ? "后端版本较旧，请更新并重启后端以启用自主学习" : `自主学习 / AI自测：${health.personal_ai_configured ? "已配置DeepSeek" : "尚未配置DeepSeek"}`} · 智能问答：${(health.chat_ai_configured ?? health.ai_configured) ? "已配置" : "尚未配置"}`
           : "正在检查服务…"}
         <span>
           {" "}
@@ -79,6 +93,9 @@ export default function Home() {
             : "尚无账号学习记录时，继续学习使用本标签实际访问记录。"}
         </span>
       </div>
+      <p className="caption">
+        不同AI功能独立配置；如提示未配置，请联系平台管理员。“已配置”不代表服务已连接成功，可用性以实际调用为准。
+      </p>
       <div className="grid">
         <section className="panel">
           <h2>章节导航</h2>

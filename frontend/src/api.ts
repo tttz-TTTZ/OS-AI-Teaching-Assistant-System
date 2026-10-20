@@ -194,6 +194,9 @@ export interface Health {
   database: string;
   llm_mode: string;
   ai_configured: boolean;
+  chat_ai_configured?: boolean;
+  personal_ai_configured?: boolean;
+  platform_revision?: string;
 }
 export interface Process {
   pid: string;

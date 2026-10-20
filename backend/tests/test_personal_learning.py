@@ -347,3 +347,37 @@ def test_pptx_code_keeps_tabs_soft_breaks_and_indentation():
     with ZipFile(BytesIO(out.getvalue())) as archive:
         result = slide_text(archive, "code.xml", 1)
     assert result["text"] == "def demo():\n\t    return 1"
+
+
+def test_flashcards_generate_persist_and_reject_invalid_deck(clients, monkeypatch):
+    _, a, b = clients
+    body, _ = prepared(a)
+    body["modes"] = ["flashcards"]
+
+    async def fake(request, source, **kw):
+        output = generated(request, source)
+        output["modules"][0]["cards"] = [
+            {"front": f"概念{i}", "back": "操作系统管理资源并提供服务。"}
+            for i in range(3)
+        ]
+        return output
+
+    monkeypatch.setattr(ai, "call_deepseek", fake)
+    response = a.post(BASE + "/generate", json=body)
+    assert response.status_code == 200, response.text
+    ident = response.json()["id"]
+    assert (
+        len(a.get(BASE + f"/jobs/{ident}").json()["body"]["modules"][0]["cards"]) == 3
+    )
+    assert b.get(BASE + f"/jobs/{ident}").status_code == 404
+    with pytest.raises(ValueError):
+        ai.Flashcard(front=" ", back="答案")
+    with pytest.raises(ValueError):
+        ai.Module(
+            mode="flashcards",
+            title="无效闪卡",
+            text="说明",
+            source_ref="x",
+            source_quote="操作系统管理资源并提供服务",
+            cards=[],
+        )

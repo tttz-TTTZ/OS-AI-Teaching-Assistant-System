@@ -1,5 +1,9 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+## 最新：学生学习笔记本三栏工作台与闪卡
+
+主入口LearningNotebook.tsx：左侧公共/个人来源与真实上传，中间检索后生成/阅读/追问，右侧Studio工具和个人成果。复用V8权限/检索/任务，新增flashcards模式和3–20张翻面卡，保存在原JSON，无新迁移或依赖。教师已发布算法实验先用，AI概念演示单列；不加入教学视频/音频，不执行任意AI动画脚本。个人AI测验沿用独立作答页。旧PersonalLearning.tsx继续服务ai-practice，带point旧链接仍兼容旧教材。首页health新增chat_ai_configured、personal_ai_configured、platform_revision，保留ai_configured原聊天含义，分别显示两种配置并提示旧后端。完整说明见 [LEARNING-NOTEBOOK.md](LEARNING-NOTEBOOK.md)。
+
 ## 当前定位：教师提供资料/目录，学生自主学习与个人AI练习
 
 本轮用户明确取消教师备课职责。教师工作台/目录已调整；旧AI备课写接口410、历史只读，旧教材与记录保留兼容。学生主入口 `/student/knowledge` 为个人生成工作区，可多选六种学习方式；`/student/ai-practice` 为按薄弱点的个人自测，`/student/practice` 继续教师正式练习，二者数据和成绩隔离。支持带本人错题上下文继续学习、笔记收藏和历史。课件按页索引+中英文关键词检索的轻量RAG，没有向量库或OCR；400页PPTX可检索后半部分。AI动画采用现有计算模板或明确标识的概念分步图，不执行任意AI脚本。V8新增资料索引、个人任务和个人作答三表，备份后迁移，无新增依赖，DEEPSEEK_*复用并可配置PERSONAL_AI_DAILY_LIMIT。以 [STUDENT-AUTONOMOUS-LEARNING.md](STUDENT-AUTONOMOUS-LEARNING.md) 为准，历史备课文档不再作为产品方向。

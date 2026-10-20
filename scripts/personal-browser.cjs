@@ -1,20 +1,19 @@
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
-  const status = {
-    configured: true,
-    model: "mock-personal-test",
-    daily_limit: 20,
-  };
   await s.route("**/api/student/personal/status", (r) =>
     r.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify(status),
+      body: JSON.stringify({
+        configured: true,
+        model: "mock-notebook-test",
+        daily_limit: 20,
+      }),
     }),
   );
   await s.route("**/api/student/personal/generate", async (r) => {
-    const value = execFileSync(
+    const result = execFileSync(
       process.env.TEST_PYTHON,
       [path.join(__dirname, "personal_fixture.py"), studentName],
       { input: r.request().postData(), encoding: "utf8" },
@@ -22,41 +21,34 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     await r.fulfill({
       status: 200,
       contentType: "application/json",
-      body: value,
+      body: result,
     });
   });
-  const me = await (await apiCall(s, "get", base + "/api/auth/me")).json();
-  const upload = await apiCall(s, "post", base + "/api/materials/upload", {
-    headers: { "X-CSRF-Token": me.csrf_token },
-    multipart: {
-      file: {
-        name: "自主学习浏览器资料.txt",
-        mimeType: "text/plain",
-        buffer: Buffer.from(
-          "操作系统负责管理计算机硬件和软件资源，为用户和应用程序提供服务。进程具有独立地址空间，线程共享进程资源。个人学习浏览器验收。",
-        ),
-      },
-    },
-  });
-  if (upload.status() !== 201) throw Error(await upload.text());
-  const doc = await upload.json();
-  await s.getByRole("link", { name: "知识点学习", exact: true }).click();
-  await s.getByRole("heading", { name: "我的自主学习", exact: true }).waitFor();
-  await s.getByLabel("课程大章", { exact: true }).selectOption(String(cid));
-  await s.getByRole("button", { name: "我的个人资料", exact: true }).click();
-  await s.getByLabel(new RegExp(doc.title)).check();
-  await s.getByLabel("学习主题", { exact: true }).fill("进程与线程的资源管理");
+  await s.goto(base + `/student/knowledge?chapter=${cid}`);
   await s
-    .getByLabel("我的薄弱点或追问", { exact: true })
-    .fill("我分不清资源共享，请多种方式帮助我理解。");
+    .getByRole("heading", { name: "操作系统 · 学习笔记本", exact: true })
+    .waitFor();
+  for (const region of ["学习来源", "学习对话", "学习工具"])
+    await s.getByRole("region", { name: region, exact: true }).waitFor();
   await s
-    .getByRole("button", { name: "选择全部学习方式", exact: true })
-    .click();
+    .getByLabel("上传我的学习来源", { exact: true })
+    .setInputFiles({
+      name: "笔记本自主学习资料.txt",
+      mimeType: "text/plain",
+      buffer: Buffer.from(
+        "操作系统负责管理计算机硬件和软件资源，为用户和应用程序提供服务。进程具有独立地址空间，线程共享进程资源。笔记本独立上传验收。",
+      ),
+    });
   await s
-    .getByRole("button", { name: "开始生成我的内容", exact: true })
-    .click();
+    .getByRole("status")
+    .filter({ hasText: "资料已保存到本人账号" })
+    .waitFor();
   await s
-    .getByRole("heading", { name: "我的个人学习内容", exact: true })
+    .getByLabel("提问或创作学习内容", { exact: true })
+    .fill("分析进程与线程的资源共享");
+  await s.getByRole("button", { name: "发送学习问题", exact: true }).click();
+  await s
+    .getByRole("heading", { name: "explain个人学习", exact: true })
     .waitFor();
   const learning = Number(new URL(s.url()).searchParams.get("job"));
   if (
@@ -64,62 +56,88 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       await apiCall(b, "get", base + `/api/student/personal/jobs/${learning}`)
     ).status() !== 404
   )
-    throw Error("个人内容跨学生泄露");
-  await s
-    .getByRole("navigation", { name: "我的学习方式" })
+    throw Error("笔记本跨学生泄露");
+  const studio = s.getByRole("region", { name: "学习工具", exact: true });
+  await studio
     .getByRole("button", { name: "思维导图", exact: true })
     .click();
   await s
     .getByLabel("个人思维导图")
     .getByText("资源管理", { exact: true })
     .waitFor();
-  await s
-    .getByRole("navigation", { name: "我的学习方式" })
+  await studio
     .getByRole("button", { name: "代码讲解", exact: true })
     .click();
+  await s.getByRole("heading", { name: "code个人学习", exact: true }).waitFor();
   if (
     !(await s.locator("pre.personal-code").innerText()).includes("\n    return")
   )
-    throw Error("代码缩进丢失");
-  await s
-    .getByRole("navigation", { name: "我的学习方式" })
-    .getByRole("button", { name: "动画理解", exact: true })
+    throw Error("笔记本代码缩进丢失");
+  await studio
+    .getByRole("button", { name: "知识闪卡", exact: true })
     .click();
+  await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  await s.getByRole("button", { name: "显示答案", exact: true }).click();
+  await s
+    .getByRole("button", { name: "闪卡答案", exact: true })
+    .getByText("管理计算机资源，为用户和程序提供服务。", { exact: true })
+    .waitFor();
+  await s.getByRole("button", { name: "下一张", exact: true }).click();
+  await s
+    .getByRole("button", { name: "闪卡问题", exact: true })
+    .getByText("线程共享什么？", { exact: true })
+    .waitFor();
+  const flashId = Number(new URL(s.url()).searchParams.get("job"));
+  await s.reload();
+  await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  await studio
+    .getByRole("button", { name: "算法动画", exact: true })
+    .click();
+  await s
+    .getByRole("heading", { name: "教师已发布的算法实验", exact: true })
+    .waitFor();
+  if (
+    !(await s.getByRole("link", { name: "进入算法实验", exact: true }).count())
+  )
+    throw Error("没有关联教师已发布实验");
+  await s
+    .getByRole("button", { name: "生成 AI 概念演示", exact: true })
+    .click();
+  await s
+    .getByRole("heading", { name: "AI概念分步演示", exact: true })
+    .waitFor();
   await s.getByRole("button", { name: "下一步", exact: true }).click();
   await s.getByRole("heading", { name: "获得资源", exact: true }).waitFor();
   if (process.env.BROWSER_SCREENSHOT_DIR)
     await s.screenshot({
       path: path.join(
         process.env.BROWSER_SCREENSHOT_DIR,
-        "personal-animation.png",
+        "learning-notebook-desktop.png",
       ),
     });
+  await s.getByRole("button", { name: "＋ 个人笔记", exact: true }).click();
   await s
-    .getByLabel("个人笔记", { exact: true })
-    .fill("只属于我的资源共享笔记");
-  await s.getByLabel("收藏本次学习内容", { exact: true }).check();
-  await s.getByRole("button", { name: "保存个人笔记", exact: true }).click();
+    .getByLabel("笔记本个人笔记", { exact: true })
+    .fill("我的笔记本资源共享笔记");
+  await s.getByLabel("收藏这份学习内容", { exact: true }).check();
+  await s.getByRole("button", { name: "保存笔记与收藏", exact: true }).click();
   await s
     .getByRole("status")
     .filter({ hasText: "个人笔记与收藏已保存" })
     .waitFor();
   await s.reload();
   await s
-    .getByRole("heading", { name: "我的个人学习内容", exact: true })
+    .getByRole("heading", { name: "animation个人学习", exact: true })
     .waitFor();
+  await s.getByRole("button", { name: "＋ 个人笔记", exact: true }).click();
   if (
-    (await s.getByLabel("个人笔记", { exact: true }).inputValue()) !==
-    "只属于我的资源共享笔记"
+    (await s.getByLabel("笔记本个人笔记", { exact: true }).inputValue()) !==
+    "我的笔记本资源共享笔记"
   )
-    throw Error("个人笔记刷新丢失");
+    throw Error("笔记本笔记刷新丢失");
+  await studio.getByRole("button", { name: "测验", exact: true }).click();
   await s
-    .getByLabel("我还不理解的地方", { exact: true })
-    .fill("针对线程共享资源给我出题");
-  await s
-    .getByRole("button", { name: "针对薄弱点再生成自测", exact: true })
-    .click();
-  await s
-    .getByRole("button", { name: "开始生成我的内容", exact: true })
+    .getByRole("link", { name: "开始作答 / 查看解析", exact: true })
     .click();
   await s
     .getByRole("heading", { name: "个人薄弱点自测", exact: true })
@@ -138,19 +156,34 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     ).status() !== 404
   )
     throw Error("个人自测成绩泄露");
-  await s
-    .getByRole("button", { name: "针对薄弱点再生成自测", exact: true })
-    .waitFor();
+  await s.goto(base + `/student/knowledge?job=${flashId}`);
+  await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  await s.setViewportSize({ width: 390, height: 844 });
+  if (process.env.BROWSER_SCREENSHOT_DIR)
+    await s.screenshot({
+      path: path.join(
+        process.env.BROWSER_SCREENSHOT_DIR,
+        "learning-notebook-mobile.png",
+      ),
+      fullPage: true,
+    });
+  if (
+    await s.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth + 2,
+    )
+  )
+    throw Error("笔记本窄屏横向溢出");
+  await s.setViewportSize({ width: 1366, height: 768 });
+  await s.getByRole("button", { name: "收起来源", exact: true }).click();
+  await s.getByRole("button", { name: "展开来源", exact: true }).click();
   await s.unroute("**/api/student/personal/status");
   await s.unroute("**/api/student/personal/generate");
   await t.goto(base + "/teacher/dashboard");
   await t
     .getByRole("heading", { name: "课程资料与教学管理", exact: true })
     .waitFor();
-  if (await t.getByRole("link", { name: "从课件备课 →", exact: true }).count())
-    throw Error("教师仍有备课入口");
   console.log(
-    "PASS 学生自主学习模拟联调：六方式生成、导图、代码缩进、概念动画回放、私人笔记收藏刷新、薄弱点自测作答与成绩隔离、教师职责调整（模型为模拟，未调用真实DeepSeek）",
+    "PASS Notebook学习工作台模拟联调：三栏来源/对话/Studio、个人上传、导图/代码/闪卡翻面、教师算法入口、AI概念动画、笔记收藏刷新、自测作答与隔离、桌面与窄屏（未调用真实模型）",
   );
 }
 module.exports = { verifyPersonal };

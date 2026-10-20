@@ -18,12 +18,16 @@ export default function PersonalModule({
     [error, setError] = useState("");
   const [config, setConfig] = useState<SimConfig | null>(module.simulation);
   const [busy, setBusy] = useState(false);
+  const [cardIndex, setCardIndex] = useState(0),
+    [flipped, setFlipped] = useState(false);
   useEffect(() => {
     setStep(0);
     setPlaying(false);
     setTrace(undefined);
     setConfig(module.simulation);
     setError("");
+    setCardIndex(0);
+    setFlipped(false);
   }, [module, job]);
   async function run() {
     if (!config) return;
@@ -82,6 +86,52 @@ export default function PersonalModule({
     <article className="personal-module">
       <h2>{module.title}</h2>
       <Markdown content={module.text} />
+      {module.mode === "flashcards" && !!module.cards?.length && (
+        <section className="flashcard-deck" aria-label="知识闪卡">
+          <p>
+            第 {cardIndex + 1} / {module.cards.length} 张 ·
+            点击翻面，不计入正式成绩
+          </p>
+          <button
+            className={`flashcard-face ${flipped ? "is-back" : ""}`}
+            aria-label={flipped ? "闪卡答案" : "闪卡问题"}
+            onClick={() => setFlipped(!flipped)}
+          >
+            <small>{flipped ? "答案 / 解释" : "回忆问题"}</small>
+            <span>
+              {flipped
+                ? module.cards[cardIndex].back
+                : module.cards[cardIndex].front}
+            </span>
+            <small>{flipped ? "点击返回问题" : "点击查看答案"}</small>
+          </button>
+          <div className="row-actions">
+            <button
+              className="secondary"
+              disabled={!cardIndex}
+              onClick={() => {
+                setCardIndex((i) => i - 1);
+                setFlipped(false);
+              }}
+            >
+              上一张
+            </button>
+            <button className="secondary" onClick={() => setFlipped(!flipped)}>
+              {flipped ? "再看问题" : "显示答案"}
+            </button>
+            <button
+              className="secondary"
+              disabled={cardIndex === module.cards.length - 1}
+              onClick={() => {
+                setCardIndex((i) => i + 1);
+                setFlipped(false);
+              }}
+            >
+              下一张
+            </button>
+          </div>
+        </section>
+      )}
       {module.mode === "map" && (
         <div className="personal-mindmap" aria-label="个人思维导图">
           {tree(null)}

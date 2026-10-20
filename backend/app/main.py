@@ -85,12 +85,19 @@ def get_material(db, material_id, user=None):
 def health():
     with database() as db:
         db.execute("SELECT 1").fetchone()
+    chat_configured = os.getenv("LLM_MODE", "openai") == "openai" and bool(
+        os.getenv("LLM_API_KEY", "").strip()
+    )
+    personal_configured = bool(os.getenv("DEEPSEEK_API_KEY", "").strip())
     return {
         "status": "ok",
         "database": "ok",
         "llm_mode": os.getenv("LLM_MODE", "openai"),
-        "ai_configured": os.getenv("LLM_MODE", "openai") == "openai"
-        and bool(os.getenv("LLM_API_KEY")),
+        # 保留旧字段供智能问答客户端使用，不将DeepSeek配置冒充聊天服务可用。
+        "ai_configured": chat_configured,
+        "chat_ai_configured": chat_configured,
+        "personal_ai_configured": personal_configured,
+        "platform_revision": "student-autonomous-v8",
     }
 
 

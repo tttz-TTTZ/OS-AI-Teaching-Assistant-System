@@ -25,6 +25,7 @@ import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import TeacherChapters, { SectionForm } from "./pages/teacher/Chapters";
 import PersonalLearning from "./pages/PersonalLearning";
+import LearningNotebook from "./pages/LearningNotebook";
 import CourseOutline, { PlanKnowledge } from "./pages/teacher/CourseOutline";
 import LearningFeedback from "./pages/teacher/LearningFeedback";
 import TeacherKnowledge from "./pages/teacher/Knowledge";
@@ -55,7 +56,7 @@ function PersonalKnowledge() {
   return new URLSearchParams(location.search).has("point") ? (
     <Knowledge />
   ) : (
-    <PersonalLearning />
+    <LearningNotebook />
   );
 }
 function Guard({ role }: { role: "student" | "teacher" }) {
@@ -73,6 +74,11 @@ function Guard({ role }: { role: "student" | "teacher" }) {
 }
 function Layout({ role }: { role: "student" | "teacher" }) {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const notebook =
+    role === "student" &&
+    location.pathname === "/student/knowledge" &&
+    !new URLSearchParams(location.search).has("point");
   const [error, setError] = useState("");
   const [courseTitle, setCourseTitle] = useState("正在加载课程…");
   useEffect(() => {
@@ -81,7 +87,7 @@ function Layout({ role }: { role: "student" | "teacher" }) {
       .catch((e) => setError(e.message));
   }, []);
   return (
-    <div className={`layout ${role}`}>
+    <div className={`layout ${role}${notebook ? " notebook-shell" : ""}`}>
       <aside>
         <div className="brand">
           OS<span> / ASSISTANT</span>

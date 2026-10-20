@@ -72,6 +72,20 @@ V8追加三表：document_ai_indexes（授权检索缓存）、personal_ai_jobs�
 
 ## Windows更新和启动
 
+### 截图仍是旧首页或显示“尚未配置AI服务”时
+
+新版首页应有“学生自主学习版 · V8”、“开始自主学习”和“生成我的薄弱点练习”。若没有，先确认在本仓库feat/development-foundation分支拉取了最新提交，停止原前端进程再重启；不能把新代码已推送到GitHub等同于本机运行实例已更新。使用--strictPort避免启动到另一个端口后仍访问旧页面。
+
+首页配置提示已修正为分别显示两种AI：自主学习/个人AI自测/教师AI出题使用DEEPSEEK_API_KEY，原智能问答使用LLM_API_KEY。旧首页ai_configured只检查原智能问答，会在只配置DeepSeek时产生笼统的“未配置AI”误导。新health保留旧字段供聊天客户端兼容，追加chat_ai_configured、personal_ai_configured和platform_revision=student-autonomous-v8。只检查密钥是否存在，不发送供应商请求，不证明余额或可用性，也不返回密钥。
+
+更新后可在PowerShell只查看非敏感状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/health | Select-Object platform_revision, personal_ai_configured, chat_ai_configured
+```
+
+backend\.env修改后须重启后端；同名进程环境变量优先于.env。不要把.env内容或密钥发到聊天。
+
 ```powershell
 cd D:\A-bishe\OS-AI-Teaching-Assistant-System
 git pull --ff-only

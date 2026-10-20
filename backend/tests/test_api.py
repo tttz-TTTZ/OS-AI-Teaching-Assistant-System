@@ -81,3 +81,32 @@ def test_provider_errors(client, monkeypatch):
     )
     assert client.post("/api/chat", json={"question": "hi"}).status_code == 502
     assert client.get("/api/conversations").json() == []
+
+
+@pytest.mark.parametrize(
+    "chat_key,deepseek_key,mode,chat_expected,personal_expected",
+    [
+        ("", "", "openai", False, False),
+        ("", "test-deepseek-only", "openai", False, True),
+        ("test-chat-only", "", "openai", True, False),
+        ("test-chat", "test-deepseek", "openai", True, True),
+        ("test-chat", "test-deepseek", "mock", False, True),
+        ("   ", "   ", "openai", False, False),
+    ],
+)
+def test_health_distinguishes_chat_and_personal_ai(
+    client, monkeypatch, chat_key, deepseek_key, mode, chat_expected, personal_expected
+):
+    monkeypatch.setenv("LLM_MODE", mode)
+    monkeypatch.setenv("LLM_API_KEY", chat_key)
+    monkeypatch.setenv("DEEPSEEK_API_KEY", deepseek_key)
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["chat_ai_configured"] is chat_expected
+    assert data["personal_ai_configured"] is personal_expected
+    assert data["ai_configured"] is chat_expected
+    assert data["platform_revision"] == "student-autonomous-v8"
+    for secret in (chat_key.strip(), deepseek_key.strip()):
+        if secret:
+            assert secret not in response.text

@@ -7,6 +7,7 @@ export const modeNames = {
   code: "代码讲解",
   animation: "动画理解",
   summary: "复习总结",
+  flashcards: "知识闪卡",
 };
 export type Mode = keyof typeof modeNames;
 export interface PersonalSource {
@@ -52,6 +53,7 @@ export interface LearningModule {
   language: string;
   simulation: SimConfig | null;
   frames: { label: string; explanation: string; nodes: string[] }[];
+  cards?: { front: string; back: string }[];
 }
 export interface PersonalQuestion {
   prompt: string;

@@ -54,6 +54,15 @@ if __name__ == "__main__":
                 ]
             if mode == "code":
                 m.update(code="def demo():\n    return 1", language="python")
+            if mode == "flashcards":
+                m["cards"] = [
+                    {
+                        "front": "操作系统的基本职责？",
+                        "back": "管理计算机资源，为用户和程序提供服务。",
+                    },
+                    {"front": "线程共享什么？", "back": "线程共享所属进程的资源。"},
+                    {"front": "进程地址空间的特点？", "back": "进程具有独立地址空间。"},
+                ]
             if mode == "animation":
                 m["frames"] = [
                     {
