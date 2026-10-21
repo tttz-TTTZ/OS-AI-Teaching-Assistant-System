@@ -28,6 +28,21 @@ export interface Evidence {
   indexed_chunks: number;
   method: string;
   warnings: string[];
+  pilot_plan?: {
+    selected_pages: number;
+    text_chunks: number;
+    batches: number;
+    cached_batches: number;
+    estimated_calls: number;
+    scope: string;
+    excluded: {
+      ref: string;
+      document_id: number;
+      page: number;
+      reason: string;
+    }[];
+    unreadable_pages: { document_id: number; page: number }[];
+  };
 }
 export interface PersonalConfig {
   chapter_id: number;
@@ -35,6 +50,8 @@ export interface PersonalConfig {
   sources: PersonalSource[];
   topic: string;
   source_overview?: boolean;
+  analysis_mode?: "quick" | "section";
+  analysis_confirmed?: boolean;
   weakness: string;
   level: string;
   kind: "learning" | "practice";
@@ -49,12 +66,17 @@ export interface LearningModule {
   text: string;
   source_ref: string;
   source_quote: string;
-  nodes: { id: string; label: string; parent: string | null }[];
+  nodes: {
+    id: string;
+    label: string;
+    parent: string | null;
+    fact_ids?: string[];
+  }[];
   code: string;
   language: string;
   simulation: SimConfig | null;
   frames: { label: string; explanation: string; nodes: string[] }[];
-  cards?: { front: string; back: string }[];
+  cards?: { front: string; back: string; fact_ids?: string[] }[];
 }
 export interface PersonalQuestion {
   prompt: string;
@@ -63,6 +85,27 @@ export interface PersonalQuestion {
   items: string[];
   source_ref: string;
   source_quote: string;
+}
+export interface PilotAnalysis {
+  plan: NonNullable<Evidence["pilot_plan"]>;
+  stage: string;
+  calls_used: number;
+  cached_batches: number;
+  facts: {
+    id: string;
+    title: string;
+    statement: string;
+    evidence: { ref: string; quote: string }[];
+  }[];
+  concepts: { id: string; title: string; fact_ids: string[] }[];
+  metrics: {
+    processed_chunks: number;
+    selected_chunks: number;
+    facts: number;
+    concepts: number;
+    artifact_fact_coverage: number;
+    duplicate_questions: number | null;
+  };
 }
 export interface PersonalJob {
   id: number;
@@ -80,6 +123,7 @@ export interface PersonalJob {
     modules?: LearningModule[];
     questions?: PersonalQuestion[];
     requested_count?: number;
+    pilot?: PilotAnalysis;
   };
   sources: Evidence;
   config: PersonalConfig;
@@ -107,6 +151,13 @@ export interface PersonalGrade {
   }[];
 }
 export const personalApi = {
+  progress: (key: string) =>
+    request<{
+      stage: string;
+      completed_batches: number;
+      total_batches: number;
+      calls_used: number;
+    }>(`/student/personal/progress/${encodeURIComponent(key)}`),
   status: () =>
     request<{ configured: boolean; model: string; daily_limit: number }>(
       "/student/personal/status",

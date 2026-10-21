@@ -1,17 +1,27 @@
 import { useEffect, useState } from "react";
-import { LearningModule, personalApi } from "../personal";
+import {
+  LearningModule,
+  personalApi,
+  PilotAnalysis,
+  Evidence,
+} from "../personal";
 import Markdown from "../Markdown";
 import MindMap from "./MindMap";
+import PilotEvidence, { PilotSummary } from "./PilotEvidence";
 import { SimConfig, Trace } from "../digital";
 import { ConfigFields } from "./Interaction";
 export default function PersonalModule({
   module,
   job,
   index,
+  analysis,
+  evidence,
 }: {
   module: LearningModule;
   job: number;
   index: number;
+  analysis?: PilotAnalysis;
+  evidence?: Evidence;
 }) {
   const [step, setStep] = useState(0),
     [playing, setPlaying] = useState(false);
@@ -71,6 +81,7 @@ export default function PersonalModule({
     <article className="personal-module">
       <h2>{module.title}</h2>
       <Markdown content={module.text} />
+      {analysis && <PilotSummary analysis={analysis} />}
       {module.mode === "flashcards" && !!module.cards?.length && (
         <section className="flashcard-deck" aria-label="知识闪卡">
           <p>
@@ -115,10 +126,22 @@ export default function PersonalModule({
               下一张
             </button>
           </div>
+          {analysis && evidence && (
+            <PilotEvidence
+              analysis={analysis}
+              evidence={evidence}
+              ids={module.cards[cardIndex].fact_ids}
+            />
+          )}
         </section>
       )}
       {module.mode === "map" && (
-        <MindMap module={module} job={job} index={index} />
+        <>
+          <MindMap module={module} job={job} index={index} />
+          {analysis && evidence && (
+            <PilotEvidence analysis={analysis} evidence={evidence} />
+          )}
+        </>
       )}
       {module.mode === "code" && (
         <section>

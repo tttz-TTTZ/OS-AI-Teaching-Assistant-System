@@ -96,6 +96,16 @@ export default function LearningNotebook() {
     answerRef = useRef<HTMLDivElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
   const [generationStage, setGenerationStage] = useState("");
+  const [pilotEnabled, setPilotEnabled] = useState(false);
+  const [pendingPilot, setPendingPilot] = useState<{
+    mode: Mode;
+    body: PersonalConfig;
+    evidence: Evidence;
+  }>();
+  const pilotPoll = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined,
+  );
+  useEffect(() => () => clearInterval(pilotPoll.current), []);
   useEffect(() => {
     const saved = sessionStorage.getItem(`notebook-source-tab:${user?.id}`);
     if (saved === "personal" || saved === "public") setCategory(saved);
@@ -174,6 +184,7 @@ export default function LearningNotebook() {
     setError("");
     setEvidence(undefined);
     setShowEvidence(false);
+    setPendingPilot(undefined);
     setJob(undefined);
     setParents([]);
     setLoading(!!jobId);
@@ -189,6 +200,7 @@ export default function LearningNotebook() {
         setSection(j.config.section_id || 0);
         setSources(j.config.sources);
         setLevel(j.config.level);
+        setPilotEnabled(j.config.analysis_mode === "section");
         setNote(j.note);
         setBookmarked(!!j.bookmarked);
         setEvidence(j.sources);
@@ -218,6 +230,7 @@ export default function LearningNotebook() {
     };
   }, [jobId]);
   function invalidate() {
+    setPendingPilot(undefined);
     requestKey.current = "";
     setEvidence(undefined);
     setError("");
@@ -238,8 +251,15 @@ export default function LearningNotebook() {
   const config = (mode: Mode | "practice"): PersonalConfig => ({
     chapter_id: chapter,
     section_id: section || null,
+    analysis_mode:
+      pilotEnabled && (mode === "map" || mode === "flashcards")
+        ? "section"
+        : "quick",
     sources,
     topic:
+      (pilotEnabled && (mode === "map" || mode === "flashcards")
+        ? sections.find((s) => s.id === section)?.title
+        : "") ||
       job?.config.topic ||
       prompt.trim() ||
       sources
@@ -255,7 +275,11 @@ export default function LearningNotebook() {
     count: 5,
     parent_id: job?.status === "ready" ? job.id : null,
   });
-  async function create(mode: Mode | "practice" = "explain", retry = false) {
+  async function create(
+    mode: Mode | "practice" = "explain",
+    retry = false,
+    confirmed = false,
+  ) {
     if (busy || uploading || loading) return;
     if (noteDirty && !window.confirm("笔记尚未保存，确定先生成新内容吗？"))
       return;
@@ -264,6 +288,18 @@ export default function LearningNotebook() {
       return;
     }
     const body = config(mode);
+    if (body.analysis_mode === "section" && !section) {
+      setError("请先选择本次试点的小节，并调整各份PPT的本小节页码范围。");
+      return;
+    }
+    if (
+      confirmed &&
+      JSON.stringify(body) !== JSON.stringify(pendingPilot?.body)
+    ) {
+      setError("范围或设置已改变，请重新点击工具预览。");
+      setPendingPilot(undefined);
+      return;
+    }
     if (lastMode.current !== mode) requestKey.current = "";
     lastMode.current = mode;
     if (!body.topic) {
@@ -289,7 +325,35 @@ export default function LearningNotebook() {
       const ev = await personalApi.preview(body);
       if (token !== epoch.current) return;
       setEvidence(ev);
+      if (body.analysis_mode === "section") {
+        if (
+          !confirmed ||
+          ev.fingerprint !== pendingPilot?.evidence.fingerprint
+        ) {
+          setPendingPilot({ mode: mode as Mode, body, evidence: ev });
+          setMessage("已准备分析计划，确认后才调用模型；请检查小节页码范围。");
+          return;
+        }
+        body.analysis_confirmed = true;
+        setPendingPilot(undefined);
+      }
       requestKey.current ||= crypto.randomUUID();
+      if (body.analysis_mode === "section") {
+        const key = requestKey.current;
+        pilotPoll.current = setInterval(
+          () =>
+            personalApi
+              .progress(key)
+              .then((p) => {
+                if (token === epoch.current)
+                  setGenerationStage(
+                    `${p.stage} · ${p.completed_batches}/${p.total_batches}批 · 本次已调用${p.calls_used}次`,
+                  );
+              })
+              .catch(() => {}),
+          2000,
+        );
+      }
       setGenerationStage(
         `正在生成${mode === "practice" ? "测验" : modeNames[mode]}，请稍候…`,
       );
@@ -318,6 +382,7 @@ export default function LearningNotebook() {
         setHistory(await personalApi.jobs().catch(() => []));
       }
     } finally {
+      clearInterval(pilotPoll.current);
       setBusy(false);
       setGenerationStage("");
     }
@@ -660,6 +725,43 @@ export default function LearningNotebook() {
             </button>
           </div>
           <div className="notebook-answer" ref={answerRef} aria-live="polite">
+            {busy && (
+              <p role="status" className="notebook-success">
+                {generationStage}
+              </p>
+            )}
+            {pendingPilot?.evidence.pilot_plan && (
+              <section className="pilot-plan" aria-label="小节提炼确认">
+                <h3>确认完整提炼范围</h3>
+                <p>
+                  小节：{pendingPilot.evidence.pilot_plan.scope}。
+                  {pendingPilot.evidence.pilot_plan.selected_pages}页，
+                  {pendingPilot.evidence.pilot_plan.text_chunks}个正文块，分
+                  {pendingPilot.evidence.pilot_plan.batches}批；可复用
+                  {pendingPilot.evidence.pilot_plan.cached_batches}批。
+                </p>
+                <p>
+                  预计最多{pendingPilot.evidence.pilot_plan.estimated_calls}
+                  次模型调用，可能计费。目录标记
+                  {pendingPilot.evidence.pilot_plan.excluded.length}块，无文字页
+                  {pendingPilot.evidence.pilot_plan.unreadable_pages.length}
+                  页；不代表已识别图片或已校对知识。
+                </p>
+                <button
+                  disabled={busy}
+                  onClick={() => create(pendingPilot.mode, false, true)}
+                >
+                  确认开始小节提炼
+                </button>
+                <button
+                  className="secondary"
+                  onClick={() => setPendingPilot(undefined)}
+                >
+                  返回调整范围
+                </button>
+              </section>
+            )}
+
             {error && (
               <p role="alert" className="notice">
                 {error}
@@ -775,6 +877,8 @@ export default function LearningNotebook() {
                         module={current}
                         job={job.id}
                         index={moduleIndex}
+                        analysis={job.body.pilot}
+                        evidence={job.sources}
                       />
                       <div className="notebook-citation">
                         <button
@@ -934,6 +1038,23 @@ export default function LearningNotebook() {
             <p className="notebook-studio-hint">
               先勾选左侧资料。无需填写主题即可概览所选资料；填写具体问题时按问题检索。生成后自动保存在本人账号。
             </p>
+            <label className="pilot-switch">
+              <input
+                type="checkbox"
+                checked={pilotEnabled}
+                disabled={busy || loading}
+                onChange={(e) => {
+                  setPilotEnabled(e.target.checked);
+                  invalidate();
+                }}
+              />
+              完整提炼试点（导图 / 闪卡）
+            </label>
+            {pilotEnabled && (
+              <p className="notebook-studio-hint">
+                限定一个小节，最多120页、12批、20个概念与80条结论。先设置各文件页码，预览后确认计费；知识结果可复用，失败保留已完成批次。
+              </p>
+            )}
             <div className="notebook-tools">
               {studio.map((tool) => (
                 <button

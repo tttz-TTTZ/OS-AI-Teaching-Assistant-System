@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import re
+from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 from fastapi import HTTPException
 from .digital import database
@@ -30,6 +31,9 @@ class Retrieval(BaseModel):
     topic: str = Field(min_length=1, max_length=1000)
     weakness: str = Field(default="", max_length=2000)
     source_overview: bool = False
+    analysis_mode: Literal["quick", "section"] = "quick"
+    chapter_id: int | None = None
+    section_id: int | None = None
 
 
 def index_document(document, user):
@@ -45,7 +49,7 @@ def index_document(document, user):
                 document["stored_name"],
                 document["title"],
                 document["content"],
-                "personal-index-v1",
+                "personal-index-v2-full-blocks",
             ],
             ensure_ascii=False,
         ).encode()
@@ -108,7 +112,23 @@ def index_document(document, user):
     ]
     if not chunks:
         raise HTTPException(422, "课件没有可读文字；图片/扫描内容需先OCR或补充TXT")
+    # Preserve full text separately for the small-section pilot; quick retrieval remains compatible.
+    full_chunks = []
+    for page_index, (page, text) in enumerate(pages):
+        for offset in range(0, len(text), 3000):
+            part = text[offset : offset + 3000].strip()
+            if part:
+                full_chunks.append(
+                    {
+                        "ref": f'd{document["id"]}-p{page}-b{page_index}-{offset}',
+                        "document_id": document["id"],
+                        "title": document["title"],
+                        "page": page,
+                        "text": part,
+                    }
+                )
     data = {
+        "full_chunks": full_chunks,
         "chunks": chunks,
         "total_pages": max(p for p, _ in pages),
         "signature": signature,
@@ -135,6 +155,10 @@ def terms(text):
 
 
 def retrieve(body: Retrieval, user):
+    if body.analysis_mode == "section":
+        from .knowledge_pilot import prepare
+
+        return prepare(body, user)
     pool, warnings, signatures = [], [], []
     seen = set()
     for selected in body.sources:

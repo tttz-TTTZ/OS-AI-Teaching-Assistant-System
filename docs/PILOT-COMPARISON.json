@@ -1,0 +1,31 @@
+{
+  "dataset": "2 authored synthetic PPTX; each has 6 directory slides then 4 body slides; 6 distinct gold facts, 2 duplicates",
+  "live_model": false,
+  "model": "deterministic boundary fixture; tests engineering coverage, not real DeepSeek quality",
+  "baseline": {
+    "read_chunks": 8,
+    "gold_facts_present_in_input": 0.0,
+    "flashcard_quality": "not measured; no baseline flashcards generated"
+  },
+  "pilot": {
+    "selected_pages": 20,
+    "excluded_directory_blocks": 12,
+    "processed_body_blocks": 8,
+    "expected_body_blocks": 8,
+    "gold_facts_in_result": 1.0,
+    "raw_facts": 8,
+    "deduplicated_facts": 6,
+    "duplicates_removed": 2,
+    "map_fact_reference_coverage": 1.0,
+    "map_calls": 4,
+    "flashcard_additional_calls": 1,
+    "cards": 6,
+    "duplicate_card_questions": 0,
+    "answers_match_gold_facts": 1.0
+  },
+  "unverified": [
+    "real PPT semantics and layout",
+    "real DeepSeek extraction and question quality",
+    "performance and cost on 400-slide documents"
+  ]
+}

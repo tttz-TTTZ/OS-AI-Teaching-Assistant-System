@@ -2125,3 +2125,9 @@ header h1 {
 .mindmap-hint { color: #526779; font-size: 13px; }
 .mindmap-canvas { max-width: 100%; max-height: 600px; overflow: auto; border: 1px solid #dbe6eb; border-radius: 12px; background: #f7fafc; }
 .mindmap-canvas svg { display: block; }
+.pilot-switch { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 12px 0; }
+.pilot-switch input { width: auto; margin: 3px 0; }
+.pilot-plan, .pilot-summary { border: 1px solid #b9d4cc; border-radius: 12px; background: #f1f8f5; padding: 16px; margin: 12px 0; font-size: 14px; }
+.pilot-plan button { margin: 5px; }
+.pilot-evidence { margin: 16px 0; border-top: 1px solid #dbe6eb; padding-top: 12px; }
+.pilot-evidence section { margin: 16px 0; }

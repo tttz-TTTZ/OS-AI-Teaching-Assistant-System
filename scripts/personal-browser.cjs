@@ -191,6 +191,42 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.setViewportSize({ width: 1366, height: 768 });
   await s.getByRole("button", { name: "收起来源", exact: true }).click();
   await s.getByRole("button", { name: "展开来源", exact: true }).click();
+  // End-to-end pilot: two actual PPTX uploads, explicit billing/range confirmation,
+  // map -> cached flashcards -> persisted evidence and downloadable report.
+  const sections = await (await apiCall(s, "get", base + `/api/sections?chapter_id=${cid}`)).json();
+  const selectedSection = sections.find(x => x.chapter_id === cid);
+  if (!selectedSection) throw Error("验收缺少已发布小节");
+  const decks = JSON.parse(execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "pilot_fixture.py")], { encoding: "utf8" }));
+  await s.goto(base + `/student/ai-chat?chapter=${cid}`);
+  await s.getByLabel("笔记本课程小节", { exact: true }).selectOption(String(selectedSection.id));
+  for (let i = 0; i < decks.length; i++) {
+    const response = s.waitForResponse(r => r.url().includes("/api/materials/upload") && r.request().method() === "POST");
+    await s.getByLabel("上传我的学习来源", { exact: true }).setInputFiles({name: `试点多课件${i}.pptx`, mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", buffer: Buffer.from(decks[i], "base64")});
+    if ((await response).status() !== 201) throw Error("试点课件上传失败");
+    await s.getByRole("status").filter({hasText: "资料已保存到本人账号"}).waitFor();
+  }
+  await s.getByLabel("完整提炼试点（导图 / 闪卡）", { exact: true }).check();
+  await studio.getByRole("button", { name: "思维导图", exact: true }).click();
+  await s.getByRole("region", { name: "小节提炼确认", exact: true }).waitFor();
+  await s.getByRole("button", { name: "确认开始小节提炼", exact: true }).click();
+  await s.getByRole("region", { name: "小节提炼报告", exact: true }).getByText(/6个概念/).waitFor();
+  const pilotId = Number(new URL(s.url()).searchParams.get("job"));
+  await s.getByText("查看6条知识依据（AI辅助，待核对）", { exact: true }).click();
+  await s.getByRole("link", {name: /试点多课件0.pptx · 第7页/}).first().waitFor();
+  if (process.env.BROWSER_SCREENSHOT_DIR) await s.screenshot({path: path.join(process.env.BROWSER_SCREENSHOT_DIR, "section-pilot.png"), fullPage: true});
+  await studio.getByRole("button", { name: "知识闪卡", exact: true }).click();
+  await s.getByRole("region", { name: "小节提炼确认", exact: true }).getByText(/预计最多1次/).waitFor();
+  await s.getByRole("button", { name: "确认开始小节提炼", exact: true }).click();
+  await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  await s.getByRole("button", { name: "显示答案", exact: true }).click();
+  await s.getByRole("button", { name: "闪卡答案", exact: true }).waitFor();
+  const reportDownload = s.waitForEvent("download");
+  await s.getByRole("button", { name: "下载试点报告", exact: true }).click();
+  const report = JSON.parse(fs.readFileSync(await (await reportDownload).path(), "utf8"));
+  if (report.metrics.concepts !== 6 || report.calls_used !== 1) throw Error("试点缓存或报告错误");
+  if ((await apiCall(b, "get", base + `/api/student/personal/jobs/${pilotId}`)).status() !== 404) throw Error("试点知识泄露");
+  await s.reload();
+  await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   await s.unroute("**/api/student/personal/status");
   await s.unroute("**/api/student/personal/generate");
   await t.goto(base + "/teacher/dashboard");

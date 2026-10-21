@@ -23,6 +23,9 @@ if __name__ == "__main__":
     body = ai.Generation.model_validate(json.loads(sys.stdin.read()))
 
     async def fake(body, source, **kwargs):
+        if kwargs.get("payload", {}).get("task", "").startswith("pilot_"):
+            from pilot_fixture import model_output
+            return model_output(kwargs["payload"])
         c = source["chunks"][0]
         cite = {"source_ref": c["ref"], "source_quote": c["text"][:30]}
         if body.kind == "practice":

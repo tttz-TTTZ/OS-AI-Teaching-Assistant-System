@@ -33,6 +33,7 @@ class Node(BaseModel):
     id: str = Field(pattern=r"^[a-zA-Z0-9_-]{1,40}$")
     label: str = Field(min_length=1, max_length=300)
     parent: str | None = None
+    fact_ids: list[str] = Field(default_factory=list, max_length=80)
 
 
 class Frame(BaseModel):
@@ -52,6 +53,7 @@ class Flashcard(BaseModel):
     model_config = ConfigDict(extra="forbid")
     front: str = Field(min_length=1, max_length=1000)
     back: str = Field(min_length=1, max_length=5000)
+    fact_ids: list[str] = Field(default_factory=list, max_length=8)
 
     @model_validator(mode="after")
     def valid(self):
@@ -67,7 +69,7 @@ class Module(BaseModel):
     text: str = Field(min_length=1, max_length=12000)
     source_ref: str = Field(max_length=80)
     source_quote: str = Field(min_length=8, max_length=400)
-    nodes: list[Node] = Field(default_factory=list, max_length=60)
+    nodes: list[Node] = Field(default_factory=list, max_length=120)
     code: str = Field(default="", max_length=16000)
     language: str = Field(default="text", max_length=40)
     simulation: Config | None = None
@@ -110,6 +112,7 @@ class Module(BaseModel):
 class Generation(Retrieval):
     chapter_id: int
     section_id: int | None = None
+    analysis_confirmed: bool = False
     kind: Literal["learning", "practice"] = "learning"
     modes: list[Mode] = Field(
         default_factory=lambda: ["explain"], min_length=1, max_length=7
@@ -125,10 +128,9 @@ class Generation(Retrieval):
 
 
 def own(db, ident, user):
-    db.execute(
-        "UPDATE personal_ai_jobs SET status='interrupted',error='任务中断，请确认记录后再手动生成' WHERE user_id=? AND status='running' AND created_at<datetime('now','-5 minutes')",
-        (user["id"],),
-    )
+    from .knowledge_pilot import stale_jobs
+
+    stale_jobs(db, user["id"])
     row = db.execute(
         "SELECT * FROM personal_ai_jobs WHERE id=? AND user_id=?", (ident, user["id"])
     ).fetchone()
@@ -206,10 +208,9 @@ def preview(body: Retrieval, user=Depends(student)):
 @router.get("/jobs")
 def jobs(user=Depends(student)):
     with database() as db:
-        db.execute(
-            "UPDATE personal_ai_jobs SET status='interrupted',error='任务中断' WHERE user_id=? AND status='running' AND created_at<datetime('now','-5 minutes')",
-            (user["id"],),
-        )
+        from .knowledge_pilot import stale_jobs
+
+        stale_jobs(db, user["id"])
         return [
             dict(r)
             for r in db.execute(
@@ -217,6 +218,25 @@ def jobs(user=Depends(student)):
                 (user["id"],),
             )
         ]
+
+
+@router.get("/progress/{request_key}")
+def progress(request_key: str, user=Depends(student)):
+    with database() as db:
+        row = db.execute(
+            "SELECT status,body_json FROM personal_ai_jobs WHERE user_id=? AND request_key=?",
+            (user["id"], request_key),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "任务尚未建立或不存在")
+    state = json.loads(row["body_json"]).get("pilot", {})
+    return {
+        "status": row["status"],
+        "stage": state.get("stage", "准备中"),
+        "completed_batches": len(state.get("batches", {})),
+        "total_batches": state.get("plan", {}).get("batches", 0),
+        "calls_used": state.get("calls_used", 0),
+    }
 
 
 @router.get("/jobs/{ident}")
@@ -311,6 +331,16 @@ def generation_instructions(body):
 @router.post("/generate")
 async def generate(body: Generation, user=Depends(student)):
     _, _, model = provider_settings()
+    if body.analysis_mode == "section" and (
+        body.kind != "learning"
+        or len(body.modes) != 1
+        or body.modes[0] not in ("map", "flashcards")
+    ):
+        raise HTTPException(422, "小节完整提炼试点仅支持单项思维导图或知识闪卡")
+    if body.analysis_mode == "section" and not body.analysis_confirmed:
+        raise HTTPException(
+            422, "请先预览本小节的页码范围与预计调用次数，再确认开始提炼"
+        )
     parent = None
     previous_attempt = None
     with database() as db:
@@ -367,10 +397,9 @@ async def generate(body: Generation, user=Depends(student)):
             if old["request_hash"] != digest:
                 raise HTTPException(409, "请求标识已用于其他内容")
             return result(own(db, old["id"], user))
-        db.execute(
-            "UPDATE personal_ai_jobs SET status='interrupted',error='任务中断' WHERE user_id=? AND status='running' AND created_at<datetime('now','-5 minutes')",
-            (user["id"],),
-        )
+        from .knowledge_pilot import stale_jobs
+
+        stale_jobs(db, user["id"])
         if db.execute(
             "SELECT 1 FROM personal_ai_jobs WHERE user_id=? AND status='running'",
             (user["id"],),
@@ -398,31 +427,36 @@ async def generate(body: Generation, user=Depends(student)):
         ).lastrowid
     system = generation_instructions(body)
     try:
-        output = await call_deepseek(
-            body,
-            source,
-            system_prompt=system,
-            payload={
-                "task": body.kind,
-                "chapter": chapter["title"],
-                "topic": body.topic,
-                "source_overview": body.source_overview,
-                "weakness": body.weakness,
-                "level": body.level,
-                "modes": list(dict.fromkeys(body.modes)),
-                "count": body.count,
-                "question_kinds": body.question_kinds,
-                "previous_learning": (
-                    json.dumps(json.loads(parent["body_json"]), ensure_ascii=False)[
-                        :16000
-                    ]
-                    if parent
-                    else None
-                ),
-                "previous_self_test": previous_attempt,
-                "sources": source["chunks"],
-            },
-        )
+        if body.analysis_mode == "section":
+            from .knowledge_pilot import distill
+
+            output = await distill(body, source, user, ident, call_deepseek)
+        else:
+            output = await call_deepseek(
+                body,
+                source,
+                system_prompt=system,
+                payload={
+                    "task": body.kind,
+                    "chapter": chapter["title"],
+                    "topic": body.topic,
+                    "source_overview": body.source_overview,
+                    "weakness": body.weakness,
+                    "level": body.level,
+                    "modes": list(dict.fromkeys(body.modes)),
+                    "count": body.count,
+                    "question_kinds": body.question_kinds,
+                    "previous_learning": (
+                        json.dumps(json.loads(parent["body_json"]), ensure_ascii=False)[
+                            :16000
+                        ]
+                        if parent
+                        else None
+                    ),
+                    "previous_self_test": previous_attempt,
+                    "sources": source["chunks"],
+                },
+            )
         title = output.get("title", body.topic) if isinstance(output, dict) else ""
         if not isinstance(title, str) or not title.strip() or len(title) > 200:
             raise HTTPException(502, "AI没有返回有效标题")
@@ -437,6 +471,15 @@ async def generate(body: Generation, user=Depends(student)):
             for m in modules:
                 citation(m.source_ref, m.source_quote, source)
             content = {"title": title, "modules": [m.model_dump() for m in modules]}
+            if body.analysis_mode == "section":
+                # Re-authorize files/versions after a potentially long multi-call task.
+                latest = await run_in_threadpool(retrieve, body, user)
+                if latest["fingerprint"] != body.fingerprint:
+                    raise HTTPException(
+                        409,
+                        "提炼期间资料版本变化，请重新确认范围；旧批次不会作为新版本使用",
+                    )
+                content["pilot"] = output["pilot"]
         else:
             raw = output.get("questions", [])
             if not isinstance(raw, list) or not 1 <= len(raw) <= body.count:
