@@ -37,6 +37,9 @@ async def lifespan(app):
     migrate(DB_PATH)
     with database() as db:
         db.execute("PRAGMA journal_mode=WAL")
+    from .chapter_apply import auto_apply_chapter
+
+    auto_apply_chapter()
     yield
 
 
@@ -351,5 +354,6 @@ from .personal_chat import router as personal_chat_router
 app.include_router(personal_chat_router)
 
 from .chapter_content import router as chapter_content_router
+from . import chapter_apply  # register direct-apply route before including router
 
 app.include_router(chapter_content_router)

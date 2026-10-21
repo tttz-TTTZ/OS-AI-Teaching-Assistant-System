@@ -61,12 +61,12 @@ const base = process.env.APP_TEST_BASE_URL;
     const cid = (await created.json()).id;
     await t.goto(base + "/teacher/knowledge");
     await t
-      .getByRole("link", { name: "审核已填写的第一章内容", exact: true })
+      .getByRole("link", { name: "查看新版第一章内容", exact: true })
       .click();
     await t
-      .getByRole("heading", { name: "第一章内容审核", exact: true })
+      .getByRole("heading", { name: "第一章课程内容", exact: true })
       .waitFor();
-    const choices = t.getByLabel("选择审核内容");
+    const choices = t.getByLabel("选择查看内容");
     await choices.selectOption("CH01-K014");
     if ((await choices.locator("option").count()) !== 17)
       throw Error("内容未完整填写");
@@ -77,9 +77,12 @@ const base = process.env.APP_TEST_BASE_URL;
     await t.getByRole("img", { name: /FLOW-02/ }).waitFor();
     await t.getByLabel("导入目标章节").selectOption(String(cid));
     await t
-      .getByRole("button", { name: "保存已填写内容为待审核草稿", exact: true })
+      .getByRole("button", { name: "应用新内容并直接发布", exact: true })
       .click();
-    await t.getByRole("status").filter({ hasText: "草稿已保存" }).waitFor();
+    await t
+      .getByRole("status")
+      .filter({ hasText: "第一章已替换并发布" })
+      .waitFor();
     const result = await (
       await api(t, "post", "/teacher/chapter-content/chapter01/import", {
         chapter_id: cid,
@@ -88,32 +91,19 @@ const base = process.env.APP_TEST_BASE_URL;
     if (!result.already_imported || result.points.length !== 16)
       throw Error("幂等草稿保存失败");
     const point = result.points.find((p) => p.code === "CH01-K009");
-    if ((await api(s, "get", `/learning-content/${point.id}`)).status() !== 404)
-      throw Error("草稿泄露");
+    if ((await api(s, "get", `/learning-content/${point.id}`)).status() !== 200)
+      throw Error("直接应用后学生不可见");
     if (
       (await api(s, "get", "/teacher/chapter-content/chapter01")).status() !==
       403
     )
-      throw Error("审核包越权");
-    const draft = await (
-      await api(t, "get", `/teacher/learning-content/${point.id}`)
-    ).json();
-    const section = await (await api(t, "get", "/sections")).json();
-    const sec = section.find((x) => x.id === draft.section_id);
-    await api(t, "put", `/teacher/sections/${sec.id}`, {
-      chapter_id: cid,
-      code: sec.code,
-      title: sec.title,
-      sort_order: sec.sort_order,
-      published: true,
-    });
-    const pub = await api(
-      t,
-      "post",
-      `/teacher/learning-content/${point.id}/publish`,
-      { expected_version: draft.edit_version },
-    );
-    if (!pub.ok()) throw Error(await pub.text());
+      throw Error("课程包越权");
+    if (
+      !(await t
+        .getByRole("button", { name: "应用新内容并直接发布", exact: true })
+        .isDisabled())
+    )
+      throw Error("已应用状态应阻止重复覆盖");
     await s.goto(base + `/student/knowledge?chapter=${cid}&point=${point.id}`);
     await s
       .getByRole("button", { name: /FLOW-02|RR时间片轮转流程/ })
@@ -123,14 +113,12 @@ const base = process.env.APP_TEST_BASE_URL;
     await s.reload();
     await s.getByRole("img", { name: /FLOW-02/ }).waitFor();
     if (process.env.BROWSER_SCREENSHOT_DIR) {
-      await s
-        .locator(".knowledge-diagram")
-        .screenshot({
-          path: path.join(
-            process.env.BROWSER_SCREENSHOT_DIR,
-            "chapter-content-flow.png",
-          ),
-        });
+      await s.locator(".knowledge-diagram").screenshot({
+        path: path.join(
+          process.env.BROWSER_SCREENSHOT_DIR,
+          "chapter-content-flow.png",
+        ),
+      });
       await t.screenshot({
         path: path.join(
           process.env.BROWSER_SCREENSHOT_DIR,
@@ -147,7 +135,7 @@ const base = process.env.APP_TEST_BASE_URL;
     }
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "第一章内容：审核预览、图示、草稿导入、重复导入、权限、发布与学生刷新通过",
+      "第一章内容：内容查看、图示、直接替换发布、重复应用保护、权限与学生刷新通过",
     );
   } finally {
     await browser.close();

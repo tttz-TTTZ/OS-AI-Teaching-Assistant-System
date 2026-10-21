@@ -47,6 +47,9 @@ def run(chapter_only=False) -> None:
     with tempfile.TemporaryDirectory(prefix="os-v02-") as folder:
         temp = Path(folder)
         os.environ["DATABASE_PATH"] = str(temp / "test.db")
+        os.environ["CHAPTER01_AUTO_APPLY"] = (
+            "0"  # old fixtures; direct apply has dedicated verification
+        )
         sys.path.insert(0, str(ROOT / "backend"))
         from app.main import DB_PATH
         from app.migrations import migrate

@@ -33,7 +33,7 @@ def chapters(user: dict = Depends(require_user)):
 def knowledge(chapter_id: int | None = None, user: dict = Depends(require_user)):
     with db_context() as db:
         rows = db.execute(
-            "SELECT k.* FROM knowledge_points k JOIN chapters ch ON ch.id=k.chapter_id JOIN courses c ON c.id=ch.course_id WHERE (? IS NULL OR k.chapter_id=?) AND ch.archived_at IS NULL AND (? OR (k.published=1 AND ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,k.id",
+            "SELECT k.* FROM knowledge_points k JOIN chapters ch ON ch.id=k.chapter_id JOIN courses c ON c.id=ch.course_id WHERE (? IS NULL OR k.chapter_id=?) AND k.archived_at IS NULL AND ch.archived_at IS NULL AND (? OR (k.published=1 AND ch.published=1 AND c.published=1)) ORDER BY ch.sort_order,k.id",
             (chapter_id, chapter_id, user["role"] == "teacher"),
         ).fetchall()
         from .digital import view_point
@@ -55,7 +55,7 @@ def knowledge_detail(item_id: int, user: dict = Depends(require_user)):
         row = db.execute(
             "SELECT * FROM knowledge_points WHERE id=?", (item_id,)
         ).fetchone()
-        if not row:
+        if not row or row["archived_at"]:
             raise HTTPException(404, "知识点不存在")
         visible_chapter(db, row["chapter_id"], user)
         if user["role"] != "teacher" and not row["published"]:
