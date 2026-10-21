@@ -22,7 +22,11 @@ export default function ContentView({
       {(!focus || focus === "overview") && (
         <>
           <div className="toolbar">
-            <span className="badge">{content.code || "课程知识点"}</span>
+            <span className="badge">
+              {!preview && content.code?.startsWith("CH01-")
+                ? "本节要点"
+                : content.code || "课程知识点"}
+            </span>
             {content.emphasis && (
               <span className="badge">{content.emphasis}</span>
             )}
@@ -51,7 +55,7 @@ export default function ContentView({
             <h3>{block.title || "学习内容"}</h3>
             {block.text && <Markdown content={block.text} />}
             {block.kind === "diagram" && block.diagram && (
-              <KnowledgeDiagram diagram={block.diagram} />
+              <KnowledgeDiagram diagram={block.diagram} editor={preview} />
             )}
             {block.kind === "image" && block.asset_id && (
               <figure>
@@ -92,7 +96,8 @@ export default function ContentView({
             )}
           </section>
         ))}
-      {!focus &&
+      {preview &&
+        !focus &&
         (content.source_title ||
           content.printed_pages ||
           content.pdf_pages ||

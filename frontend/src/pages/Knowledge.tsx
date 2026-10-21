@@ -5,7 +5,6 @@ import { Content, digitalApi, Progress, Section } from "../digital";
 import { Notice, useChapters } from "../components";
 import { useAuth } from "../auth";
 import ContentView from "../learning/ContentView";
-import Markdown from "../Markdown";
 import { studyApi } from "../study";
 import { Experiment, experimentApi } from "../experiments";
 
@@ -30,6 +29,23 @@ export default function Knowledge() {
   const [sections, setSections] = useState<Section[]>([]);
   const [detail, setDetail] = useState<Content>();
   const [experiments, setExperiments] = useState<Experiment[]>([]);
+  const [hasPractice, setHasPractice] = useState<boolean | null>(null);
+  useEffect(() => {
+    let current = true;
+    setHasPractice(null);
+    if (requested && chapter)
+      studyApi
+        .questions(chapter, requested)
+        .then((rows) => {
+          if (current) setHasPractice(rows.length > 0);
+        })
+        .catch(() => {
+          if (current) setHasPractice(false);
+        });
+    return () => {
+      current = false;
+    };
+  }, [requested, chapter]);
   useEffect(() => {
     let active = true;
     setExperiments([]);
@@ -344,6 +360,27 @@ export default function Knowledge() {
   const visible = items.filter((p) =>
     (p.code + " " + p.title + " " + p.summary).includes(query),
   );
+  const stageNames: Record<string, string> = {
+    overview: "学习路线",
+    intro: "想一想",
+    concept: "抓住概念",
+    explanation: "理解原理",
+    diagram: "看图梳理",
+    interaction: "动手观察",
+    case: "看个例子",
+    mistake: "辨清误区",
+    summary: "回顾要点",
+  };
+  const stageHints: Record<string, string> = {
+    intro: "先带着这个问题往下读，不必急着给出标准答案。",
+    concept: "先抓住定义和边界，再进入具体过程。",
+    explanation: "留意成立条件，理解每一步为什么发生。",
+    diagram: "选择节点查看关系，或逐条阅读分支。",
+    interaction: "先预测，再操作；对照状态变化检查自己的判断。",
+    case: "把刚才的原理放回具体情景中理解。",
+    mistake: "对照容易混淆的说法，找出差异。",
+    summary: "试着用自己的话解释，再决定是否做实验或练习。",
+  };
   const practice = `/student/practice?chapter=${chapter || ""}&knowledge=${detail?.id || ""}&block=${active === "overview" ? "" : encodeURIComponent(active)}`;
   const catalog = new URLSearchParams(
     chapter ? { chapter: String(chapter) } : {},
@@ -355,10 +392,19 @@ export default function Knowledge() {
         <div className="study-point-row" key={p.id}>
           <div>
             <small>
-              {p.code || "知识点"}
+              {p.code?.startsWith("CH01-")
+                ? p.emphasis || "知识点"
+                : p.code || "知识点"}
               {p.minutes ? ` · 建议 ${p.minutes} 分钟` : ""}
             </small>
             <h3>{p.title}</h3>
+            <div className="reading-card-tags">
+              {p.block_kinds?.includes("diagram") && <span>有图解</span>}
+              {p.block_kinds?.includes("interaction") && (
+                <span>可交互观察</span>
+              )}
+              {p.lab && <span>配套实验</span>}
+            </div>
             {p.summary && <p>{p.summary}</p>}
           </div>
           <button onClick={() => choose(p)} disabled={saving}>
@@ -477,7 +523,11 @@ export default function Knowledge() {
           ) : detail ? (
             <>
               <header className="study-heading study-lesson-heading">
-                <span>{detail.code || "课程知识点"}</span>
+                <span>
+                  {detail.code?.startsWith("CH01-")
+                    ? "知识学习"
+                    : detail.code || "知识学习"}
+                </span>
                 <h1>{detail.title}</h1>
               </header>
               <nav className="study-tabs" aria-label="知识点学习任务">
@@ -497,7 +547,7 @@ export default function Knowledge() {
                   to={practice}
                   onClick={(e) => void follow(e, practice)}
                 >
-                  练习本知识点 →
+                  练习与自测 →
                 </Link>
               </nav>
               {message && (
@@ -511,6 +561,19 @@ export default function Knowledge() {
                 </p>
               )}
               <div hidden={view !== "read"}>
+                <nav className="reading-route" aria-label="学习路线">
+                  {modules.map((m, i) => (
+                    <button
+                      key={m.id}
+                      disabled={saving}
+                      aria-current={active === m.id ? "step" : undefined}
+                      onClick={() => selectBlock(m.id)}
+                    >
+                      <span>{i === 0 ? "起" : i}</span>
+                      {stageNames[m.kind] || m.title}
+                    </button>
+                  ))}
+                </nav>
                 <section className="study-card study-module-tools">
                   <label>
                     本知识点学习导航
@@ -529,7 +592,9 @@ export default function Knowledge() {
                     </select>
                   </label>
                   <span>
-                    当前 {moduleIndex + 1} / {modules.length} 个阅读环节
+                    {moduleIndex === 0
+                      ? "选择学习起点"
+                      : `阅读位置 ${moduleIndex} / ${modules.length - 1}`}
                   </span>
                   <label className="study-font">
                     字号
@@ -551,6 +616,18 @@ export default function Knowledge() {
                   style={{ fontSize: font }}
                   aria-label="当前学习内容"
                 >
+                  {active !== "overview" && (
+                    <header className="reading-stage-heading">
+                      <span>
+                        第 {moduleIndex} 步 ·{" "}
+                        {stageNames[modules[moduleIndex].kind] || "继续学习"}
+                      </span>
+                      <p>
+                        {stageHints[modules[moduleIndex].kind] ||
+                          "按自己的节奏阅读，可以随时切换环节。"}
+                      </p>
+                    </header>
+                  )}
                   <ContentView
                     key={`${detail.id}-${detail.revision_id}-${active}`}
                     content={detail}
@@ -561,8 +638,16 @@ export default function Knowledge() {
                   {active === "overview" && (
                     <>
                       <p>
-                        下面按教师安排的顺序学习，也可以通过导航直接选择内容。阅读位置会随学习记录保存；切换页面不代表已经掌握。
+                        按顺序学习，或直接选择你想弄懂的环节。阅读位置会自动记在本次学习记录中。
                       </p>
+                      {modules.length > 1 && (
+                        <button
+                          className="reading-start"
+                          onClick={() => selectBlock(modules[1].id)}
+                        >
+                          开始这一知识点 →
+                        </button>
+                      )}
                       <ol className="study-module-list">
                         {modules.slice(1).map((b) => (
                           <li key={b.id}>
@@ -590,6 +675,19 @@ export default function Knowledge() {
                       )}
                     </>
                   )}
+                  {active !== "overview" &&
+                    ["diagram", "case", "summary"].includes(
+                      modules[moduleIndex].kind,
+                    ) &&
+                    !!experiments.length && (
+                      <section className="reading-lab-prompt">
+                        <h3>把理解放进实验里</h3>
+                        <p>
+                          先预测结果，再调整参数验证；完成后可返回这里继续。
+                        </p>
+                        {experimentLinks()}
+                      </section>
+                    )}
                 </section>
                 <div className="study-next-bar">
                   <button
@@ -606,6 +704,23 @@ export default function Knowledge() {
                       onClick={() => selectBlock(modules[moduleIndex + 1].id)}
                     >
                       下一环节 →
+                    </button>
+                  ) : experiments.length ? (
+                    <Link
+                      className="button"
+                      to={`/student/experiments/${experiments[0].id}?from=${detail.id}&block=${encodeURIComponent(active)}`}
+                      onClick={(e) =>
+                        void follow(
+                          e,
+                          `/student/experiments/${experiments[0].id}?from=${detail.id}&block=${encodeURIComponent(active)}`,
+                        )
+                      }
+                    >
+                      进入配套实验 →
+                    </Link>
+                  ) : hasPractice === false ? (
+                    <button onClick={() => selectView("notes")}>
+                      记下我的理解 →
                     </button>
                   ) : (
                     <Link
@@ -628,12 +743,10 @@ export default function Knowledge() {
                     </button>
                     {detail.lab && (
                       <Link
-                        to="/student/experiments?algorithm=fcfs"
-                        onClick={(e) =>
-                          void follow(e, "/student/experiments?algorithm=fcfs")
-                        }
+                        to="/student/experiments"
+                        onClick={(e) => void follow(e, "/student/experiments")}
                       >
-                        查看 FCFS 实验 →
+                        浏览算法实验 →
                       </Link>
                     )}
                     {index >= 0 && index < items.length - 1 && (
@@ -679,17 +792,6 @@ export default function Knowledge() {
                     {!detail.materials?.length && <p>教师尚未关联补充资料。</p>}
                   </section>
                   <section className="study-card">
-                    <h2>内容来源与页码</h2>
-                    <p>{detail.source_title || "来源待教师补充"}</p>
-                    {detail.printed_pages && (
-                      <p>教材印刷页：{detail.printed_pages}</p>
-                    )}
-                    {detail.pdf_pages && <p>PDF 页序：{detail.pdf_pages}</p>}
-                    {detail.source_note && (
-                      <Markdown content={detail.source_note} />
-                    )}
-                  </section>
-                  <section className="study-card">
                     <h2>关联学习</h2>
                     {detail.related?.map((p) => {
                       const to = `/student/knowledge?chapter=${p.chapter_id}&point=${p.id}`;
@@ -711,15 +813,12 @@ export default function Knowledge() {
                     {detail.lab && !experiments.length && (
                       <p>
                         <Link
-                          to="/student/experiments?algorithm=fcfs"
+                          to="/student/experiments"
                           onClick={(e) =>
-                            void follow(
-                              e,
-                              "/student/experiments?algorithm=fcfs",
-                            )
+                            void follow(e, "/student/experiments")
                           }
                         >
-                          查看 FCFS 实验 →
+                          浏览算法实验 →
                         </Link>
                       </p>
                     )}

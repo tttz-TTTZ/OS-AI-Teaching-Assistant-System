@@ -248,6 +248,10 @@ def view_point(db, point, user, preview=False):
     if point["digital_managed"] and not revision:
         raise HTTPException(404, "知识点没有发布版本")
     body = body_of(db, point, revision)
+    if user["role"] != "teacher":
+        from .reading import student_reading
+
+        body = student_reading(body)
     if body.get("section_id"):
         section = get(db, "sections", body["section_id"])
         if user["role"] != "teacher" and not section["published"]:
@@ -519,9 +523,14 @@ def list_content(chapter_id: int | None = None, user=Depends(require_user)):
                 data = view_point(db, dict(row), user)
                 result.append(
                     {
-                        k: v
-                        for k, v in data.items()
-                        if k not in ("blocks", "objectives", "source_note")
+                        **{
+                            k: v
+                            for k, v in data.items()
+                            if k not in ("blocks", "objectives", "source_note")
+                        },
+                        "block_kinds": list(
+                            dict.fromkeys(b["kind"] for b in data["blocks"])
+                        ),
                     }
                 )
             except HTTPException:

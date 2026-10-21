@@ -2149,3 +2149,32 @@ header h1 {
 .diagram-scroll { overflow:auto; border:1px solid #d6e4e6; border-radius:12px; background:#f7fbfc; }
 .diagram-scroll svg { display:block; width:100%; }
 .knowledge-diagram figcaption { color:#527078; padding:.7rem 0; }
+
+/* 阅读路径以实际环节为准，不把浏览进度当掌握程度。 */
+.reading-route { display:flex; gap:.5rem; overflow-x:auto; padding:.8rem .1rem 1rem; }
+.reading-route button { flex-shrink:0; display:flex; align-items:center; gap:.45rem; background:white; color:#50666d; border:1px solid #dce5e8; padding:.7rem .85rem; }
+.reading-route button span { font-size:.8rem; width:1.45rem; height:1.45rem; display:grid; place-items:center; background:#eef3f3; border-radius:50%; }
+.reading-route button[aria-current="step"] { background:#236b62; color:white; border-color:#236b62; }
+.reading-route button[aria-current="step"] span { background:#ffffff26; }
+.reading-stage-heading { border-bottom:1px solid #e3ebeb; padding-bottom:1rem; margin-bottom:1.5rem; }
+.reading-stage-heading > span { font-size:.85rem; font-weight:650; color:#23716a; }
+.reading-stage-heading p { margin:.5rem 0 0; color:#62777e; font-size:.95rem; }
+.study-reader .prose { max-width:74ch; line-height:1.95; }
+.study-reader .prose p { margin:1rem 0; }
+.study-reader .kind-concept { border-left:4px solid #409b8a; padding-left:1.2rem; }
+.study-reader .kind-mistake { background:#fff8ed; border-radius:12px; padding:1.1rem 1.4rem; }
+.reading-start { margin:.8rem 0 1.2rem; }
+.reading-lab-prompt { margin-top:2rem; padding:1.2rem 1.4rem; border-radius:12px; background:#edf6f2; }
+.reading-card-tags { display:flex; gap:.5rem; margin:.4rem 0; flex-wrap:wrap; }
+.reading-card-tags span { font-size:.75rem; color:#386d66; background:#edf5f2; padding:.2rem .55rem; border-radius:6px; }
+.diagram-controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-bottom:.75rem; }
+.diagram-controls > span { margin-right:auto; font-weight:650; }
+.diagram-controls button { padding:.45rem .75rem; font-size:.85rem; }
+.diagram-reading-note { padding:.8rem 1rem; min-height:3rem; border:1px solid #dce9e4; border-radius:10px; margin-bottom:.8rem; background:#f2f8f5; font-size:.9rem; }
+.diagram-reading-note p, .diagram-reading-note ul { margin:.25rem 0; }
+.diagram-node { cursor:pointer; outline:none; }
+.diagram-node:focus rect { stroke:#a76324; stroke-width:4px; }
+.diagram-relations { margin:.7rem 0; }
+.diagram-relations summary, .interaction-settings summary { cursor:pointer; color:#246f65; padding:.65rem 0; }
+.study-reader .diagram-scroll { max-height:620px; }
+@media (max-width:700px) { .reading-route button { padding:.55rem .65rem; font-size:.85rem; } .diagram-controls > span { width:100%; } .study-reader .diagram-scroll { max-height:470px; } .study-reader .kind-mistake { padding:.8rem; } }

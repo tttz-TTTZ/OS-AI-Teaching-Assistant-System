@@ -107,6 +107,7 @@ export interface Content {
   pdf_pages: string;
   source_note: string;
   blocks: ContentBlock[];
+  block_kinds?: ContentBlock["kind"][];
   related_ids: number[];
   lab: boolean;
   edit_version?: number;

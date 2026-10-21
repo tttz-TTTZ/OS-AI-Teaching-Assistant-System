@@ -64,7 +64,8 @@ def test_revision_publication_and_conflict(clients):
     )
     assert pub.status_code == 200, pub.text
     data = s.get("/api/learning-content/1").json()
-    assert data["code"] == "待校对" and data["printed_pages"] == "待核对"
+    assert data["code"] == "待校对" and data["printed_pages"] == ""
+    assert t.get("/api/teacher/learning-content/1").json()["printed_pages"] == "待核对"
     body.update(expected_version=pub.json()["edit_version"], title="仅新草稿")
     draft = t.put("/api/teacher/learning-content/1", json=body).json()
     assert s.get("/api/learning-content/1").json()["title"] == "可编辑教学样板"

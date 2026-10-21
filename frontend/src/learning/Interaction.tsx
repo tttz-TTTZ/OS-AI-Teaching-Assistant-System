@@ -164,7 +164,10 @@ export default function Interaction({
         <span className="badge">{templates[config.template]}</span>
         <small>教学简化模型 · 参数改变后重新运行</small>
       </div>
-      <ConfigFields value={config} onChange={change} />
+      <details className="interaction-settings" open={!trace}>
+        <summary>调整观察条件</summary>
+        <ConfigFields value={config} onChange={change} />
+      </details>
       <button type="button" disabled={busy} onClick={run}>
         {busy ? "计算中…" : "生成教学事件"}
       </button>

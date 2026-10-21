@@ -70,11 +70,11 @@ const base = process.env.APP_TEST_BASE_URL;
     await choices.selectOption("CH01-K014");
     if ((await choices.locator("option").count()) !== 17)
       throw Error("内容未完整填写");
-    await t.getByRole("img", { name: /MAP-04/ }).waitFor();
+    await t.getByRole("group", { name: /MAP-04/ }).waitFor();
     if ((await t.locator("path[stroke-dasharray]").count()) !== 3)
       throw Error("未保留待核实关系方向");
     await choices.selectOption("CH01-K009");
-    await t.getByRole("img", { name: /FLOW-02/ }).waitFor();
+    await t.getByRole("group", { name: /RR时间片轮转流程/ }).waitFor();
     await t.getByLabel("导入目标章节").selectOption(String(cid));
     await t
       .getByRole("button", { name: "应用新内容并直接发布", exact: true })
@@ -109,9 +109,72 @@ const base = process.env.APP_TEST_BASE_URL;
       .getByRole("button", { name: /FLOW-02|RR时间片轮转流程/ })
       .first()
       .click();
-    await s.getByRole("img", { name: /FLOW-02/ }).waitFor();
+    await s.getByRole("group", { name: /RR时间片轮转流程/ }).waitFor();
     await s.reload();
-    await s.getByRole("img", { name: /FLOW-02/ }).waitFor();
+    await s.getByRole("group", { name: /RR时间片轮转流程/ }).waitFor();
+    if (
+      /SRC-|VERIFY-|来源待教师补充|等待你审核/.test(
+        await s.locator("body").innerText(),
+      )
+    )
+      throw Error("学生界面泄露编写元数据");
+    const diagram = s.locator(".knowledge-diagram");
+    const node = s.getByRole("button", {
+      name: "查看就绪队列非空？的关系",
+      exact: true,
+    });
+    await node.click();
+    await node.focus();
+    await node.press("Enter");
+    if ((await node.getAttribute("aria-pressed")) !== "false")
+      throw Error("键盘无法取消节点选择");
+    await node.press("Space");
+    if ((await node.getAttribute("aria-pressed")) !== "true")
+      throw Error("节点选择没有反馈");
+    await diagram
+      .getByRole("button", { name: "下一条关系", exact: true })
+      .click();
+    await diagram
+      .locator(".diagram-reading-note")
+      .getByText("初始化", { exact: true })
+      .waitFor();
+    const graphWidth = await diagram
+      .locator("svg")
+      .evaluate((e) => e.getBoundingClientRect().width);
+    await diagram.getByRole("button", { name: "放大", exact: true }).click();
+    if (
+      (await diagram
+        .locator("svg")
+        .evaluate((e) => e.getBoundingClientRect().width)) <= graphWidth
+    )
+      throw Error("图示无法放大");
+    await diagram
+      .getByRole("button", { name: "重置图示", exact: true })
+      .click();
+    if (await diagram.locator("table").isVisible())
+      throw Error("关系表不应默认展开");
+    await diagram.getByText("查看全部关系与分支", { exact: true }).click();
+    await diagram.locator("table").waitFor();
+    await diagram.getByText("查看全部关系与分支", { exact: true }).click();
+    await s
+      .getByRole("navigation", { name: "学习路线", exact: true })
+      .getByRole("button", { name: /看个例子/ })
+      .click();
+    if (new URL(s.url()).searchParams.get("block") !== "case")
+      throw Error("路线导航没有跳转");
+    if ((await s.locator("body").innerText()).includes("本例为教学补充"))
+      throw Error("例子仍混有编写说明");
+    await s.getByRole("button", { name: "上一环节", exact: true }).click();
+    await s.getByRole("group", { name: /RR时间片轮转流程/ }).waitFor();
+    await s.getByRole("button", { name: "相关资料", exact: true }).click();
+    if (
+      await s
+        .getByRole("heading", { name: "内容来源与页码", exact: true })
+        .count()
+    )
+      throw Error("来源面板仍向学生展示");
+    await s.getByRole("button", { name: "阅读与观察", exact: true }).click();
+    await s.getByRole("group", { name: /RR时间片轮转流程/ }).waitFor();
     if (process.env.BROWSER_SCREENSHOT_DIR) {
       await s.locator(".knowledge-diagram").screenshot({
         path: path.join(

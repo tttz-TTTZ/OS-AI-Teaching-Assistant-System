@@ -407,7 +407,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
           })
         : r.continue(),
     );
-    await s.getByRole("link", { name: "练习本知识点 →", exact: true }).click();
+    await s.getByRole("link", { name: "练习与自测 →", exact: true }).click();
     await s
       .getByRole("alert")
       .filter({ hasText: "验收模拟保存失败" })
@@ -575,7 +575,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
     const returnModule = await s
       .getByLabel("本知识点学习导航", { exact: true })
       .inputValue();
-    await s.getByRole("link", { name: "练习本知识点 →", exact: true }).click();
+    await s.getByRole("link", { name: "练习与自测 →", exact: true }).click();
     await s.getByLabel("A. 正确选项", { exact: true }).check();
     await s.getByRole("button", { name: "提交练习", exact: true }).click();
     await s.getByText("本次得分：1 / 1", { exact: true }).waitFor();

@@ -96,6 +96,7 @@ export default function LearningNotebook() {
     fileInput = useRef<HTMLInputElement>(null),
     answerRef = useRef<HTMLDivElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
+  const immediateAnswer = useRef<PersonalJob | null>(null);
   const [generationStage, setGenerationStage] = useState("");
   const [useSources, setUseSources] = useState(true);
   const [pendingPilot, setPendingPilot] = useState<{
@@ -180,6 +181,19 @@ export default function LearningNotebook() {
     };
   }, [category, search, refresh]);
   useEffect(() => {
+    // The ask response already contains the complete saved conversation. Refetching
+    // on this navigation can clear text the student has just started typing.
+    if (immediateAnswer.current?.id === jobId) {
+      const answer = immediateAnswer.current;
+      immediateAnswer.current = null;
+      setJob(answer);
+      setChapter(answer.chapter_id);
+      setParents([]);
+      setNote(answer.note);
+      setBookmarked(!!answer.bookmarked);
+      setLoading(false);
+      return;
+    }
     let alive = true;
     epoch.current++;
     setError("");
@@ -419,6 +433,7 @@ export default function LearningNotebook() {
         { ...answer, config_json: JSON.stringify(answer.config) },
         ...old.filter((h) => h.id !== answer.id),
       ]);
+      immediateAnswer.current = answer;
       setParams({ chapter: String(answer.chapter_id), job: String(answer.id) });
       setJob(answer);
       setPrompt("");

@@ -155,7 +155,7 @@ export default function BlockEditor({
                   <p>
                     结构化图示随本次审核包提供；本页可修改标题与说明，图结构的可视化编辑后续开放。
                   </p>
-                  <KnowledgeDiagram diagram={block.diagram} />
+                  <KnowledgeDiagram diagram={block.diagram} editor />
                 </>
               )}
               {block.kind === "image" && (
