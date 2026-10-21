@@ -33,6 +33,7 @@ import AIQuestions from "./pages/teacher/AIQuestions";
 import TeacherMaterials from "./pages/teacher/Materials";
 import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
+import ChapterContent from "./pages/teacher/ChapterContent";
 import { Page, Notice } from "./components";
 const student = [
   ["dashboard", "学习首页"],
@@ -173,6 +174,7 @@ function App() {
         <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="/teacher" element={<Guard role="teacher" />}>
+        <Route path="chapter-content" element={<ChapterContent />} />
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TeacherDashboard />} />
         <Route path="chapters" element={<CourseOutline />} />

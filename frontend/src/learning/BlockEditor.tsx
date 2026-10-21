@@ -8,6 +8,7 @@ import {
   assetUrl,
 } from "../digital";
 import { ConfigFields } from "./Interaction";
+import KnowledgeDiagram from "./KnowledgeDiagram";
 export default function BlockEditor({
   form,
   change,
@@ -149,6 +150,14 @@ export default function BlockEditor({
                   />
                 </>
               )}
+              {block.kind === "diagram" && block.diagram && (
+                <>
+                  <p>
+                    结构化图示随本次审核包提供；本页可修改标题与说明，图结构的可视化编辑后续开放。
+                  </p>
+                  <KnowledgeDiagram diagram={block.diagram} />
+                </>
+              )}
               {block.kind === "image" && (
                 <>
                   <label>
@@ -242,36 +251,38 @@ export default function BlockEditor({
         <h2>还想补充什么内容？</h2>
         <p>选择一种模块，马上进入它的独立编辑区域。</p>
         <div className="module-palette">
-          {Object.entries(blockKinds).map(([kind, label]) => (
-            <button
-              type="button"
-              className="secondary"
-              key={kind}
-              disabled={form.blocks.length >= 60}
-              onClick={() => {
-                const id = crypto.randomUUID();
-                change({
-                  ...form,
-                  blocks: [
-                    ...form.blocks,
-                    {
-                      id,
-                      kind: kind as ContentBlock["kind"],
-                      title: label,
-                      text: "",
-                      ...(kind === "interaction"
-                        ? { config: { template: "memory" as Template } }
-                        : {}),
-                    },
-                  ],
-                });
-                onSelect(id);
-                window.scrollTo(0, 0);
-              }}
-            >
-              ＋ {label}
-            </button>
-          ))}
+          {Object.entries(blockKinds)
+            .filter(([kind]) => kind !== "diagram")
+            .map(([kind, label]) => (
+              <button
+                type="button"
+                className="secondary"
+                key={kind}
+                disabled={form.blocks.length >= 60}
+                onClick={() => {
+                  const id = crypto.randomUUID();
+                  change({
+                    ...form,
+                    blocks: [
+                      ...form.blocks,
+                      {
+                        id,
+                        kind: kind as ContentBlock["kind"],
+                        title: label,
+                        text: "",
+                        ...(kind === "interaction"
+                          ? { config: { template: "memory" as Template } }
+                          : {}),
+                      },
+                    ],
+                  });
+                  onSelect(id);
+                  window.scrollTo(0, 0);
+                }}
+              >
+                ＋ {label}
+              </button>
+            ))}
         </div>
       </section>
     </>

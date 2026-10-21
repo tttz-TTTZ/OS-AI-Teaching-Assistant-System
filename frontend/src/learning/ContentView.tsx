@@ -1,6 +1,7 @@
 import { Content, assetUrl } from "../digital";
 import Markdown from "../Markdown";
 import Interaction from "./Interaction";
+import KnowledgeDiagram from "./KnowledgeDiagram";
 export default function ContentView({
   content,
   preview = false,
@@ -49,6 +50,9 @@ export default function ContentView({
           >
             <h3>{block.title || "学习内容"}</h3>
             {block.text && <Markdown content={block.text} />}
+            {block.kind === "diagram" && block.diagram && (
+              <KnowledgeDiagram diagram={block.diagram} />
+            )}
             {block.kind === "image" && block.asset_id && (
               <figure>
                 <img

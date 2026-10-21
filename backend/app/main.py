@@ -349,3 +349,7 @@ app.include_router(personal_learning_router)
 from .personal_chat import router as personal_chat_router
 
 app.include_router(personal_chat_router)
+
+from .chapter_content import router as chapter_content_router
+
+app.include_router(chapter_content_router)

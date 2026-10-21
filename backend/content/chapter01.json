@@ -1,0 +1,2292 @@
+{
+  "package_id": "chapter01-ppt-only-v1",
+  "title": "第一章重点难点：四份教师PPT内容审核包",
+  "report_title": "操作系统第一章_PPT内容分析与Codex实施需求_最终版.docx",
+  "report_sha256": "060a544f29aeff2b6361a98248293e9d5fc0ba7cf66cdd7da25cd306ace57abb",
+  "notice": "依据用户提供报告编写；未直接核验四份原PPT。只使用PPT来源；不使用教材PDF。核心概念依据报告，展开解释与新例子为教学补充。导入仅生成草稿，不自动发布。",
+  "sources": [
+    {
+      "id": "SRC-01",
+      "filename": "1.1操作系统概观 (1)(1).pptx",
+      "slides": 42,
+      "conversion_note": "报告核查文字；图片公式仍待视觉核验。"
+    },
+    {
+      "id": "SRC-02",
+      "filename": "1.2操作系统形成和发展 (1)(1).pptx",
+      "slides": 44,
+      "conversion_note": "报告核查文字；图片公式仍待视觉核验。"
+    },
+    {
+      "id": "SRC-03",
+      "filename": "1.3操作系统基本服务和用户接口  (1)(1).ppt",
+      "slides": 28,
+      "conversion_note": "旧PPT报告使用转换副本读取；图像、嵌入对象和转换保真度未全面核验。"
+    },
+    {
+      "id": "SRC-04",
+      "filename": "1.4操作系统结构和运行模型 (1)(1).ppt",
+      "slides": 29,
+      "conversion_note": "旧PPT报告使用转换副本读取；图像、嵌入对象和转换保真度未全面核验。"
+    }
+  ],
+  "sections": [
+    {
+      "code": "1.1",
+      "title": "操作系统概观"
+    },
+    {
+      "code": "1.2",
+      "title": "操作系统形成和发展"
+    },
+    {
+      "code": "1.3",
+      "title": "操作系统基本服务和用户接口"
+    },
+    {
+      "code": "1.4",
+      "title": "操作系统结构和运行模型"
+    }
+  ],
+  "items": [
+    {
+      "code": "CH01-K001",
+      "title": "操作系统、应用、硬件与内核的层次",
+      "section": "1.1",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "操作系统在硬件能力和程序需求之间提供资源管理与服务；应用利用这些服务完成具体任务。内核是承担关键受保护功能的部分，不能把全部预装软件都归入内核。",
+      "objectives": "能够区分应用、操作系统与内核，解释受控资源访问。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "为什么桌面上的软件不都属于操作系统内核？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "操作系统在硬件能力和程序需求之间提供资源管理与服务；应用利用这些服务完成具体任务。内核是承担关键受保护功能的部分，不能把全部预装软件都归入内核。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "从应用请求向下看，可依次讨论服务接口、操作系统对资源的管理以及硬件执行。层次图表达职责，不表示所有程序只能按一条固定的物理路径调用。\n\n判断软件类别时，应看它承担什么职责、运行在哪一层，而不只看是否随系统安装。Shell、GUI与编译器并不因此必然成为内核模块。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "保存文件时，编辑器组织文本；操作系统组织文件和设备访问；存储硬件完成实际读写。这是教学补充例子，不是课件原题。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：凡是随系统安装的程序都是内核。纠正：安装方式不决定职责与特权级。\n误解：内核就是整个操作系统。纠正：课程讨论中要说明采用广义系统还是内核口径。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "区分“应用做什么”和“操作系统如何提供受控环境”，再讨论内核的边界。"
+        },
+        {
+          "id": "map-01",
+          "kind": "diagram",
+          "title": "资源管理与基础抽象",
+          "text": "依据报告：SRC-01 16、22–26、34。图为概念重绘，不是课件原图复刻；“依赖物理资源”参见21–23。",
+          "diagram": {
+            "code": "MAP-01",
+            "title": "资源管理与基础抽象",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "操作系统",
+                "x": 30,
+                "y": 40
+              },
+              {
+                "id": "n1",
+                "label": "CPU / 内存 / 设备",
+                "x": 340,
+                "y": 40
+              },
+              {
+                "id": "n2",
+                "label": "资源抽象",
+                "x": 650,
+                "y": 40
+              },
+              {
+                "id": "n3",
+                "label": "进程 / 虚存 / 文件",
+                "x": 30,
+                "y": 185
+              },
+              {
+                "id": "n4",
+                "label": "资源虚化",
+                "x": 340,
+                "y": 185
+              },
+              {
+                "id": "n5",
+                "label": "物理资源",
+                "x": 650,
+                "y": 185
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "管理",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "形成逻辑视图",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "依赖",
+                "direction": "directed"
+              }
+            ],
+            "note": "依据报告：SRC-01 16、22–26、34。图为概念重绘，不是课件原图复刻；“依赖物理资源”参见21–23。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "11–16",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K003",
+        "CH01-K010",
+        "CH01-K013"
+      ],
+      "lab": false,
+      "original_section": "1.1.1"
+    },
+    {
+      "code": "CH01-K002",
+      "title": "空分复用与时分复用",
+      "section": "1.1",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "空分复用按空间或容量划分资源；时分复用让多个使用者在不同时段使用资源。二者可以在同一系统中共同出现。",
+      "objectives": "能够根据资源划分方式区分空分与时分，说明适用限制。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "多项任务如何共享同一种资源？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "空分复用按空间或容量划分资源；时分复用让多个使用者在不同时段使用资源。二者可以在同一系统中共同出现。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "空分关注“各自获得哪一部分”，时分关注“何时轮到谁”。例如内存分区强调容量划分，单 CPU 轮流执行任务强调时间安排。\n\n|比较项|空分复用|时分复用|\n|---|---|---|\n|主要划分维度|空间或容量|时间段|\n|典型观察|各区域由谁使用|当前由谁使用|\n|仍需考虑|边界与访问保护|切换、调度和访问保护|"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "给 A、B 分别安排内存区域，同时让 CPU 先运行 A 再运行 B：前者是空分观察，后者是时分观察。具体容量和时长由教学示例设定。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：时分意味着资源随时都能被抢占。纠正：能否抢占取决于资源和操作规则。\n误解：共享等于没有隔离。纠正：共享仍需要保护与协调。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "先问划分的是空间还是时间，再检查资源是否允许切换与抢占。"
+        },
+        {
+          "id": "map-02",
+          "kind": "diagram",
+          "title": "复用、并发与协调",
+          "text": "依据报告：SRC-01 18–20、35–38，SRC-02 13–22。“可能引发”不是必然结论；本图为教学重绘。",
+          "diagram": {
+            "code": "MAP-02",
+            "title": "复用、并发与协调",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "资源复用",
+                "x": 30,
+                "y": 40
+              },
+              {
+                "id": "n1",
+                "label": "空分复用",
+                "x": 340,
+                "y": 40
+              },
+              {
+                "id": "n2",
+                "label": "时分复用",
+                "x": 650,
+                "y": 40
+              },
+              {
+                "id": "n3",
+                "label": "多道程序",
+                "x": 30,
+                "y": 185
+              },
+              {
+                "id": "n4",
+                "label": "资源复用与调度",
+                "x": 340,
+                "y": 185
+              },
+              {
+                "id": "n5",
+                "label": "并发",
+                "x": 650,
+                "y": 185
+              },
+              {
+                "id": "n6",
+                "label": "共享资源竞争",
+                "x": 30,
+                "y": 330
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n2",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n4",
+                "label": "依赖",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n6",
+                "label": "可能引发",
+                "direction": "directed"
+              }
+            ],
+            "note": "依据报告：SRC-01 18–20、35–38，SRC-02 13–22。“可能引发”不是必然结论；本图为教学重绘。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "18–20",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K003",
+        "CH01-K005",
+        "CH01-K006"
+      ],
+      "lab": false,
+      "original_section": "1.1.2"
+    },
+    {
+      "code": "CH01-K003",
+      "title": "资源抽象、虚化与复用",
+      "section": "1.1",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "复用让多个使用者共享有限资源；抽象用较简单的接口隐藏实现细节；虚化向使用者呈现逻辑资源视图。逻辑视图并不消除物理容量与处理速度的限制。",
+      "objectives": "能够分别解释复用、抽象和虚化，而不把三个术语当同义词。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "为什么同一台打印机能接受多个程序的请求？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "复用让多个使用者共享有限资源；抽象用较简单的接口隐藏实现细节；虚化向使用者呈现逻辑资源视图。逻辑视图并不消除物理容量与处理速度的限制。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "以打印服务为例：应用提交逻辑打印请求，不必直接控制设备寄存器；系统维护队列并安排单台打印机顺序工作。接受请求与设备完成输出是两个事件。\n\n复用回答“如何共享”，抽象回答“如何隐藏复杂性”，虚化回答“向使用者呈现什么资源视图”。三者可能共同支持同一项服务。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "P1 正在打印时 P2 提交请求，P2 可以进入队列，但不能因此被标记为已经打印完成。队列数据和故障情景属于教学补充。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：虚拟资源不受物理资源限制。纠正：最终处理仍受设备能力与容量约束。\n误解：排队成功就是打印成功。纠正：应区分接受、等待、执行和完成。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "用同一个打印案例分别解释三个问题，避免只背术语。"
+        },
+        {
+          "id": "animation-status",
+          "kind": "text",
+          "title": "动态演示开发状态",
+          "text": "本轮已填写静态讲解与图示（如有）；对应动画仍待专门开发与核验，不提供无效的播放入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "18、21–23",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K002",
+        "CH01-K004"
+      ],
+      "lab": false,
+      "original_section": "1.1.2"
+    },
+    {
+      "code": "CH01-K004",
+      "title": "进程、虚存、文件三种基础抽象",
+      "section": "1.1",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "进程组织程序执行所需的状态与资源；虚存组织程序可使用的逻辑地址视图；文件组织可持久保存的数据。三种抽象解决不同层面的问题。",
+      "objectives": "能够把执行、逻辑地址和持久数据分别联系到进程、虚存和文件。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "程序、地址和数据为什么需要不同的资源视图？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "进程组织程序执行所需的状态与资源；虚存组织程序可使用的逻辑地址视图；文件组织可持久保存的数据。三种抽象解决不同层面的问题。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "进程不是一颗物理 CPU；虚拟地址不是物理地址；文件也不是某一固定磁盘位置的简单别名。操作系统负责把逻辑视图与底层资源联系起来，并检查访问权限。\n\n|抽象|主要学习问题|不要混同|\n|---|---|---|\n|进程|谁在执行、保留什么状态|源代码或物理 CPU|\n|虚存|程序如何使用地址空间|物理内存地址|\n|文件|数据如何命名与持久组织|固定设备位置|"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "两个进程可以各自使用自己的地址空间，并通过文件接口访问数据；具体映射与访问权限由系统管理。本例为教学补充。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：两个进程出现相同虚拟地址就一定访问同一物理位置。纠正：必须结合各自映射讨论。\n误解：进程就是静态程序文件。纠正：进程还包含执行状态。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "分别用“执行状态、逻辑地址、持久数据”记住三种抽象的职责。"
+        },
+        {
+          "id": "map-01",
+          "kind": "diagram",
+          "title": "资源管理与基础抽象",
+          "text": "依据报告：SRC-01 16、22–26、34。图为概念重绘，不是课件原图复刻；“依赖物理资源”参见21–23。",
+          "diagram": {
+            "code": "MAP-01",
+            "title": "资源管理与基础抽象",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "操作系统",
+                "x": 30,
+                "y": 40
+              },
+              {
+                "id": "n1",
+                "label": "CPU / 内存 / 设备",
+                "x": 340,
+                "y": 40
+              },
+              {
+                "id": "n2",
+                "label": "资源抽象",
+                "x": 650,
+                "y": 40
+              },
+              {
+                "id": "n3",
+                "label": "进程 / 虚存 / 文件",
+                "x": 30,
+                "y": 185
+              },
+              {
+                "id": "n4",
+                "label": "资源虚化",
+                "x": 340,
+                "y": 185
+              },
+              {
+                "id": "n5",
+                "label": "物理资源",
+                "x": 650,
+                "y": 185
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "管理",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "形成逻辑视图",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "依赖",
+                "direction": "directed"
+              }
+            ],
+            "note": "依据报告：SRC-01 16、22–26、34。图为概念重绘，不是课件原图复刻；“依赖物理资源”参见21–23。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "24–31",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K001",
+        "CH01-K003",
+        "CH01-K005"
+      ],
+      "lab": false,
+      "original_section": "1.1.2"
+    },
+    {
+      "code": "CH01-K005",
+      "title": "并发、并行、共享与随机性",
+      "section": "1.1",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "并发关注多个活动在一段时间内共同推进；并行关注同一时刻的同时执行。单核交替可以形成并发，多核为并行提供条件，但不保证每时每刻都有多个任务执行。",
+      "objectives": "能够区分时间区间内共同推进与同一时刻执行，识别共享资源协调问题。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "两个程序都在推进，是否表示它们同一时刻都在执行？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "并发关注多个活动在一段时间内共同推进；并行关注同一时刻的同时执行。单核交替可以形成并发，多核为并行提供条件，但不保证每时每刻都有多个任务执行。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "共享资源可能使活动之间产生依赖或竞争，执行先后也可能受外部事件影响。课件“宏观并行、微观串行”需要结合单处理器教学语境理解，不能用来排除现代多核并行。\n\n讨论一段时间轴时，先标注处理器数量，再标注每项任务的运行、就绪或等待状态，最后判断是否存在共享与协调需求。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "单核：A[0,1)、B[1,2)、A[2,3)；双核：A 和 B 可以在不同核心同时运行。时间线由教学设计补充。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：并发就是多核并行。纠正：观察维度不同。\n误解：并发必然发生数据竞争。纠正：还需要分析是否共享数据及访问方式。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "判断并发看共同推进，判断并行看同一时刻与硬件执行条件。"
+        },
+        {
+          "id": "animation-status",
+          "kind": "text",
+          "title": "动态演示开发状态",
+          "text": "本轮已填写静态讲解与图示（如有）；对应动画仍待专门开发与核验，不提供无效的播放入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "35–39",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K002",
+        "CH01-K006",
+        "CH01-K009"
+      ],
+      "lab": false,
+      "original_section": "1.1.4"
+    },
+    {
+      "code": "CH01-K006",
+      "title": "单道与多道程序运行",
+      "section": "1.2",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "单道运行时，当前程序等待 I/O 可能使 CPU 闲置；多道运行时，系统可以安排其他就绪程序使用 CPU，从而减少部分空闲。",
+      "objectives": "能够沿 CPU/I-O 流程解释阻塞、就绪和多道程序减少闲置的条件。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "一个程序等待 I/O 时，CPU 为什么可能闲着？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "单道运行时，当前程序等待 I/O 可能使 CPU 闲置；多道运行时，系统可以安排其他就绪程序使用 CPU，从而减少部分空闲。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "任务发出需要等待的 I/O 请求后进入等待状态；I/O 完成后回到就绪状态，等待调度。没有就绪任务时 CPU 仍然可以空闲。\n\n利用率的改善取决于任务与设备的交替关系、可运行任务数量以及调度开销，不能承诺单个任务一定更快。课件的 35%/63% 时间线尚需回看原图，不能据报告摘录反推精确时长。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "P1 发出 I/O 后等待，P2 若就绪可占用 CPU；若 P2 也等待且没有其他就绪任务，CPU 空闲。示例事件为教学补充。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：多道程序让每个程序都更快。纠正：主要解释资源利用和整体推进，单任务等待可能增加。\n误解：阻塞任务还能继续占 CPU 执行。纠正：等待完成前不能按就绪任务调度。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "沿“运行→等待→就绪→再调度”解释利用率变化，而不是只记百分比。"
+        },
+        {
+          "id": "flow-01",
+          "kind": "diagram",
+          "title": "多道程序与I/O等待",
+          "text": "SRC-02 13–17、20–22；等待与分支细化为T。全阻塞不是全完成：CPU空闲后仍等待I/O事件。静态流程图，未宣称动态演示已经完成。",
+          "diagram": {
+            "code": "FLOW-01",
+            "title": "多道程序与I/O等待",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "开始 / 就绪任务",
+                "x": 350,
+                "y": 30
+              },
+              {
+                "id": "n1",
+                "label": "选择就绪任务",
+                "x": 350,
+                "y": 170
+              },
+              {
+                "id": "n2",
+                "label": "CPU运行",
+                "x": 350,
+                "y": 310
+              },
+              {
+                "id": "n3",
+                "label": "需要等待I/O？",
+                "x": 350,
+                "y": 450
+              },
+              {
+                "id": "n4",
+                "label": "等待I/O完成",
+                "x": 30,
+                "y": 590
+              },
+              {
+                "id": "n5",
+                "label": "任务完成？",
+                "x": 650,
+                "y": 590
+              },
+              {
+                "id": "n6",
+                "label": "返回就绪队列",
+                "x": 30,
+                "y": 730
+              },
+              {
+                "id": "n7",
+                "label": "无就绪：CPU空闲",
+                "x": 30,
+                "y": 170
+              },
+              {
+                "id": "n8",
+                "label": "结束：全部完成",
+                "x": 650,
+                "y": 730
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "有就绪任务",
+                "direction": "directed"
+              },
+              {
+                "source": "n1",
+                "target": "n2",
+                "label": "调度",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "检查事件",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n4",
+                "label": "是",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n5",
+                "label": "否",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n6",
+                "label": "I/O完成",
+                "direction": "directed"
+              },
+              {
+                "source": "n6",
+                "target": "n1",
+                "label": "等待再次调度",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n8",
+                "label": "是且全部完成",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n1",
+                "label": "否 / 还有就绪任务",
+                "direction": "directed"
+              },
+              {
+                "source": "n1",
+                "target": "n7",
+                "label": "无就绪但仍有等待任务",
+                "direction": "directed"
+              },
+              {
+                "source": "n7",
+                "target": "n6",
+                "label": "外部完成事件",
+                "direction": "directed"
+              }
+            ],
+            "note": "SRC-02 13–17、20–22；等待与分支细化为T。全阻塞不是全完成：CPU空闲后仍等待I/O事件。静态流程图，未宣称动态演示已经完成。"
+          }
+        },
+        {
+          "id": "animation-status",
+          "kind": "text",
+          "title": "动态演示开发状态",
+          "text": "本轮已填写静态讲解与图示（如有）；对应动画仍待专门开发与核验，不提供无效的播放入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-02",
+          "pages": "13–17、20–22",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K005",
+        "CH01-K007",
+        "CH01-K009"
+      ],
+      "lab": false,
+      "original_section": "1.2.3"
+    },
+    {
+      "code": "CH01-K007",
+      "title": "多道程序 CPU 利用率概率模型",
+      "section": "1.2",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "若 n 个程序各自处于等待的概率都是 p，且等待相互独立，则它们同时等待的概率为 p^n。把“至少一个可运行”作为 CPU 忙碌条件，可得简化利用率 U=1-p^n。",
+      "objectives": "能够使用 U=1-p^n，并说明独立等待和忽略开销的假设。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "增加程序数为什么在简化模型中可能减少 CPU 空闲？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "若 n 个程序各自处于等待的概率都是 p，且等待相互独立，则它们同时等待的概率为 p^n。把“至少一个可运行”作为 CPU 忙碌条件，可得简化利用率 U=1-p^n。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "适用条件必须与公式一起说明：等待独立、概率口径一致、忽略调度等开销。这不是对真实系统负载的精确预测。\n\n|p|n|U|\n|---|---|---|\n|0.8|4|59.04%|\n|0.8|9|约86.58%|\n|0|3|100%|\n|1|3|0%|\n|0.5|2|75%|"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "p=0.8、n=4：先计算 0.8^4=0.4096，再取补得到 0.5904。数值例子用于核验公式，不能解释为实测性能。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：程序越多真实系统就一定越快。纠正：模型忽略开销，现实还受资源竞争等限制。\n输入应满足 0≤p≤1，n 为正整数；非法输入不能继续计算。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "先检查假设，再计算“全部等待”的补事件。本轮先提供公式和核算表，滑块计算器尚待开发。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-02",
+          "pages": "18–19",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K006"
+      ],
+      "lab": false,
+      "original_section": "1.2.3"
+    },
+    {
+      "code": "CH01-K008",
+      "title": "批处理、分时、实时系统",
+      "section": "1.2",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "批处理强调批量自动执行；分时强调交互响应和轮流服务；实时强调在规定时限内正确完成响应与处理。实际系统可以同时具有多种特征。",
+      "objectives": "能够根据交互方式与时间约束区分批处理、分时和实时系统。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "为什么“响应快”和“按时完成”不是同一个目标？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "批处理强调批量自动执行；分时强调交互响应和轮流服务；实时强调在规定时限内正确完成响应与处理。实际系统可以同时具有多种特征。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "|类型|主要目标或约束|观察重点|\n|---|---|---|\n|批处理|批量自动执行、资源利用|提交后如何自动推进作业|\n|分时|交互与及时响应|多个用户如何轮流获得服务|\n|实时|明确时限约束|是否在规定时间内完成处理|\n\n分类应结合工作方式和要求，不能仅凭“是否联网”“处理器是否快”判断。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "课件用批发商店、零售商店、全天候服务作类比（SRC-02 42–43）。类比帮助记忆，但全天营业本身不构成实时系统的严格定义。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：实时等于运算最快。纠正：核心是规定时限。\n误解：三种类型绝对互斥。纠正：课件明确讨论混合特征。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "用“批量自动执行、交互轮流服务、明确时限”区分三种类型。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-02",
+          "pages": "25–31",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K006",
+        "CH01-K009"
+      ],
+      "lab": false,
+      "original_section": "1.2.4"
+    },
+    {
+      "code": "CH01-K009",
+      "title": "时间片轮转与分时服务",
+      "section": "1.2",
+      "phase": "第一批实验导引",
+      "importable": true,
+      "summary": "RR 每次选择就绪队首，运行一个时间片或运行到完成。未完成任务重新进入队尾；已完成任务不再入队。",
+      "objectives": "能够解释 RR 队列、时间片和完成规则，并用实验检查结果。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "多个就绪任务如何轮流获得 CPU？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "RR 每次选择就绪队首，运行一个时间片或运行到完成。未完成任务重新进入队尾；已完成任务不再入队。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "本平台复用 scheduler-1：同到达按输入顺序；时间片边界先把新到达者入队，再把未完成的当前进程放到队尾。没有就绪任务时显示 CPU 空闲。\n\n实验是单 CPU、无 I/O、无切换开销的教学模型。课件给出分时与轮转思想；具体边界顺序和数值案例属于平台教学约定，等待你审核。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "P1(a=0,b=5)、P2(a=0,b=3)、q=2：P1[0,2)→P2[2,4)→P1[4,6)→P2[6,7)→P1[7,8)。\n\n|进程|完成|周转|等待|\n|---|---|---|---|\n|P1|8|8|3|\n|P2|7|7|4|\n平均周转7.5，平均等待3.5。本例为教学补充。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：恰好完成也要再回到队尾。纠正：完成即离开。\n误解：所有 RR 实现的同刻事件顺序天然相同。纠正：需先声明规则。\n暂时空队列表示等待后续到达，不等于输入空进程列表合法。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "在关联 RR 实验中修改 q，先预测执行顺序，再对照同一引擎生成的甘特图。"
+        },
+        {
+          "id": "flow-02",
+          "kind": "diagram",
+          "title": "RR时间片轮转流程",
+          "text": "SRC-02 27–28支持轮转思想；具体事件次序与数值为T。scheduler-1边界先入队新到达者，再重入队未完成任务。实验回放直接使用现有RR引擎。",
+          "diagram": {
+            "code": "FLOW-02",
+            "title": "RR时间片轮转流程",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "开始 / 输入有效进程",
+                "x": 350,
+                "y": 30
+              },
+              {
+                "id": "n1",
+                "label": "接收当前已到达任务",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "n2",
+                "label": "就绪队列非空？",
+                "x": 350,
+                "y": 320
+              },
+              {
+                "id": "n3",
+                "label": "取队首运行min(剩余,q)",
+                "x": 350,
+                "y": 465
+              },
+              {
+                "id": "n4",
+                "label": "先入队本段中新到达者",
+                "x": 350,
+                "y": 610
+              },
+              {
+                "id": "n5",
+                "label": "当前任务完成？",
+                "x": 350,
+                "y": 755
+              },
+              {
+                "id": "n6",
+                "label": "完成离队 / 记录指标",
+                "x": 30,
+                "y": 900
+              },
+              {
+                "id": "n7",
+                "label": "未完成任务回到队尾",
+                "x": 650,
+                "y": 900
+              },
+              {
+                "id": "n8",
+                "label": "等待下一到达 / CPU空闲",
+                "x": 30,
+                "y": 320
+              },
+              {
+                "id": "n9",
+                "label": "全部完成：结束",
+                "x": 650,
+                "y": 320
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "初始化",
+                "direction": "directed"
+              },
+              {
+                "source": "n1",
+                "target": "n2",
+                "label": "检查",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "是",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n4",
+                "label": "运行段结束",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "按引擎规则",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n6",
+                "label": "是",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n7",
+                "label": "否",
+                "direction": "directed"
+              },
+              {
+                "source": "n6",
+                "target": "n2",
+                "label": "仍有任务",
+                "direction": "directed"
+              },
+              {
+                "source": "n7",
+                "target": "n2",
+                "label": "继续",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n8",
+                "label": "否且有未到达任务",
+                "direction": "directed"
+              },
+              {
+                "source": "n8",
+                "target": "n1",
+                "label": "推进逻辑时间",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n9",
+                "label": "否且全部完成",
+                "direction": "directed"
+              }
+            ],
+            "note": "SRC-02 27–28支持轮转思想；具体事件次序与数值为T。scheduler-1边界先入队新到达者，再重入队未完成任务。实验回放直接使用现有RR引擎。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-02",
+          "pages": "27–29",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K002",
+        "CH01-K005",
+        "CH01-K006",
+        "CH01-K015"
+      ],
+      "lab": true,
+      "original_section": "1.2.4"
+    },
+    {
+      "code": "CH01-K010",
+      "title": "API、库函数与系统调用",
+      "section": "1.3",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "API 描述接口约定；库函数是可供调用的实现；系统调用提供请求内核服务的受控入口。一个 API 的实现可以包含库内处理，也可以封装系统调用。",
+      "objectives": "能够区分接口约定、库实现与内核服务入口。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "调用一个函数是否就一定进入内核？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "API 描述接口约定；库函数是可供调用的实现；系统调用提供请求内核服务的受控入口。一个 API 的实现可以包含库内处理，也可以封装系统调用。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "应用看见相似的函数调用形式，不代表底层路径相同。有的函数主要在用户空间完成，有的需要请求内核资源。\n\n|对象|讨论层面|关键问题|\n|---|---|---|\n|API|接口约定|调用者能依赖什么接口|\n|库函数|实现与封装|哪些工作在库中完成|\n|系统调用|内核服务|如何受控访问系统能力|"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "用 strlen 与 read 对照：前者用于理解库内计算，后者用于理解可能封装内核读服务的路径。这是教学补充，不能把某一库或架构的实现细节当成全部系统的规则。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：每个库函数都进入内核。纠正：是否需要内核服务取决于实现和任务。\n误解：函数名相同说明底层机制相同。纠正：应结合接口、库与系统实现分别分析。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "不要把“怎么调用”与“在哪里执行”混为一谈。"
+        },
+        {
+          "id": "map-03",
+          "kind": "diagram",
+          "title": "API、库函数与内核服务",
+          "text": "依据报告：SRC-03 8–11、13–14。关系图不表示所有库调用都会进入内核，原第10、11、14张图仍待核验。",
+          "diagram": {
+            "code": "MAP-03",
+            "title": "API、库函数与内核服务",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "应用程序",
+                "x": 30,
+                "y": 40
+              },
+              {
+                "id": "n1",
+                "label": "API",
+                "x": 340,
+                "y": 40
+              },
+              {
+                "id": "n2",
+                "label": "库函数",
+                "x": 650,
+                "y": 40
+              },
+              {
+                "id": "n3",
+                "label": "系统调用",
+                "x": 30,
+                "y": 185
+              },
+              {
+                "id": "n4",
+                "label": "系统调用入口",
+                "x": 340,
+                "y": 185
+              },
+              {
+                "id": "n5",
+                "label": "内核服务例程",
+                "x": 650,
+                "y": 185
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "使用",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "可能封装",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "分派",
+                "direction": "directed"
+              }
+            ],
+            "note": "依据报告：SRC-03 8–11、13–14。关系图不表示所有库调用都会进入内核，原第10、11、14张图仍待核验。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-03",
+          "pages": "5–11、16",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K001",
+        "CH01-K011"
+      ],
+      "lab": false,
+      "original_section": "1.3.2"
+    },
+    {
+      "code": "CH01-K011",
+      "title": "用户态、内核态与系统调用处理",
+      "section": "1.3",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "应用准备请求参数，通过受控入口进入系统服务处理；内核校验请求并分派服务，随后返回结果，或在资源未就绪时等待。",
+      "objectives": "能够解释受控入口、必要上下文保存、校验、分派及返回或等待。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "应用请求受保护服务时，系统需要检查什么？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "应用准备请求参数，通过受控入口进入系统服务处理；内核校验请求并分派服务，随后返回结果，或在资源未就绪时等待。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "流程图分别呈现参数无效、权限不足和资源等待。模式切换与进程切换不是同一个概念：进入内核不必然换成另一个应用进程。\n\n入口指令、寄存器和参数传递规则随架构与 ABI 变化。当前图是通用教学流程，不是对课件旧 Linux 汇编的精确复刻；原图仍需核验。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "读请求可分为有效请求、无效参数返回错误、需要等待资源三种路径。路径细化为教学补充，不能冒称课件逐项给出这些分支。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：系统调用必然切换到另一个进程。纠正：区分执行模式与当前进程上下文。\n误解：所有调用都成功返回数据。纠正：错误与等待必须单独处理。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "沿请求与结果跟踪控制流，分别检查模式、参数、权限和等待条件。"
+        },
+        {
+          "id": "flow-03",
+          "kind": "diagram",
+          "title": "系统调用：正常、错误与等待",
+          "text": "SRC-03 13–16；错误与等待分支是T。原图与入口实现未视觉核验，此图是通用机制，不指定现代ABI。静态流程，不执行系统调用。",
+          "diagram": {
+            "code": "FLOW-03",
+            "title": "系统调用：正常、错误与等待",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "用户态准备参数",
+                "x": 350,
+                "y": 30
+              },
+              {
+                "id": "n1",
+                "label": "受控入口 / 保存上下文",
+                "x": 350,
+                "y": 170
+              },
+              {
+                "id": "n2",
+                "label": "参数与权限有效？",
+                "x": 350,
+                "y": 310
+              },
+              {
+                "id": "n3",
+                "label": "分派服务",
+                "x": 350,
+                "y": 450
+              },
+              {
+                "id": "n4",
+                "label": "资源就绪？",
+                "x": 350,
+                "y": 590
+              },
+              {
+                "id": "n5",
+                "label": "等待资源",
+                "x": 30,
+                "y": 730
+              },
+              {
+                "id": "n6",
+                "label": "执行并形成结果",
+                "x": 350,
+                "y": 730
+              },
+              {
+                "id": "n7",
+                "label": "返回错误",
+                "x": 650,
+                "y": 450
+              },
+              {
+                "id": "n8",
+                "label": "恢复必要上下文 / 返回用户态",
+                "x": 350,
+                "y": 870
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "提出请求",
+                "direction": "directed"
+              },
+              {
+                "source": "n1",
+                "target": "n2",
+                "label": "校验",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "有效",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n7",
+                "label": "无效参数 / 权限不足",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n4",
+                "label": "检查",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "否",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n4",
+                "label": "资源事件 / 唤醒",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n6",
+                "label": "是",
+                "direction": "directed"
+              },
+              {
+                "source": "n6",
+                "target": "n8",
+                "label": "返回结果",
+                "direction": "directed"
+              },
+              {
+                "source": "n7",
+                "target": "n8",
+                "label": "返回错误码",
+                "direction": "directed"
+              }
+            ],
+            "note": "SRC-03 13–16；错误与等待分支是T。原图与入口实现未视觉核验，此图是通用机制，不指定现代ABI。静态流程，不执行系统调用。"
+          }
+        },
+        {
+          "id": "animation-status",
+          "kind": "text",
+          "title": "动态演示开发状态",
+          "text": "本轮已填写静态讲解与图示（如有）；对应动画仍待专门开发与核验，不提供无效的播放入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-03",
+          "pages": "13–16",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K010",
+        "CH01-K016"
+      ],
+      "lab": false,
+      "original_section": "1.3.2"
+    },
+    {
+      "code": "CH01-K012",
+      "title": "传统 Linux 系统调用实现",
+      "section": "1.3",
+      "phase": "第三批暂缓",
+      "importable": false,
+      "summary": "报告描述旧 Linux/x86 的调用号、寄存器、int 0x80 入口及服务分派。这里只登记待核实范围，不将摘录修补为可运行代码。",
+      "objectives": "先确认历史环境和代码，再讨论旧 x86 系统调用路径。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "旧课件中的调用号、寄存器和入口表应该如何阅读？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "报告描述旧 Linux/x86 的调用号、寄存器、int 0x80 入口及服务分派。这里只登记待核实范围，不将摘录修补为可运行代码。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "需要人工核对 SRC-03 第20、24、27张图和代码，以及第21张指令摘录。历史 ABI 不能作为现代所有 Linux 架构的统一规则。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "报告提及 read(fd,buffer,nbytes) 路径；本轮不补齐不可辨认指令，不提供执行按钮。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "不能自行把 move1 等可疑摘录改为确定指令，也不能把历史参数寄存器规则推广到所有现代系统。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "保留为报告审核条目，默认不导入正式知识点。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-03",
+          "pages": "20–27",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K010",
+        "CH01-K011"
+      ],
+      "lab": false,
+      "original_section": "1.3.4"
+    },
+    {
+      "code": "CH01-K013",
+      "title": "单体、层次、虚拟机与微内核结构",
+      "section": "1.4",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "单体结构强调系统模块在整体中的组织与调用；层次结构强调单向依赖；虚拟机结构强调提供逻辑运行环境；微内核结构强调精简核心及用户态服务协作。",
+      "objectives": "能够用多个比较维度解释四种结构，避免只背名称。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "模块调用关系、服务位置和运行环境如何影响结构划分？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "单体结构强调系统模块在整体中的组织与调用；层次结构强调单向依赖；虚拟机结构强调提供逻辑运行环境；微内核结构强调精简核心及用户态服务协作。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "|结构|主要观察维度|阅读图示时要问|\n|---|---|---|\n|单体|模块组织与调用|模块如何协作|\n|层次|单向依赖|上层依赖哪些下层能力|\n|虚拟机|逻辑运行环境|向客体提供什么机器视图|\n|微内核|服务位置与通信|哪些服务在内核，哪些在用户态|\n\n虚拟机结构与内核组织并非完全相同维度，不能把四类标签当成对所有现实系统的互斥分类。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "课件包含 THE、VM/370 和微内核等历史示例。第一批使用概念比较表；未核实原图不标为精确复刻。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：有可加载模块就不能是单体结构。纠正：模块机制与整体结构应分别判断。\n误解：虚拟机与微内核只是同一种结构的两种叫法。纠正：比较维度不同。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "先声明比较维度，再讨论调用、隔离与服务位置。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-04",
+          "pages": "4–12",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K001",
+        "CH01-K014",
+        "CH01-K016"
+      ],
+      "lab": false,
+      "original_section": "1.4.1"
+    },
+    {
+      "code": "CH01-K014",
+      "title": "Linux 内核子系统依赖（辅助图）",
+      "section": "1.4",
+      "phase": "第一批辅助图",
+      "importable": true,
+      "summary": "课件列出调度、进程管理、虚存、进程通信、VFS、网络与设备管理等子系统及其协作关系。文字证实存在依赖，并不一定给出完整箭头方向。",
+      "objectives": "能够识别课件列出的子系统，并区分存在依赖与确定依赖方向。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "一次服务为什么可能需要多个内核子系统协作？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "课件列出调度、进程管理、虚存、进程通信、VFS、网络与设备管理等子系统及其协作关系。文字证实存在依赖，并不一定给出完整箭头方向。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "本辅助图将“包含”与“存在依赖”分开表示。已知包含关系用有向边；方向尚未核对的依赖用无箭头虚线。不能根据课件列举顺序推断谁调用谁。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "读取文件可能涉及 VFS 与设备管理，这是理解协作的教学补充例子，不能替代对 SRC-04 第14张原图的核验。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：表格把 VFS 写在前面，就说明所有依赖都从 VFS 指向其他系统。纠正：方向需要独立依据。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "把此图作为 K013 的辅助资料，不扩写成冗长教材；依赖方向保持待核实。"
+        },
+        {
+          "id": "map-04",
+          "kind": "diagram",
+          "title": "Linux内核与子系统关系",
+          "text": "SRC-04 13–15、27。虚线不带箭头表示方向待核实；VFS与虚存的关系不推广为VFS与所有进程通信关系。第14张原图未核验。",
+          "diagram": {
+            "code": "MAP-04",
+            "title": "Linux内核与子系统关系",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "Linux内核",
+                "x": 30,
+                "y": 40
+              },
+              {
+                "id": "n1",
+                "label": "调度 / 进程管理",
+                "x": 340,
+                "y": 40
+              },
+              {
+                "id": "n2",
+                "label": "虚存 / 进程通信",
+                "x": 650,
+                "y": 40
+              },
+              {
+                "id": "n3",
+                "label": "VFS",
+                "x": 30,
+                "y": 185
+              },
+              {
+                "id": "n4",
+                "label": "设备管理",
+                "x": 340,
+                "y": 185
+              },
+              {
+                "id": "n5",
+                "label": "网络",
+                "x": 650,
+                "y": 185
+              },
+              {
+                "id": "n6",
+                "label": "独立服务器模型",
+                "x": 30,
+                "y": 330
+              },
+              {
+                "id": "n7",
+                "label": "微内核消息传递",
+                "x": 340,
+                "y": 330
+              },
+              {
+                "id": "vm",
+                "label": "虚存管理",
+                "x": 650,
+                "y": 475
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n2",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n3",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n4",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n5",
+                "label": "包含",
+                "direction": "directed"
+              },
+              {
+                "source": "n3",
+                "target": "n4",
+                "label": "存在依赖：方向待核实",
+                "direction": "unconfirmed"
+              },
+              {
+                "source": "n3",
+                "target": "vm",
+                "label": "VFS与虚存存在依赖",
+                "direction": "unconfirmed"
+              },
+              {
+                "source": "n3",
+                "target": "n5",
+                "label": "存在依赖：方向待核实",
+                "direction": "unconfirmed"
+              },
+              {
+                "source": "n6",
+                "target": "n7",
+                "label": "通过其传递请求",
+                "direction": "directed"
+              }
+            ],
+            "note": "SRC-04 13–15、27。虚线不带箭头表示方向待核实；VFS与虚存的关系不推广为VFS与所有进程通信关系。第14张原图未核验。"
+          }
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-04",
+          "pages": "13–15",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K004",
+        "CH01-K011",
+        "CH01-K013"
+      ],
+      "lab": false,
+      "original_section": "1.4.2"
+    },
+    {
+      "code": "CH01-K015",
+      "title": "机制与策略分离",
+      "section": "1.4",
+      "phase": "第一批",
+      "importable": true,
+      "summary": "机制提供可执行能力，策略决定如何选择和使用这些能力。分离有助于在保留基础能力的同时调整行为规则。",
+      "objectives": "能够在调度、安全和模块管理情景中区分能力与选择规则。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "系统“能做什么”与“选择怎么做”有什么不同？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "机制提供可执行能力，策略决定如何选择和使用这些能力。分离有助于在保留基础能力的同时调整行为规则。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "|情景|机制关注|策略关注|\n|---|---|---|\n|调度|保存恢复上下文、完成切换|下一次选择谁|\n|安全|提供检查与访问控制能力|允许谁访问什么|\n|模块管理|加载和卸载能力|何时选择加载或卸载|\n\n这是设计原则，不保证所有策略都物理部署在内核外，也不表示修改策略完全没有代价。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "本平台可以复用输入和结果回放界面，分别采用 FCFS、SJF、RR 选择规则。此例帮助理解能力与策略，但浏览器组件不等同于真实内核机制。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：机制与策略分离意味着两者必须在不同机器运行。纠正：首先是职责分离原则。\n误解：换策略就不需要检查机制约束。纠正：选择仍受执行能力限制。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "分别问“提供什么能力”和“依据什么规则作选择”。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-04",
+          "pages": "21–23",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K009",
+        "CH01-K013"
+      ],
+      "lab": false,
+      "original_section": "1.4.3"
+    },
+    {
+      "code": "CH01-K016",
+      "title": "嵌入应用进程与独立服务器运行模型",
+      "section": "1.4",
+      "phase": "第二批静态草稿",
+      "importable": true,
+      "summary": "一种模型在当前应用进程上下文中进入内核服务；另一种模型通过消息把请求交给独立服务器进程处理，再返回响应。执行模式与当前进程需要分别标注。",
+      "objectives": "能够区分当前应用进程上下文中的内核服务与独立服务器进程协作。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "系统服务一定以独立进程运行吗？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "核心概念",
+          "text": "一种模型在当前应用进程上下文中进入内核服务；另一种模型通过消息把请求交给独立服务器进程处理，再返回响应。执行模式与当前进程需要分别标注。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "理解原理与限制",
+          "text": "当前进程模型不等于把内核代码变成应用的普通用户态代码。服务器模型也不能把服务器进程画成原应用进程。\n\n静态流程图对照两条路径；等待、服务器不可用等分支属于明确标记的教学补充。SRC-04 第26、28张原图仍需视觉核验。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "例子与对照（教学补充）",
+          "text": "应用发起服务请求：路径A进入内核处理后返回；路径B发送消息，等待服务器处理与回复。此例用于区分上下文，不承诺复刻任一现实系统。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "易错点与边界",
+          "text": "误解：进入内核就一定换进程。纠正：还要检查当前上下文。\n误解：运行模型与全部内核结构一一对应。纠正：不能机械等同。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "学习小结",
+          "text": "沿每一步分别记录“谁在执行”和“处于什么模式”。"
+        },
+        {
+          "id": "flow-04",
+          "kind": "diagram",
+          "title": "两种系统服务运行路径",
+          "text": "SRC-04 24–28；错误与等待细化为T。独立服务器与应用是不同进程；第26、28张原图待核验。静态双路径概览，动画待开发。",
+          "diagram": {
+            "code": "FLOW-04",
+            "title": "两种系统服务运行路径",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "n0",
+                "label": "应用发起请求",
+                "x": 350,
+                "y": 30
+              },
+              {
+                "id": "n1",
+                "label": "路径A：当前进程进入内核",
+                "x": 30,
+                "y": 175
+              },
+              {
+                "id": "n2",
+                "label": "在当前上下文执行服务",
+                "x": 30,
+                "y": 320
+              },
+              {
+                "id": "n3",
+                "label": "服务返回或等待",
+                "x": 30,
+                "y": 465
+              },
+              {
+                "id": "n4",
+                "label": "路径B：发送服务消息",
+                "x": 650,
+                "y": 175
+              },
+              {
+                "id": "n5",
+                "label": "等待服务器调度",
+                "x": 650,
+                "y": 320
+              },
+              {
+                "id": "n6",
+                "label": "服务器处理请求",
+                "x": 650,
+                "y": 465
+              },
+              {
+                "id": "n7",
+                "label": "回复应用",
+                "x": 650,
+                "y": 610
+              },
+              {
+                "id": "n8",
+                "label": "服务器不可用 / 错误结束",
+                "x": 350,
+                "y": 320
+              }
+            ],
+            "edges": [
+              {
+                "source": "n0",
+                "target": "n1",
+                "label": "当前进程模型",
+                "direction": "directed"
+              },
+              {
+                "source": "n1",
+                "target": "n2",
+                "label": "受控进入",
+                "direction": "directed"
+              },
+              {
+                "source": "n2",
+                "target": "n3",
+                "label": "返回 / 等待资源后继续",
+                "direction": "directed"
+              },
+              {
+                "source": "n0",
+                "target": "n4",
+                "label": "独立服务器模型",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n5",
+                "label": "服务器可用",
+                "direction": "directed"
+              },
+              {
+                "source": "n5",
+                "target": "n6",
+                "label": "获得执行机会",
+                "direction": "directed"
+              },
+              {
+                "source": "n6",
+                "target": "n7",
+                "label": "处理完成",
+                "direction": "directed"
+              },
+              {
+                "source": "n4",
+                "target": "n8",
+                "label": "不可用（教学补充）",
+                "direction": "directed"
+              }
+            ],
+            "note": "SRC-04 24–28；错误与等待细化为T。独立服务器与应用是不同进程；第26、28张原图待核验。静态双路径概览，动画待开发。"
+          }
+        },
+        {
+          "id": "animation-status",
+          "kind": "text",
+          "title": "动态演示开发状态",
+          "text": "本轮已填写静态讲解与图示（如有）；对应动画仍待专门开发与核验，不提供无效的播放入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-04",
+          "pages": "24–28",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K011",
+        "CH01-K013"
+      ],
+      "lab": false,
+      "original_section": "1.4.4"
+    },
+    {
+      "code": "CH01-A000",
+      "title": "第一章普通内容速览与课件定位",
+      "section": "1.1",
+      "original_section": "跨1.1–1.4，按来源定位",
+      "phase": "普通摘要",
+      "importable": true,
+      "summary": "12项普通内容保留摘要和课件入口，不扩展为复杂交互。",
+      "objectives": "定位基础定义、历史与服务材料；理解摘要与重点难点的分工。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "如何使用",
+          "text": "普通内容优先结合原课件阅读，困难机制进入关联知识卡。"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "阅读范围",
+          "text": "本页仅依据四份PPT报告；缺失的1.5不生成正文。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "12项摘要",
+          "text": "## CH01-A001 定义、目标与四个观察角度\n从使用者、开发者、执行和系统功能理解操作系统；定义与目标结合职责讨论。\n来源：SRC-01，物理第4–17张。\n\n## CH01-A002 资源管理与服务视角\n以管理员和服务员视角理解资源分配与服务提供。\n来源：SRC-01，物理第32–34张。\n\n## CH01-A003 人工操作与管理程序历史\n历史演进围绕人工干预、自动化作业和管理程序展开；图示等待核对。\n来源：SRC-02，物理第3–12张。\n\n## CH01-A004 发展的推动因素\n硬件、软件、资源利用和新服务需求推动操作系统演进。\n来源：SRC-02，物理第24张。\n\n## CH01-A005 系统类型简介\n微机、网络、分布式和嵌入式系统从不同应用与组织角度分类；保留历史语境。\n来源：SRC-02，物理第32–37张。\n\n## CH01-A006 商店服务类比\n批发、零售、全天候等类比用于记忆，不充当严格定义。\n来源：SRC-02，物理第42–43张。\n\n## CH01-A007 基本服务\n编写与执行程序、I/O、信息存取、通信及错误处理等服务。\n来源：SRC-03，物理第3–4张。\n\n## CH01-A008 系统调用功能分类\n进程、存储、设备、文件、通信及信息维护等分类。\n来源：SRC-03，物理第12张。\n\n## CH01-A009 操作接口\n命令行、批命令、GUI与作业控制语言；区分联机与脱机控制。\n来源：SRC-03，物理第17–19张。\n\n## CH01-A010 内核功能\n中断、时钟、短程调度及原语管理；具体实现不可无条件推广。\n来源：SRC-04，物理第16–18张。\n\n## CH01-A011 历史结构示例\nTHE和VM/370等历史材料用于结构比较，原图未完全核验。\n来源：SRC-04，物理第7–10张。\n\n## CH01-A012 历史规模统计\n仅作为历史与发展背景，不当作当前系统统计；编号待确认。\n来源：SRC-01，物理第40–41张。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "类比的边界",
+          "text": "商店类比帮助记忆，但不能充当实时系统的严格定义。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "历史材料不是现代通则",
+          "text": "历史规模、旧ABI和内核属性必须保留语境；图形不清楚时查待核实事项。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "继续学习",
+          "text": "从知识点列表进入重点卡；未提供正式题目时不伪造练习入口。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "SRC-01",
+          "pages": "1–42",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        },
+        {
+          "source_id": "SRC-02",
+          "pages": "1–44",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        },
+        {
+          "source_id": "SRC-03",
+          "pages": "1–28",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        },
+        {
+          "source_id": "SRC-04",
+          "pages": "1–29",
+          "status": "S",
+          "basis": "report",
+          "visual_check": "pending"
+        }
+      ],
+      "related": [
+        "CH01-K001",
+        "CH01-K008",
+        "CH01-K010",
+        "CH01-K013"
+      ],
+      "lab": false
+    }
+  ],
+  "issues": [
+    {
+      "code": "VERIFY-01",
+      "text": "教材版本与旧课件背景不同；仅以PPT为准，不承诺教材逐项一致。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-02",
+      "text": "SRC-01 14/26；SRC-02 4/6/7/12/15/16/38–41含图页需视觉核验。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-03",
+      "text": "SRC-03 10/11/14/20/24/27；SRC-04 6/8/10/12/14/17/26/28图形和代码需核验。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-04",
+      "text": "SRC-01 6–7代码可能有语法或变量问题，不当作可运行代码。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-05",
+      "text": "旧Linux/x86、int 0x80、寄存器与调用表是否保留，等待确认。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-06",
+      "text": "SRC-04 19“内核不可抢占”不能推广为所有现代系统规律。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-07",
+      "text": "1.5只有总目录，不生成正文。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-08",
+      "text": "SRC-01 40–41发展背景是否编号1.1.5，等待确认。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-09",
+      "text": "RR已实测采用边界新到达者先入队；仍需审核教学规则与后续图示一致性。",
+      "status": "pending"
+    },
+    {
+      "code": "VERIFY-10",
+      "text": "考试重点、正式题来源与授课删减范围未提供，不自行补写。",
+      "status": "pending"
+    }
+  ],
+  "summaries": [
+    {
+      "code": "CH01-A001",
+      "title": "定义、目标与四个观察角度",
+      "source_id": "SRC-01",
+      "pages": "4–17",
+      "text": "从使用者、开发者、执行和系统功能理解操作系统；定义与目标结合职责讨论。"
+    },
+    {
+      "code": "CH01-A002",
+      "title": "资源管理与服务视角",
+      "source_id": "SRC-01",
+      "pages": "32–34",
+      "text": "以管理员和服务员视角理解资源分配与服务提供。"
+    },
+    {
+      "code": "CH01-A003",
+      "title": "人工操作与管理程序历史",
+      "source_id": "SRC-02",
+      "pages": "3–12",
+      "text": "历史演进围绕人工干预、自动化作业和管理程序展开；图示等待核对。"
+    },
+    {
+      "code": "CH01-A004",
+      "title": "发展的推动因素",
+      "source_id": "SRC-02",
+      "pages": "24",
+      "text": "硬件、软件、资源利用和新服务需求推动操作系统演进。"
+    },
+    {
+      "code": "CH01-A005",
+      "title": "系统类型简介",
+      "source_id": "SRC-02",
+      "pages": "32–37",
+      "text": "微机、网络、分布式和嵌入式系统从不同应用与组织角度分类；保留历史语境。"
+    },
+    {
+      "code": "CH01-A006",
+      "title": "商店服务类比",
+      "source_id": "SRC-02",
+      "pages": "42–43",
+      "text": "批发、零售、全天候等类比用于记忆，不充当严格定义。"
+    },
+    {
+      "code": "CH01-A007",
+      "title": "基本服务",
+      "source_id": "SRC-03",
+      "pages": "3–4",
+      "text": "编写与执行程序、I/O、信息存取、通信及错误处理等服务。"
+    },
+    {
+      "code": "CH01-A008",
+      "title": "系统调用功能分类",
+      "source_id": "SRC-03",
+      "pages": "12",
+      "text": "进程、存储、设备、文件、通信及信息维护等分类。"
+    },
+    {
+      "code": "CH01-A009",
+      "title": "操作接口",
+      "source_id": "SRC-03",
+      "pages": "17–19",
+      "text": "命令行、批命令、GUI与作业控制语言；区分联机与脱机控制。"
+    },
+    {
+      "code": "CH01-A010",
+      "title": "内核功能",
+      "source_id": "SRC-04",
+      "pages": "16–18",
+      "text": "中断、时钟、短程调度及原语管理；具体实现不可无条件推广。"
+    },
+    {
+      "code": "CH01-A011",
+      "title": "历史结构示例",
+      "source_id": "SRC-04",
+      "pages": "7–10",
+      "text": "THE和VM/370等历史材料用于结构比较，原图未完全核验。"
+    },
+    {
+      "code": "CH01-A012",
+      "title": "历史规模统计",
+      "source_id": "SRC-01",
+      "pages": "40–41",
+      "text": "仅作为历史与发展背景，不当作当前系统统计；编号待确认。"
+    }
+  ],
+  "animations": [
+    {
+      "code": "ANI-01",
+      "point": "CH01-K003",
+      "title": "打印队列",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    },
+    {
+      "code": "ANI-02",
+      "point": "CH01-K005",
+      "title": "并发与并行",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    },
+    {
+      "code": "ANI-03",
+      "point": "CH01-K006",
+      "title": "CPU/I-O泳道",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    },
+    {
+      "code": "ANI-04",
+      "point": "CH01-K009",
+      "title": "RR同步队列演示（复用已有实验回放）",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    },
+    {
+      "code": "ANI-05",
+      "point": "CH01-K011",
+      "title": "系统调用处理",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    },
+    {
+      "code": "ANI-06",
+      "point": "CH01-K016",
+      "title": "两种运行模型",
+      "status": "待开发或专项核验，不随静态内容导入声明已实现"
+    }
+  ]
+}

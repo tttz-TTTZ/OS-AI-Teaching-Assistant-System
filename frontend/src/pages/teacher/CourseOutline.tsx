@@ -87,6 +87,9 @@ export default function CourseOutline({
     >
       <Notice error={error} />
       <div className="authoring-toolbar">
+        <Link className="button" to="/teacher/chapter-content">
+          审核已填写的第一章内容
+        </Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
             ＋ 新建章节

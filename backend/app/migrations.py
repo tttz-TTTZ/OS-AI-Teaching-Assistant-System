@@ -187,3 +187,6 @@ def migrate(path: Path) -> None:
     from .personal_migration import migrate_personal
 
     migrate_personal(path, backup=had_v7)
+    from .chapter_content_migration import migrate_chapter_content
+
+    migrate_chapter_content(path, backup=had_v7)

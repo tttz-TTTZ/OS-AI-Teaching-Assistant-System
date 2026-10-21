@@ -117,6 +117,41 @@ class Config(BaseModel):
     scenario: int = Field(default=0, ge=0, le=4)
 
 
+class DiagramNode(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=r"^[a-zA-Z0-9_-]{1,80}$")
+    label: str = Field(min_length=1, max_length=200)
+    x: int = Field(ge=0, le=3000)
+    y: int = Field(ge=0, le=3000)
+
+
+class DiagramEdge(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    source: str
+    target: str
+    label: str = Field(min_length=1, max_length=200)
+    direction: Literal["directed", "undirected", "unconfirmed"] = "directed"
+
+
+class Diagram(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    code: str = Field(max_length=80)
+    title: str = Field(max_length=200)
+    type: Literal["relation", "flow"]
+    nodes: list[DiagramNode] = Field(min_length=1, max_length=40)
+    edges: list[DiagramEdge] = Field(max_length=80)
+    note: str = Field(default="", max_length=3000)
+
+    @model_validator(mode="after")
+    def valid_links(self):
+        ids = {n.id for n in self.nodes}
+        if len(ids) != len(self.nodes) or any(
+            e.source not in ids or e.target not in ids for e in self.edges
+        ):
+            raise ValueError("图示节点ID重复或连线目标不存在")
+        return self
+
+
 class Block(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(pattern=r"^[a-zA-Z0-9_-]{1,80}$")
@@ -131,6 +166,7 @@ class Block(BaseModel):
         "interaction",
         "image",
         "chart",
+        "diagram",
     ] = "text"
     title: str = Field(default="", max_length=200)
     text: str = Field(default="", max_length=50000)
@@ -140,6 +176,7 @@ class Block(BaseModel):
     labels: list[str] = Field(default_factory=list, max_length=20)
     values: list[float] = Field(default_factory=list, max_length=20)
     unit: str = Field(default="", max_length=40)
+    diagram: Diagram | None = None
 
     @model_validator(mode="after")
     def validate_block(self):
@@ -149,6 +186,8 @@ class Block(BaseModel):
             len(s) > 100 for s in self.labels
         ):
             raise ValueError("图表标签最多100字，数值必须非负有限")
+        if self.kind == "diagram" and not self.diagram:
+            raise ValueError("图示块缺少结构化图示")
         return self
 
 

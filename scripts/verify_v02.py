@@ -31,7 +31,7 @@ def wait_ready(url: str, process: subprocess.Popen) -> None:
     raise RuntimeError("服务启动超时")
 
 
-def run() -> None:
+def run(chapter_only=False) -> None:
     # 先拒绝端口冲突，避免误连已经运行的个人开发实例。
     for port in (8010, 5174):
         with socket.socket() as probe:
@@ -131,8 +131,15 @@ def run() -> None:
                     cwd=ROOT,
                     check=True,
                 )
+                if not chapter_only:
+                    subprocess.run(
+                        ["node", str(ROOT / "scripts/browser-check.cjs")],
+                        env=env,
+                        cwd=ROOT,
+                        check=True,
+                    )
                 subprocess.run(
-                    ["node", str(ROOT / "scripts/browser-check.cjs")],
+                    ["node", str(ROOT / "scripts/chapter-content-browser.cjs")],
                     env=env,
                     cwd=ROOT,
                     check=True,
@@ -149,4 +156,12 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--chapter-content-only",
+        action="store_true",
+        help="仅运行第一章审核导入浏览器验收及HTTP冒烟",
+    )
+    run(parser.parse_args().chapter_content_only)

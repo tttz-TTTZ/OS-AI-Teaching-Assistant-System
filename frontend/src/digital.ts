@@ -55,7 +55,21 @@ export const blockKinds = {
   interaction: "交互演示",
   image: "图片",
   chart: "数据图表",
+  diagram: "知识关系图 / 流程图",
 };
+export interface Diagram {
+  code: string;
+  title: string;
+  type: "relation" | "flow";
+  nodes: { id: string; label: string; x: number; y: number }[];
+  edges: {
+    source: string;
+    target: string;
+    label: string;
+    direction: "directed" | "undirected" | "unconfirmed";
+  }[];
+  note: string;
+}
 export interface ContentBlock {
   id: string;
   kind: keyof typeof blockKinds;
@@ -67,6 +81,7 @@ export interface ContentBlock {
   labels?: string[];
   values?: number[];
   unit?: string;
+  diagram?: Diagram | null;
 }
 export interface Section {
   id: number;
