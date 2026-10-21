@@ -193,7 +193,7 @@ def test_confirmation_limits_and_versions(clients, monkeypatch):
         a.post(
             BASE + "/sources/preview", json={**config, "section_id": None}
         ).status_code
-        == 422
+        == 200
     )
     calls = []
     mock_model(monkeypatch, calls)

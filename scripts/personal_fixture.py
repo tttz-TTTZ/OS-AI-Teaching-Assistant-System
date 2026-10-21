@@ -20,11 +20,28 @@ if __name__ == "__main__":
                 (sys.argv[1],),
             ).fetchone()
         )
-    body = ai.Generation.model_validate(json.loads(sys.stdin.read()))
+    payload = json.loads(sys.stdin.read())
+    is_chat = "question" in payload
+    if is_chat:
+        from app import personal_chat
+
+        body = personal_chat.Ask.model_validate(payload)
+    else:
+        body = ai.Generation.model_validate(payload)
 
     async def fake(body, source, **kwargs):
+        if kwargs.get("payload", {}).get("task") == "conversation":
+            p = kwargs["payload"]
+            return {
+                "answer": "直接回答："
+                + p["question"]
+                + "\n\n虚拟机通过虚拟化资源为操作系统提供隔离的运行环境。"
+                + ("这是基于上轮内容的追问解释。" if p["conversation"] else ""),
+                "citations": [],
+            }
         if kwargs.get("payload", {}).get("task", "").startswith("pilot_"):
             from pilot_fixture import model_output
+
             return model_output(kwargs["payload"])
         c = source["chunks"][0]
         cite = {"source_ref": c["ref"], "source_quote": c["text"][:30]}
@@ -83,5 +100,14 @@ if __name__ == "__main__":
         return {"title": "我的个人学习内容", "modules": modules}
 
     ai.call_deepseek = fake
+    if is_chat:
+        personal_chat.call_deepseek = fake
     os.environ["DEEPSEEK_API_KEY"] = "test-only-no-network"
-    print(json.dumps(asyncio.run(ai.generate(body, user)), ensure_ascii=False))
+    print(
+        json.dumps(
+            asyncio.run(
+                personal_chat.ask(body, user) if is_chat else ai.generate(body, user)
+            ),
+            ensure_ascii=False,
+        )
+    )

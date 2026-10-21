@@ -345,3 +345,7 @@ app.include_router(ai_lessons_router)
 from .personal_learning import router as personal_learning_router
 
 app.include_router(personal_learning_router)
+
+from .personal_chat import router as personal_chat_router
+
+app.include_router(personal_chat_router)

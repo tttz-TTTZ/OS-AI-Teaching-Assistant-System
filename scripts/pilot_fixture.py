@@ -58,6 +58,18 @@ def model_output(payload):
                 for title, statement in GOLD
                 if statement in c["text"]
             ]
+            if not facts and "操作系统负责管理计算机硬件和软件资源" in c["text"]:
+                sentences = [
+                    s + "。" for s in c["text"].split("。") if len(s.strip()) >= 8
+                ][:3]
+                facts = [
+                    {
+                        "title": ["资源管理", "进程空间", "线程资源"][i],
+                        "statement": s,
+                        "quote": s,
+                    }
+                    for i, s in enumerate(sentences)
+                ]
             blocks.append(
                 {
                     "ref": c["ref"],
@@ -75,16 +87,15 @@ def model_output(payload):
             "conflicts": [],
         }
     if task == "pilot_map":
+        groups = [payload["concepts"][:3], payload["concepts"][3:]]
         return {
             "branches": [
                 {
-                    "label": "服务与接口",
-                    "concept_ids": [c["id"] for c in payload["concepts"][:3]],
-                },
-                {
-                    "label": "区别与保护",
-                    "concept_ids": [c["id"] for c in payload["concepts"][3:]],
-                },
+                    "label": ["服务与接口", "区别与保护"][i],
+                    "concept_ids": [c["id"] for c in group],
+                }
+                for i, group in enumerate(groups)
+                if group
             ]
         }
     if task == "pilot_flashcards":
@@ -100,4 +111,15 @@ def model_output(payload):
 if __name__ == "__main__":
     import base64, json
 
-    print(json.dumps([base64.b64encode(data).decode() for data in decks()]))
+    import sys
+
+    data = list(decks())
+    if "--four" in sys.argv:
+        variants = []
+        for i in range(4):
+            output = BytesIO(data[i % len(data)])
+            with ZipFile(output, "a") as book:
+                book.comment = f"synthetic-course-file-{i}".encode()
+            variants.append(output.getvalue())
+        data = variants
+    print(json.dumps([base64.b64encode(item).decode() for item in data]))

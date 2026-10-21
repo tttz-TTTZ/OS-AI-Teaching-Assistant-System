@@ -747,7 +747,7 @@ export default function PersonalLearning({
               </>
             )}
             {job.status === "ready" && job.kind === "practice" && (
-              <section className="authoring-card authoring-form">
+              <section className="authoring-card authoring-form personal-quiz">
                 <h2>个人自测 · 不计入教师正式成绩</h2>
                 {job.body.questions?.length !== job.body.requested_count && (
                   <p>
@@ -799,7 +799,7 @@ export default function PersonalLearning({
                       ))
                     ) : (
                       question.options.map((o, j) => (
-                        <label className="check" key={j}>
+                        <label className="quiz-option" key={j}>
                           <input
                             type={
                               question.kind === "multiple"
@@ -825,7 +825,12 @@ export default function PersonalLearning({
                               )
                             }
                           />
-                          {o}
+                          <span className="quiz-option-content">
+                            <span aria-hidden="true">
+                              {String.fromCharCode(65 + j)}.{" "}
+                            </span>
+                            {o}
+                          </span>
                         </label>
                       ))
                     )}
@@ -977,31 +982,33 @@ export default function PersonalLearning({
       <section className="authoring-card">
         <h2>我的学习与自测记录</h2>
         {!history.length && <p>还没有个人生成记录，从课程资料开始即可。</p>}
-        {history.map((h) => {
-          let title = "个人内容";
-          try {
-            title = JSON.parse(h.config_json).topic;
-          } catch {}
-          return (
-            <div className="outline-point" key={h.id}>
-              <span>
-                {h.bookmarked ? "★ " : ""}
-                {h.kind === "practice" ? "自测" : "学习"} · {title} ·{" "}
-                {h.created_at}
-              </span>
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() => {
-                  setParams({ job: String(h.id) });
-                  window.scrollTo(0, 0);
-                }}
-              >
-                打开记录
-              </button>
-            </div>
-          );
-        })}
+        {history
+          .filter((h) => !practice || h.kind === "practice")
+          .map((h) => {
+            let title = "个人内容";
+            try {
+              title = JSON.parse(h.config_json).topic;
+            } catch {}
+            return (
+              <div className="outline-point" key={h.id}>
+                <span>
+                  {h.bookmarked ? "★ " : ""}
+                  {h.kind === "practice" ? "自测" : "学习"} · {title} ·{" "}
+                  {h.created_at}
+                </span>
+                <button
+                  className="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    setParams({ job: String(h.id) });
+                    window.scrollTo(0, 0);
+                  }}
+                >
+                  打开记录
+                </button>
+              </div>
+            );
+          })}
       </section>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   PersonalSummary,
 } from "../personal";
 import PersonalModule from "../learning/PersonalModule";
+import Markdown from "../Markdown";
 import { materialAccept, materialFileError } from "../materialFiles";
 
 const studio: {
@@ -96,7 +97,7 @@ export default function LearningNotebook() {
     answerRef = useRef<HTMLDivElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
   const [generationStage, setGenerationStage] = useState("");
-  const [pilotEnabled, setPilotEnabled] = useState(false);
+  const [useSources, setUseSources] = useState(true);
   const [pendingPilot, setPendingPilot] = useState<{
     mode: Mode;
     body: PersonalConfig;
@@ -200,7 +201,10 @@ export default function LearningNotebook() {
         setSection(j.config.section_id || 0);
         setSources(j.config.sources);
         setLevel(j.config.level);
-        setPilotEnabled(j.config.analysis_mode === "section");
+        setUseSources(
+          (j.config as PersonalConfig & { use_sources?: boolean })
+            .use_sources !== false,
+        );
         setNote(j.note);
         setBookmarked(!!j.bookmarked);
         setEvidence(j.sources);
@@ -208,7 +212,7 @@ export default function LearningNotebook() {
         setPrompt(sessionStorage.getItem(followupKey) || "");
         sessionStorage.removeItem(followupKey);
         const prior: PersonalJob[] = [];
-        let parent = j.config.parent_id;
+        let parent = j.body.answer ? null : j.config.parent_id;
         const visited = new Set<number>([j.id]);
         while (parent && prior.length < 5 && !visited.has(parent)) {
           visited.add(parent);
@@ -252,20 +256,20 @@ export default function LearningNotebook() {
     chapter_id: chapter,
     section_id: section || null,
     analysis_mode:
-      pilotEnabled && (mode === "map" || mode === "flashcards")
-        ? "section"
-        : "quick",
+      mode === "map" || mode === "flashcards" ? "section" : "quick",
     sources,
     topic:
-      (pilotEnabled && (mode === "map" || mode === "flashcards")
-        ? sections.find((s) => s.id === section)?.title
-        : "") ||
-      job?.config.topic ||
-      prompt.trim() ||
-      sources
-        .map((source) => selectedTitle(source.document_id))
-        .join("、")
-        .slice(0, 1000),
+      mode === "map" || mode === "flashcards"
+        ? prompt.trim() ||
+          sections.find((s) => s.id === section)?.title ||
+          chapters.find((c) => c.id === chapter)?.title ||
+          "课程知识复习"
+        : job?.config.topic ||
+          prompt.trim() ||
+          sources
+            .map((source) => selectedTitle(source.document_id))
+            .join("、")
+            .slice(0, 1000),
     source_overview: !prompt.trim() && (job?.config.source_overview ?? !job),
     weakness: job ? prompt.trim() : "",
     level,
@@ -288,10 +292,6 @@ export default function LearningNotebook() {
       return;
     }
     const body = config(mode);
-    if (body.analysis_mode === "section" && !section) {
-      setError("请先选择本次试点的小节，并调整各份PPT的本小节页码范围。");
-      return;
-    }
     if (
       confirmed &&
       JSON.stringify(body) !== JSON.stringify(pendingPilot?.body)
@@ -387,6 +387,48 @@ export default function LearningNotebook() {
       setGenerationStage("");
     }
   }
+  async function ask() {
+    if (busy || uploading || loading) return;
+    const question = prompt.trim();
+    if (!question) {
+      setError("请输入具体问题；需要导图、闪卡或测验时点击右侧工具。");
+      return;
+    }
+    if (noteDirty && !window.confirm("笔记尚未保存，确定先提问吗？")) return;
+    const token = epoch.current;
+    setBusy(true);
+    setError("");
+    setMessage("");
+    setView("learn");
+    setPendingPilot(undefined);
+    requestKey.current = "";
+    setGenerationStage("正在回答你的问题…");
+    try {
+      const answer = await personalApi.ask(
+        question,
+        chapter,
+        job?.status === "ready" ? job.id : null,
+        sources,
+        useSources,
+        crypto.randomUUID(),
+      );
+      if (token !== epoch.current) return;
+      if (answer.status !== "ready")
+        throw new Error(answer.error || "问答任务尚未完成，请检查历史记录");
+      setHistory((old) => [
+        { ...answer, config_json: JSON.stringify(answer.config) },
+        ...old.filter((h) => h.id !== answer.id),
+      ]);
+      setParams({ chapter: String(answer.chapter_id), job: String(answer.id) });
+      setJob(answer);
+      setPrompt("");
+    } catch (e) {
+      if (token === epoch.current) setError((e as Error).message);
+    } finally {
+      setBusy(false);
+      setGenerationStage("");
+    }
+  }
   async function upload(file?: File) {
     if (!file) return;
     const failure = materialFileError(file);
@@ -408,10 +450,11 @@ export default function LearningNotebook() {
       setSearch("");
       setRefresh((v) => v + 1);
       if (sources.length < 5) {
-        setSources((old) => [
-          ...old,
-          { document_id: d.id, start_page: 1, end_page: null },
-        ]);
+        setSources((old) =>
+          old.some((s) => s.document_id === d.id)
+            ? old
+            : [...old, { document_id: d.id, start_page: 1, end_page: null }],
+        );
       }
       setMessage("资料已保存到本人账号，其他学生不可读取。");
       invalidate();
@@ -719,7 +762,7 @@ export default function LearningNotebook() {
           aria-label="学习对话"
         >
           <div className="notebook-pane-title">
-            <h2>{view === "notes" ? "我的学习笔记" : "学习与分析"}</h2>
+            <h2>{view === "notes" ? "我的学习笔记" : "学习与问答"}</h2>
             <button className="secondary" onClick={newTopic} disabled={busy}>
               ＋ 新话题
             </button>
@@ -815,9 +858,11 @@ export default function LearningNotebook() {
                     ))}
                   </details>
                 )}
-                <div className="notebook-user-message">
-                  {job.config.weakness || job.config.topic}
-                </div>
+                {!job.body.answer && (
+                  <div className="notebook-user-message">
+                    {job.config.weakness || job.config.topic}
+                  </div>
+                )}
                 <p className="notebook-answer-meta">
                   AI辅助学习 · 仅本人可见 · {job.model} ·{" "}
                   {job.status === "ready"
@@ -841,7 +886,40 @@ export default function LearningNotebook() {
                     刷新任务状态
                   </button>
                 )}
-                {job.kind === "practice" ? (
+                {job.body.answer ? (
+                  <section aria-label="直接问答记录">
+                    <p className="notebook-answer-meta">
+                      {job.body.basis === "general"
+                        ? "通用知识解释 · 未引用所选课件"
+                        : "结合本次检索到的资料回答"}{" "}
+                      · 保留最近对话上下文
+                    </p>
+                    {job.sources.warnings.map((w, i) => (
+                      <p key={i} className="notebook-answer-meta">
+                        {w}
+                      </p>
+                    ))}
+                    {(job.body.conversation || []).map((turn, i) => (
+                      <article
+                        key={i}
+                        className={`notebook-chat-turn ${turn.role}`}
+                      >
+                        <strong>
+                          {turn.role === "user" ? "我" : "AI 助教"}
+                        </strong>
+                        <Markdown content={turn.content} />
+                      </article>
+                    ))}
+                    {!!job.body.citations?.length && (
+                      <details>
+                        <summary>本次回答的资料依据</summary>
+                        {job.body.citations.map((c, i) => (
+                          <blockquote key={i}>{c.source_quote}</blockquote>
+                        ))}
+                      </details>
+                    )}
+                  </section>
+                ) : job.kind === "practice" ? (
                   <div>
                     <h3>{job.body.title}</h3>
                     <p>
@@ -872,6 +950,11 @@ export default function LearningNotebook() {
                           </button>
                         ))}
                       </div>
+                      {current.mode === "map" && !job.body.pilot && (
+                        <p className="notice">
+                          这是旧版抽样导图。点击右侧“思维导图”可按当前所选正文重新提炼，旧记录不会被覆盖。
+                        </p>
+                      )}
                       <PersonalModule
                         key={`${job.id}-${moduleIndex}`}
                         module={current}
@@ -973,6 +1056,15 @@ export default function LearningNotebook() {
             <label className="sr-only" htmlFor="notebook-prompt">
               提问或创作学习内容
             </label>
+            <label className="notebook-chat-settings">
+              <input
+                type="checkbox"
+                checked={useSources}
+                disabled={busy}
+                onChange={(e) => setUseSources(e.target.checked)}
+              />
+              结合已选资料；不选资料也可直接提问
+            </label>
             <textarea
               id="notebook-prompt"
               aria-label="提问或创作学习内容"
@@ -981,7 +1073,7 @@ export default function LearningNotebook() {
               placeholder={
                 job
                   ? "继续提问，或描述你的薄弱点…"
-                  : "输入主题或问题，也可以直接点击右侧学习工具…"
+                  : "直接输入具体问题，例如：为什么虚拟机能运行不同操作系统？"
               }
               value={prompt}
               disabled={busy}
@@ -992,7 +1084,7 @@ export default function LearningNotebook() {
               onKeyDown={(e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                   e.preventDefault();
-                  create("explain");
+                  ask();
                 }
               }}
             />
@@ -1004,7 +1096,7 @@ export default function LearningNotebook() {
               <button
                 aria-label="发送学习问题"
                 disabled={busy || uploading || loading}
-                onClick={() => create("explain")}
+                onClick={ask}
               >
                 {busy ? "生成中…" : "发送 ↑"}
               </button>
@@ -1038,23 +1130,9 @@ export default function LearningNotebook() {
             <p className="notebook-studio-hint">
               先勾选左侧资料。无需填写主题即可概览所选资料；填写具体问题时按问题检索。生成后自动保存在本人账号。
             </p>
-            <label className="pilot-switch">
-              <input
-                type="checkbox"
-                checked={pilotEnabled}
-                disabled={busy || loading}
-                onChange={(e) => {
-                  setPilotEnabled(e.target.checked);
-                  invalidate();
-                }}
-              />
-              完整提炼试点（导图 / 闪卡）
-            </label>
-            {pilotEnabled && (
-              <p className="notebook-studio-hint">
-                限定一个小节，最多120页、12批、20个概念与80条结论。先设置各文件页码，预览后确认计费；知识结果可复用，失败保留已完成批次。
-              </p>
-            )}
+            <p className="notebook-studio-hint">
+              导图和闪卡默认先提炼知识，生成前确认范围与调用次数；可选具体小节，也可整理本章多个相关课件。最多120页、12批，超限先调整页码。
+            </p>
             <div className="notebook-tools">
               {studio.map((tool) => (
                 <button
@@ -1070,8 +1148,8 @@ export default function LearningNotebook() {
               ))}
             </div>
             <p className="notebook-cost">
-              AI生成可能计费，每日最多{status?.daily_limit || 20}
-              次，不自动重试。算法实验请从首页进入独立板块。
+              AI调用可能计费，每日最多{status?.daily_limit || 20}
+              个任务；导图和闪卡按确认计划可能包含多次调用，不自动重试。
             </p>
             <div className="notebook-pane-title notebook-results-title">
               <h3>我的学习成果</h3>
@@ -1081,11 +1159,13 @@ export default function LearningNotebook() {
               {!history.length && <p>导图、闪卡和学习记录会出现在这里。</p>}
               {history.map((h) => {
                 let title = "学习内容",
-                  modes: Mode[] = [];
+                  modes: Mode[] = [],
+                  isChat = false;
                 try {
                   const c = JSON.parse(h.config_json);
                   title = c.topic;
                   modes = c.modes || [];
+                  isChat = !!c.chat;
                 } catch {}
                 return (
                   <button
@@ -1095,22 +1175,26 @@ export default function LearningNotebook() {
                     onClick={() => open(h.id)}
                   >
                     <span className="artifact-symbol">
-                      {h.kind === "practice"
-                        ? "测"
-                        : modes[0] === "flashcards"
-                          ? "卡"
-                          : modes[0] === "map"
-                            ? "图"
-                            : "文"}
+                      {isChat
+                        ? "问"
+                        : h.kind === "practice"
+                          ? "测"
+                          : modes[0] === "flashcards"
+                            ? "卡"
+                            : modes[0] === "map"
+                              ? "图"
+                              : "文"}
                     </span>
                     <span>
                       <strong>{title}</strong>
                       <small>
-                        {h.kind === "practice"
-                          ? "个人自测"
-                          : modes
-                              .map((m) => modeNames[m] || m)
-                              .join(" / ")}{" "}
+                        {isChat
+                          ? "直接问答"
+                          : h.kind === "practice"
+                            ? "个人自测"
+                            : modes
+                                .map((m) => modeNames[m] || m)
+                                .join(" / ")}{" "}
                         ·{" "}
                         {h.status === "ready"
                           ? "已保存"

@@ -466,7 +466,8 @@ async def generate(body: Generation, user=Depends(student)):
                 body.modes
             ):
                 raise HTTPException(
-                    502, "AI没有完整提供所选学习方式，请减少方式或缩小主题后手动重试"
+                    502,
+                    "AI未按约定返回本次学习内容类型，本次未保存为可用成果；具体问题可在输入框直接提问，生成材料请手动重试",
                 )
             for m in modules:
                 citation(m.source_ref, m.source_quote, source)

@@ -124,6 +124,10 @@ export interface PersonalJob {
     questions?: PersonalQuestion[];
     requested_count?: number;
     pilot?: PilotAnalysis;
+    answer?: string;
+    basis?: "general" | "selected_sources";
+    conversation?: { role: "user" | "assistant"; content: string }[];
+    citations?: { source_ref: string; source_quote: string }[];
   };
   sources: Evidence;
   config: PersonalConfig;
@@ -151,6 +155,25 @@ export interface PersonalGrade {
   }[];
 }
 export const personalApi = {
+  ask: (
+    question: string,
+    chapter_id: number,
+    parent_id: number | null,
+    sources: PersonalSource[],
+    use_sources: boolean,
+    key: string,
+  ) =>
+    request<PersonalJob>("/student/personal/ask", {
+      method: "POST",
+      body: JSON.stringify({
+        question,
+        chapter_id: chapter_id || null,
+        parent_id,
+        sources,
+        use_sources,
+        request_key: key,
+      }),
+    }),
   progress: (key: string) =>
     request<{
       stage: string;

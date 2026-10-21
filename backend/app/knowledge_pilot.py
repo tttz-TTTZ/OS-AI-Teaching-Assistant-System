@@ -73,19 +73,19 @@ def prepare(body, user):
         os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip().rstrip("/")
     )
     model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip()
-    if not body.chapter_id or not body.section_id:
-        raise HTTPException(
-            422,
-            "完整提炼试点需先选择一个已发布小节，再设置各课件中属于该小节的页码范围",
-        )
+    if not body.chapter_id:
+        raise HTTPException(422, "请先选择已发布课程章节，再检查各课件页码范围")
     with database() as db:
         chapter = visible_chapter(db, body.chapter_id, user)
-        section = db.execute(
-            "SELECT title FROM sections WHERE id=? AND chapter_id=? AND published=1",
-            (body.section_id, body.chapter_id),
-        ).fetchone()
-        if not section:
-            raise HTTPException(404, "小节不存在或未发布")
+        if body.section_id:
+            section = db.execute(
+                "SELECT title FROM sections WHERE id=? AND chapter_id=? AND published=1",
+                (body.section_id, body.chapter_id),
+            ).fetchone()
+            if not section:
+                raise HTTPException(404, "小节不存在或未发布")
+        else:
+            section = {"title": chapter["title"]}
     chunks, signatures, missing, pages, excluded = [], [], [], 0, []
     seen_docs = set()
     for selected in body.sources:

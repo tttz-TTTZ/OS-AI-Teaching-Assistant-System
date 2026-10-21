@@ -13,6 +13,10 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       }),
     }),
   );
+  await s.route("**/api/student/personal/ask", async r => {
+    const result = execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "personal_fixture.py"), studentName], {input: r.request().postData(), encoding: "utf8"});
+    await r.fulfill({status: 200, contentType: "application/json", body: result});
+  });
   await s.route("**/api/student/personal/generate", async (r) => {
     const result = execFileSync(
       process.env.TEST_PYTHON,
@@ -32,6 +36,17 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .waitFor();
   for (const region of ["学习来源", "学习对话", "学习工具"])
     await s.getByRole("region", { name: region, exact: true }).waitFor();
+  await s.getByLabel("提问或创作学习内容", {exact: true}).fill("为什么虚拟机能运行不同操作系统？");
+  await s.getByRole("button", {name: "发送学习问题", exact: true}).click();
+  await s.getByRole("region", {name: "直接问答记录", exact: true}).getByText(/虚拟化资源/).waitFor();
+  await s.getByLabel("提问或创作学习内容", {exact: true}).fill("那它和真实计算机有什么区别？");
+  await s.getByLabel("提问或创作学习内容", {exact: true}).press("Control+Enter");
+  await s.getByRole("region", {name: "直接问答记录", exact: true}).getByText(/这是基于上轮内容的追问解释/).waitFor();
+  const chatId = Number(new URL(s.url()).searchParams.get("job"));
+  if ((await apiCall(b, "get", base + `/api/student/personal/jobs/${chatId}`)).status() !== 404) throw Error("直接问答记录越权");
+  await s.reload();
+  await s.getByRole("region", {name: "直接问答记录", exact: true}).getByText(/这是基于上轮内容的追问解释/).waitFor();
+  await s.getByRole("button", {name: "＋ 新话题", exact: true}).click();
   await s
     .getByLabel("上传我的学习来源", { exact: true })
     .setInputFiles({
@@ -47,7 +62,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .waitFor();
   // No typed topic: selecting sources then clicking Explain must still work.
   await s.getByLabel("提问或创作学习内容", { exact: true }).fill("");
-  await s.getByRole("button", { name: "发送学习问题", exact: true }).click();
+  await s.getByRole("region", {name: "学习工具", exact: true}).getByRole("button", { name: "知识讲解", exact: true }).click();
   await s
     .getByRole("heading", { name: "explain个人学习", exact: true })
     .waitFor();
@@ -63,6 +78,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await studio
     .getByRole("button", { name: "思维导图", exact: true })
     .click();
+  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s
     .getByLabel("个人思维导图")
     .getByText("资源管理", { exact: true })
@@ -99,18 +115,20 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await studio
     .getByRole("button", { name: "知识闪卡", exact: true })
     .click();
+  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s.getByRole("alert").filter({ hasText: "测试：DeepSeek正文不是有效JSON" }).waitFor();
   await s.getByRole("button", { name: "确认历史任务后重新生成（可能计费）", exact: true }).click();
+  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   await s.getByRole("button", { name: "显示答案", exact: true }).click();
   await s
     .getByRole("button", { name: "闪卡答案", exact: true })
-    .getByText("管理计算机资源，为用户和程序提供服务。", { exact: true })
+    .getByText(/操作系统负责管理计算机硬件和软件资源/)
     .waitFor();
   await s.getByRole("button", { name: "下一张", exact: true }).click();
   await s
     .getByRole("button", { name: "闪卡问题", exact: true })
-    .getByText("线程共享什么？", { exact: true })
+    .getByText(/如何理解/)
     .waitFor();
   const flashId = Number(new URL(s.url()).searchParams.get("job"));
   await s.reload();
@@ -152,7 +170,11 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s
     .getByRole("heading", { name: "个人薄弱点自测", exact: true })
     .waitFor();
-  await s.getByLabel("是", { exact: true }).check();
+  const option = s.locator(".quiz-option").first();
+  const inputRect = await option.locator("input").boundingBox();
+  const textRect = await option.locator(".quiz-option-content").boundingBox();
+  if (inputRect.width > 24 || textRect.x - inputRect.x - inputRect.width > 24 || Math.abs(inputRect.y - textRect.y) > 12) throw Error("测验选项排版错位");
+  await s.getByLabel("A. 是", { exact: true }).check();
   await s.getByRole("button", { name: "提交我的自测", exact: true }).click();
   await s.getByRole("status").filter({ hasText: "个人自测：1 / 1" }).waitFor();
   const quiz = Number(new URL(s.url()).searchParams.get("job"));
@@ -196,16 +218,15 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   const sections = await (await apiCall(s, "get", base + `/api/sections?chapter_id=${cid}`)).json();
   const selectedSection = sections.find(x => x.chapter_id === cid);
   if (!selectedSection) throw Error("验收缺少已发布小节");
-  const decks = JSON.parse(execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "pilot_fixture.py")], { encoding: "utf8" }));
+  const decks = JSON.parse(execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "pilot_fixture.py"), "--four"], { encoding: "utf8" }));
   await s.goto(base + `/student/ai-chat?chapter=${cid}`);
   await s.getByLabel("笔记本课程小节", { exact: true }).selectOption(String(selectedSection.id));
-  for (let i = 0; i < decks.length; i++) {
+  for (let i = 0; i < 4; i++) {
     const response = s.waitForResponse(r => r.url().includes("/api/materials/upload") && r.request().method() === "POST");
-    await s.getByLabel("上传我的学习来源", { exact: true }).setInputFiles({name: `试点多课件${i}.pptx`, mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", buffer: Buffer.from(decks[i], "base64")});
+    await s.getByLabel("上传我的学习来源", { exact: true }).setInputFiles({name: `试点多课件${i}.pptx`, mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", buffer: Buffer.from(decks[i % decks.length], "base64")});
     if ((await response).status() !== 201) throw Error("试点课件上传失败");
     await s.getByRole("status").filter({hasText: "资料已保存到本人账号"}).waitFor();
   }
-  await s.getByLabel("完整提炼试点（导图 / 闪卡）", { exact: true }).check();
   await studio.getByRole("button", { name: "思维导图", exact: true }).click();
   await s.getByRole("region", { name: "小节提炼确认", exact: true }).waitFor();
   await s.getByRole("button", { name: "确认开始小节提炼", exact: true }).click();
@@ -227,6 +248,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   if ((await apiCall(b, "get", base + `/api/student/personal/jobs/${pilotId}`)).status() !== 404) throw Error("试点知识泄露");
   await s.reload();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  await s.unroute("**/api/student/personal/ask");
   await s.unroute("**/api/student/personal/status");
   await s.unroute("**/api/student/personal/generate");
   await t.goto(base + "/teacher/dashboard");
