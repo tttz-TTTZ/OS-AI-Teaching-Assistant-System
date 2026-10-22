@@ -77,7 +77,9 @@ export default function LearningNotebook() {
     [parents, setParents] = useState<PersonalJob[]>([]);
   const [evidence, setEvidence] = useState<Evidence>(),
     [showEvidence, setShowEvidence] = useState(false);
-  const [prompt, setPrompt] = useState(""),
+  const [prompt, setPrompt] = useState(() =>
+      (params.get("topic") || "").slice(0, 1000),
+    ),
     [level, setLevel] = useState("basic"),
     [busy, setBusy] = useState(false),
     [uploading, setUploading] = useState(false),

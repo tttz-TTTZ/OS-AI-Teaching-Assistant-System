@@ -356,4 +356,6 @@ app.include_router(personal_chat_router)
 from .chapter_content import router as chapter_content_router
 from . import chapter_apply  # register direct-apply route before including router
 
+from . import chapter02  # register explicit chapter02 draft routes, no startup writes
+
 app.include_router(chapter_content_router)

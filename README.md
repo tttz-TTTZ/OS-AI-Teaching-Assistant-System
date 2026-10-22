@@ -1,3 +1,5 @@
+> 第二章第一批已接入：[使用、数据兼容、Windows启动与验收](docs/CHAPTER02-FIRST-BATCH.md)。教师从“第二章预填与审核”查看12个单元，选择目标目录后保存12份知识草稿与3份FCFS/SJF/RR实验草稿，再审核发布；不自动覆盖已有内容。学生发布后沿用知识学习入口，无新迁移或运行依赖。
+
 > 第二章报告已整理：[网页阅读及PDF/Word/ZIP下载](docs/reports/chapter-02/README.md)，[交给Codex的实施指令](docs/reports/chapter-02/IMPLEMENTATION.md)。完整V1.1报告含质量复核、来源与边界；本次为文档交付，尚未修改第二章应用功能或课程数据。
 
 > 学生知识学习已优化：[阅读与交互说明](docs/KNOWLEDGE-READING-UX.md)。来源及编写待办仅保留在教师端；学生按路线阅读，可选择图示节点、逐条看分支、缩放，并进入实际关联实验。重启生效，无需再次导入。

@@ -90,6 +90,12 @@ export default function CourseOutline({
         <Link className="button" to="/teacher/chapter-content">
           查看新版第一章内容
         </Link>
+        <Link
+          className="button secondary"
+          to="/teacher/chapter-content/chapter02"
+        >
+          第二章预填与审核
+        </Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
             ＋ 新建章节

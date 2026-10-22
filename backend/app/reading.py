@@ -6,11 +6,13 @@ from functools import lru_cache
 from pathlib import Path
 
 
-@lru_cache(maxsize=1)
-def reading_copy():
+@lru_cache(maxsize=2)
+def reading_copy(chapter="chapter01"):
     return json.loads(
         (
-            Path(__file__).resolve().parents[1] / "content" / "chapter01_reading.json"
+            Path(__file__).resolve().parents[1]
+            / "content"
+            / (chapter + "_reading.json")
         ).read_text(encoding="utf-8")
     )
 
@@ -19,11 +21,13 @@ def student_reading(body):
     data = copy.deepcopy(body)
     for field in ("source_title", "source_note", "printed_pages", "pdf_pages"):
         data[field] = ""
-    if not data.get("code", "").startswith("CH01-"):
+    if not data.get("code", "").startswith(("CH01-", "CH02-")):
         return data
     blocks = []
     for b in data["blocks"]:
-        replacement = reading_copy().get(data["code"] + "/" + b["id"])
+        replacement = reading_copy(
+            "chapter02" if data["code"].startswith("CH02-") else "chapter01"
+        ).get(data["code"] + "/" + b["id"])
         # 教师之后改过正文时尊重其内容，不用旧展示副本把修改盖回去。
         if replacement and b.get("text") == replacement["expected"]:
             if replacement["hidden"]:

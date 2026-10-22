@@ -392,7 +392,7 @@ export default function Knowledge() {
         <div className="study-point-row" key={p.id}>
           <div>
             <small>
-              {p.code?.startsWith("CH01-")
+              {/^CH0[12]-/.test(p.code || "")
                 ? p.emphasis || "知识点"
                 : p.code || "知识点"}
               {p.minutes ? ` · 建议 ${p.minutes} 分钟` : ""}
@@ -524,7 +524,7 @@ export default function Knowledge() {
             <>
               <header className="study-heading study-lesson-heading">
                 <span>
-                  {detail.code?.startsWith("CH01-")
+                  {/^CH0[12]-/.test(detail.code || "")
                     ? "知识学习"
                     : detail.code || "知识学习"}
                 </span>
@@ -548,6 +548,18 @@ export default function Knowledge() {
                   onClick={(e) => void follow(e, practice)}
                 >
                   练习与自测 →
+                </Link>
+                <Link
+                  className="study-practice-link"
+                  to={`/student/ai-chat?chapter=${chapter}&topic=${encodeURIComponent("我正在学习「" + detail.title + "」，请帮我解释其中的难点。我想具体问：")}`}
+                  onClick={(e) =>
+                    void follow(
+                      e,
+                      `/student/ai-chat?chapter=${chapter}&topic=${encodeURIComponent("我正在学习「" + detail.title + "」，请帮我解释其中的难点。我想具体问：")}`,
+                    )
+                  }
+                >
+                  向AI问这个概念 →
                 </Link>
               </nav>
               {message && (

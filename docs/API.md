@@ -163,3 +163,14 @@ V0.1 表 materials/knowledge 迁移为规范名，旧名称为只读兼容视图
 `/api/student/personal`：GET status/jobs/jobs/{id}/jobs/{id}/attempts；POST sources/preview、generate、jobs/{id}/simulate、jobs/{id}/submit；PUT jobs/{id}/note。所有接口只允许学生，写请求需CSRF；教师403，其他学生记录404。来源每次授权后检索，签名不匹配409。生成带chapter_id、可选section_id、sources、topic、weakness、level、kind、modes、question_kinds、count、parent_id、fingerprint、request_key。个人笔记需expected_version；个人自测答案提交幂等，题目答案在提交前隐藏，个人结果不写入教师study_attempts。
 
 V8新增document_ai_indexes、personal_ai_jobs、personal_ai_attempts，备份后追加迁移。完整字段、限制、职责变更与Windows步骤见 [STUDENT-AUTONOMOUS-LEARNING.md](STUDENT-AUTONOMOUS-LEARNING.md)。
+
+## 第二章预填内容包（2026-10-22）
+
+以下接口仅教师可调用；写请求沿用会话和CSRF校验。学生调用返回403。无本章启动时自动导入接口。
+
+- `GET /api/teacher/chapter-content/chapter02`：12单元、24分析记录、来源、摘要、21核实事项及3个已有引擎实验的预填包；不是已发布内容。
+- `GET /api/teacher/chapter-content/chapter02/status?chapter_id=<实际ID>`：返回所选课程已导入记录或`result:null`，有记录时包含最初目标章和真实单元/实验ID。
+- `POST /api/teacher/chapter-content/chapter02/plan`：请求`{"chapter_id":123,"section_map":{"2.1":456}}`，其中ID仅示意，须选择本机实际目标。返回目标/目录复用或冲突提示和已有导入状态；不写数据库。映射可省略。
+- `POST /api/teacher/chapter-content/chapter02/import`：同上请求，单事务保存12个知识草稿、必要的新小节草稿和3个FCFS/SJF/RR实验草稿；返回`points/sections/experiments`真实ID。不会改目标章名或自动发布。
+
+`section_map`只接受包中的目录编号和同章小节ID。未显式映射时只有唯一、同编号且同标题的小节可自动复用；有歧义/冲突409，跨章422，不发生部分写入。重复同课程同包同目标返回原ID与`already_imported:true`，不覆盖教师修改；换目标或包哈希改变409，不偷偷覆盖。发布/版本/资料绑定均继续使用既有接口。
