@@ -1,0 +1,1336 @@
+[
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "fcfs",
+    "input": {
+      "P1": [
+        0,
+        7
+      ],
+      "P2": [
+        2,
+        4
+      ],
+      "P3": [
+        4,
+        1
+      ],
+      "P4": [
+        5,
+        4
+      ],
+      "P5": [
+        8,
+        2
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 9,
+    "actual": {
+      "algorithm": "fcfs",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "P1",
+          "start": 0.0,
+          "end": 7.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P2",
+          "start": 7.0,
+          "end": 11.0,
+          "idle": false,
+          "ready": [
+            "P3",
+            "P4"
+          ],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P3",
+          "start": 11.0,
+          "end": 12.0,
+          "idle": false,
+          "ready": [
+            "P4",
+            "P5"
+          ],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P4",
+          "start": 12.0,
+          "end": 16.0,
+          "idle": false,
+          "ready": [
+            "P5"
+          ],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P5",
+          "start": 16.0,
+          "end": 18.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择最早进入就绪队列的进程"
+        }
+      ],
+      "results": [
+        {
+          "pid": "P1",
+          "arrival": 0.0,
+          "burst": 7.0,
+          "start": 0.0,
+          "completion": 7.0,
+          "waiting": 0.0,
+          "turnaround": 7.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P2",
+          "arrival": 2.0,
+          "burst": 4.0,
+          "start": 7.0,
+          "completion": 11.0,
+          "waiting": 5.0,
+          "turnaround": 9.0,
+          "response": 5.0
+        },
+        {
+          "pid": "P3",
+          "arrival": 4.0,
+          "burst": 1.0,
+          "start": 11.0,
+          "completion": 12.0,
+          "waiting": 7.0,
+          "turnaround": 8.0,
+          "response": 7.0
+        },
+        {
+          "pid": "P4",
+          "arrival": 5.0,
+          "burst": 4.0,
+          "start": 12.0,
+          "completion": 16.0,
+          "waiting": 7.0,
+          "turnaround": 11.0,
+          "response": 7.0
+        },
+        {
+          "pid": "P5",
+          "arrival": 8.0,
+          "burst": 2.0,
+          "start": 16.0,
+          "completion": 18.0,
+          "waiting": 8.0,
+          "turnaround": 10.0,
+          "response": 8.0
+        }
+      ],
+      "average_waiting": 5.4,
+      "average_turnaround": 9.0,
+      "average_response": 5.4,
+      "cpu_utilization": 1.0,
+      "elapsed": 18.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "sjf",
+    "input": {
+      "P1": [
+        0,
+        7
+      ],
+      "P2": [
+        2,
+        4
+      ],
+      "P3": [
+        4,
+        1
+      ],
+      "P4": [
+        5,
+        4
+      ],
+      "P5": [
+        8,
+        2
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 7.6,
+    "actual": {
+      "algorithm": "sjf",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "P1",
+          "start": 0.0,
+          "end": 7.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P3",
+          "start": 7.0,
+          "end": 8.0,
+          "idle": false,
+          "ready": [
+            "P2",
+            "P4"
+          ],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P5",
+          "start": 8.0,
+          "end": 10.0,
+          "idle": false,
+          "ready": [
+            "P2",
+            "P4"
+          ],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P2",
+          "start": 10.0,
+          "end": 14.0,
+          "idle": false,
+          "ready": [
+            "P4"
+          ],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P4",
+          "start": 14.0,
+          "end": 18.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        }
+      ],
+      "results": [
+        {
+          "pid": "P1",
+          "arrival": 0.0,
+          "burst": 7.0,
+          "start": 0.0,
+          "completion": 7.0,
+          "waiting": 0.0,
+          "turnaround": 7.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P3",
+          "arrival": 4.0,
+          "burst": 1.0,
+          "start": 7.0,
+          "completion": 8.0,
+          "waiting": 3.0,
+          "turnaround": 4.0,
+          "response": 3.0
+        },
+        {
+          "pid": "P5",
+          "arrival": 8.0,
+          "burst": 2.0,
+          "start": 8.0,
+          "completion": 10.0,
+          "waiting": 0.0,
+          "turnaround": 2.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P2",
+          "arrival": 2.0,
+          "burst": 4.0,
+          "start": 10.0,
+          "completion": 14.0,
+          "waiting": 8.0,
+          "turnaround": 12.0,
+          "response": 8.0
+        },
+        {
+          "pid": "P4",
+          "arrival": 5.0,
+          "burst": 4.0,
+          "start": 14.0,
+          "completion": 18.0,
+          "waiting": 9.0,
+          "turnaround": 13.0,
+          "response": 9.0
+        }
+      ],
+      "average_waiting": 4.0,
+      "average_turnaround": 7.6,
+      "average_response": 4.0,
+      "cpu_utilization": 1.0,
+      "elapsed": 18.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "rr",
+    "input": {
+      "P1": [
+        0,
+        7
+      ],
+      "P2": [
+        2,
+        4
+      ],
+      "P3": [
+        4,
+        1
+      ],
+      "P4": [
+        5,
+        4
+      ],
+      "P5": [
+        8,
+        2
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 9.4,
+    "actual": {
+      "algorithm": "rr",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "P1",
+          "start": 0.0,
+          "end": 2.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P2",
+          "start": 2.0,
+          "end": 4.0,
+          "idle": false,
+          "ready": [
+            "P1"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P1",
+          "start": 4.0,
+          "end": 6.0,
+          "idle": false,
+          "ready": [
+            "P3",
+            "P2"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P3",
+          "start": 6.0,
+          "end": 7.0,
+          "idle": false,
+          "ready": [
+            "P2",
+            "P4",
+            "P1"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P2",
+          "start": 7.0,
+          "end": 9.0,
+          "idle": false,
+          "ready": [
+            "P4",
+            "P1"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P4",
+          "start": 9.0,
+          "end": 11.0,
+          "idle": false,
+          "ready": [
+            "P1",
+            "P5"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P1",
+          "start": 11.0,
+          "end": 13.0,
+          "idle": false,
+          "ready": [
+            "P5",
+            "P4"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P5",
+          "start": 13.0,
+          "end": 15.0,
+          "idle": false,
+          "ready": [
+            "P4",
+            "P1"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P4",
+          "start": 15.0,
+          "end": 17.0,
+          "idle": false,
+          "ready": [
+            "P1"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "P1",
+          "start": 17.0,
+          "end": 18.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        }
+      ],
+      "results": [
+        {
+          "pid": "P3",
+          "arrival": 4.0,
+          "burst": 1.0,
+          "start": 6.0,
+          "completion": 7.0,
+          "waiting": 2.0,
+          "turnaround": 3.0,
+          "response": 2.0
+        },
+        {
+          "pid": "P2",
+          "arrival": 2.0,
+          "burst": 4.0,
+          "start": 2.0,
+          "completion": 9.0,
+          "waiting": 3.0,
+          "turnaround": 7.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P5",
+          "arrival": 8.0,
+          "burst": 2.0,
+          "start": 13.0,
+          "completion": 15.0,
+          "waiting": 5.0,
+          "turnaround": 7.0,
+          "response": 5.0
+        },
+        {
+          "pid": "P4",
+          "arrival": 5.0,
+          "burst": 4.0,
+          "start": 9.0,
+          "completion": 17.0,
+          "waiting": 8.0,
+          "turnaround": 12.0,
+          "response": 4.0
+        },
+        {
+          "pid": "P1",
+          "arrival": 0.0,
+          "burst": 7.0,
+          "start": 0.0,
+          "completion": 18.0,
+          "waiting": 11.0,
+          "turnaround": 18.0,
+          "response": 0.0
+        }
+      ],
+      "average_waiting": 5.8,
+      "average_turnaround": 9.4,
+      "average_response": 2.2,
+      "cpu_utilization": 1.0,
+      "elapsed": 18.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "fcfs",
+    "input": {
+      "P1": [
+        0,
+        28
+      ],
+      "P2": [
+        0,
+        9
+      ],
+      "P3": [
+        0,
+        3
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 35,
+    "actual": {
+      "algorithm": "fcfs",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "P1",
+          "start": 0.0,
+          "end": 28.0,
+          "idle": false,
+          "ready": [
+            "P2",
+            "P3"
+          ],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P2",
+          "start": 28.0,
+          "end": 37.0,
+          "idle": false,
+          "ready": [
+            "P3"
+          ],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "P3",
+          "start": 37.0,
+          "end": 40.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择最早进入就绪队列的进程"
+        }
+      ],
+      "results": [
+        {
+          "pid": "P1",
+          "arrival": 0.0,
+          "burst": 28.0,
+          "start": 0.0,
+          "completion": 28.0,
+          "waiting": 0.0,
+          "turnaround": 28.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P2",
+          "arrival": 0.0,
+          "burst": 9.0,
+          "start": 28.0,
+          "completion": 37.0,
+          "waiting": 28.0,
+          "turnaround": 37.0,
+          "response": 28.0
+        },
+        {
+          "pid": "P3",
+          "arrival": 0.0,
+          "burst": 3.0,
+          "start": 37.0,
+          "completion": 40.0,
+          "waiting": 37.0,
+          "turnaround": 40.0,
+          "response": 37.0
+        }
+      ],
+      "average_waiting": 21.666666666666668,
+      "average_turnaround": 35.0,
+      "average_response": 21.666666666666668,
+      "cpu_utilization": 1.0,
+      "elapsed": 40.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "sjf",
+    "input": {
+      "P1": [
+        0,
+        28
+      ],
+      "P2": [
+        0,
+        9
+      ],
+      "P3": [
+        0,
+        3
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 18.333333333333332,
+    "actual": {
+      "algorithm": "sjf",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "P3",
+          "start": 0.0,
+          "end": 3.0,
+          "idle": false,
+          "ready": [
+            "P1",
+            "P2"
+          ],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P2",
+          "start": 3.0,
+          "end": 12.0,
+          "idle": false,
+          "ready": [
+            "P1"
+          ],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        },
+        {
+          "pid": "P1",
+          "start": 12.0,
+          "end": 40.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择当前就绪进程中运行时间最短者"
+        }
+      ],
+      "results": [
+        {
+          "pid": "P3",
+          "arrival": 0.0,
+          "burst": 3.0,
+          "start": 0.0,
+          "completion": 3.0,
+          "waiting": 0.0,
+          "turnaround": 3.0,
+          "response": 0.0
+        },
+        {
+          "pid": "P2",
+          "arrival": 0.0,
+          "burst": 9.0,
+          "start": 3.0,
+          "completion": 12.0,
+          "waiting": 3.0,
+          "turnaround": 12.0,
+          "response": 3.0
+        },
+        {
+          "pid": "P1",
+          "arrival": 0.0,
+          "burst": 28.0,
+          "start": 12.0,
+          "completion": 40.0,
+          "waiting": 12.0,
+          "turnaround": 40.0,
+          "response": 12.0
+        }
+      ],
+      "average_waiting": 5.0,
+      "average_turnaround": 18.333333333333332,
+      "average_response": 5.0,
+      "cpu_utilization": 1.0,
+      "elapsed": 40.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "rr",
+    "input": {
+      "A": [
+        0,
+        3
+      ],
+      "B": [
+        1,
+        2
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 4,
+    "actual": {
+      "algorithm": "rr",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "A",
+          "start": 0.0,
+          "end": 2.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "B",
+          "start": 2.0,
+          "end": 4.0,
+          "idle": false,
+          "ready": [
+            "A"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "A",
+          "start": 4.0,
+          "end": 5.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        }
+      ],
+      "results": [
+        {
+          "pid": "B",
+          "arrival": 1.0,
+          "burst": 2.0,
+          "start": 2.0,
+          "completion": 4.0,
+          "waiting": 1.0,
+          "turnaround": 3.0,
+          "response": 1.0
+        },
+        {
+          "pid": "A",
+          "arrival": 0.0,
+          "burst": 3.0,
+          "start": 0.0,
+          "completion": 5.0,
+          "waiting": 2.0,
+          "turnaround": 5.0,
+          "response": 0.0
+        }
+      ],
+      "average_waiting": 1.5,
+      "average_turnaround": 4.0,
+      "average_response": 0.5,
+      "cpu_utilization": 1.0,
+      "elapsed": 5.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "rr",
+    "input": {
+      "A": [
+        0,
+        4
+      ],
+      "B": [
+        2,
+        1
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 3,
+    "actual": {
+      "algorithm": "rr",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "A",
+          "start": 0.0,
+          "end": 2.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "B",
+          "start": 2.0,
+          "end": 3.0,
+          "idle": false,
+          "ready": [
+            "A"
+          ],
+          "reason": "队首进程运行一个时间片或至完成"
+        },
+        {
+          "pid": "A",
+          "start": 3.0,
+          "end": 5.0,
+          "idle": false,
+          "ready": [],
+          "reason": "队首进程运行一个时间片或至完成"
+        }
+      ],
+      "results": [
+        {
+          "pid": "B",
+          "arrival": 2.0,
+          "burst": 1.0,
+          "start": 2.0,
+          "completion": 3.0,
+          "waiting": 0.0,
+          "turnaround": 1.0,
+          "response": 0.0
+        },
+        {
+          "pid": "A",
+          "arrival": 0.0,
+          "burst": 4.0,
+          "start": 0.0,
+          "completion": 5.0,
+          "waiting": 1.0,
+          "turnaround": 5.0,
+          "response": 0.0
+        }
+      ],
+      "average_waiting": 0.5,
+      "average_turnaround": 3.0,
+      "average_response": 0.0,
+      "cpu_utilization": 1.0,
+      "elapsed": 5.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "现有平台纯引擎调用",
+    "algorithm": "fcfs",
+    "input": {
+      "A": [
+        2,
+        1
+      ],
+      "B": [
+        5,
+        1
+      ]
+    },
+    "quantum": 2,
+    "expected_mean": 1,
+    "actual": {
+      "algorithm": "fcfs",
+      "engine_version": "scheduler-1",
+      "quantum": 2.0,
+      "timeline": [
+        {
+          "pid": "CPU 空闲",
+          "start": 0.0,
+          "end": 2.0,
+          "idle": true,
+          "reason": "尚无就绪进程",
+          "ready": []
+        },
+        {
+          "pid": "A",
+          "start": 2.0,
+          "end": 3.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择最早进入就绪队列的进程"
+        },
+        {
+          "pid": "CPU 空闲",
+          "start": 3.0,
+          "end": 5.0,
+          "idle": true,
+          "reason": "尚无就绪进程",
+          "ready": []
+        },
+        {
+          "pid": "B",
+          "start": 5.0,
+          "end": 6.0,
+          "idle": false,
+          "ready": [],
+          "reason": "选择最早进入就绪队列的进程"
+        }
+      ],
+      "results": [
+        {
+          "pid": "A",
+          "arrival": 2.0,
+          "burst": 1.0,
+          "start": 2.0,
+          "completion": 3.0,
+          "waiting": 0.0,
+          "turnaround": 1.0,
+          "response": 0.0
+        },
+        {
+          "pid": "B",
+          "arrival": 5.0,
+          "burst": 1.0,
+          "start": 5.0,
+          "completion": 6.0,
+          "waiting": 0.0,
+          "turnaround": 1.0,
+          "response": 0.0
+        }
+      ],
+      "average_waiting": 0.0,
+      "average_turnaround": 1.0,
+      "average_response": 0.0,
+      "cpu_utilization": 0.3333333333333333,
+      "elapsed": 6.0
+    },
+    "status": "数值匹配；不等于端到端回归"
+  },
+  {
+    "kind": "分析用独立参考计算；不是平台引擎",
+    "algorithm": "srtf",
+    "input": {
+      "P1": [
+        0,
+        8
+      ],
+      "P2": [
+        1,
+        4
+      ],
+      "P3": [
+        2,
+        9
+      ],
+      "P4": [
+        3,
+        5
+      ]
+    },
+    "segments": [
+      [
+        "P1",
+        0,
+        1
+      ],
+      [
+        "P2",
+        1,
+        5
+      ],
+      [
+        "P4",
+        5,
+        10
+      ],
+      [
+        "P1",
+        10,
+        17
+      ],
+      [
+        "P3",
+        17,
+        26
+      ]
+    ],
+    "expected_mean": 13,
+    "actual": {
+      "completion": {
+        "P1": 17,
+        "P2": 5,
+        "P4": 10,
+        "P3": 26
+      },
+      "turnaround": {
+        "P1": 17,
+        "P2": 4,
+        "P3": 24,
+        "P4": 7
+      },
+      "mean_turnaround": 13.0
+    },
+    "status": "按报告所声明规则复算一致"
+  },
+  {
+    "kind": "分析用独立参考计算；不是平台引擎",
+    "algorithm": "srtf",
+    "input": {
+      "P1": [
+        0,
+        7
+      ],
+      "P2": [
+        2,
+        4
+      ],
+      "P3": [
+        4,
+        1
+      ],
+      "P4": [
+        5,
+        4
+      ],
+      "P5": [
+        8,
+        2
+      ]
+    },
+    "segments": [
+      [
+        "P1",
+        0,
+        2
+      ],
+      [
+        "P2",
+        2,
+        4
+      ],
+      [
+        "P3",
+        4,
+        5
+      ],
+      [
+        "P2",
+        5,
+        7
+      ],
+      [
+        "P4",
+        7,
+        8
+      ],
+      [
+        "P5",
+        8,
+        10
+      ],
+      [
+        "P4",
+        10,
+        13
+      ],
+      [
+        "P1",
+        13,
+        18
+      ]
+    ],
+    "expected_mean": 6.8,
+    "actual": {
+      "completion": {
+        "P1": 18,
+        "P2": 7,
+        "P3": 5,
+        "P4": 13,
+        "P5": 10
+      },
+      "turnaround": {
+        "P1": 18,
+        "P2": 5,
+        "P3": 1,
+        "P4": 8,
+        "P5": 2
+      },
+      "mean_turnaround": 6.8
+    },
+    "status": "按报告所声明规则复算一致"
+  },
+  {
+    "kind": "分析用独立参考计算；不是平台引擎",
+    "algorithm": "hrrf",
+    "input": {
+      "P1": [
+        0,
+        20
+      ],
+      "P2": [
+        5,
+        15
+      ],
+      "P3": [
+        10,
+        5
+      ],
+      "P4": [
+        15,
+        10
+      ]
+    },
+    "segments": [
+      [
+        "P1",
+        0,
+        20
+      ],
+      [
+        "P3",
+        20,
+        25
+      ],
+      [
+        "P2",
+        25,
+        40
+      ],
+      [
+        "P4",
+        40,
+        50
+      ]
+    ],
+    "expected_mean": 26.25,
+    "actual": {
+      "completion": {
+        "P1": 20,
+        "P3": 25,
+        "P2": 40,
+        "P4": 50
+      },
+      "turnaround": {
+        "P1": 20,
+        "P2": 35,
+        "P3": 15,
+        "P4": 35
+      },
+      "mean_turnaround": 26.25
+    },
+    "status": "按报告所声明规则复算一致"
+  },
+  {
+    "kind": "分析用独立参考计算；不是平台引擎",
+    "algorithm": "hrrf",
+    "input": {
+      "P1": [
+        0,
+        7
+      ],
+      "P2": [
+        2,
+        4
+      ],
+      "P3": [
+        4,
+        1
+      ],
+      "P4": [
+        5,
+        4
+      ],
+      "P5": [
+        8,
+        2
+      ]
+    },
+    "segments": [
+      [
+        "P1",
+        0,
+        7
+      ],
+      [
+        "P3",
+        7,
+        8
+      ],
+      [
+        "P2",
+        8,
+        12
+      ],
+      [
+        "P5",
+        12,
+        14
+      ],
+      [
+        "P4",
+        14,
+        18
+      ]
+    ],
+    "expected_mean": 8,
+    "actual": {
+      "completion": {
+        "P1": 7,
+        "P3": 8,
+        "P2": 12,
+        "P5": 14,
+        "P4": 18
+      },
+      "turnaround": {
+        "P1": 7,
+        "P2": 10,
+        "P3": 4,
+        "P4": 13,
+        "P5": 6
+      },
+      "mean_turnaround": 8.0
+    },
+    "status": "按报告所声明规则复算一致"
+  },
+  {
+    "kind": "静态给定轨迹的守恒/指标复核；不是完整算法测试",
+    "algorithm": "priority-nonpreempt",
+    "input": {
+      "A": [
+        0,
+        4
+      ],
+      "B": [
+        1,
+        1
+      ]
+    },
+    "segments": [
+      [
+        "A",
+        0,
+        4
+      ],
+      [
+        "B",
+        4,
+        5
+      ]
+    ],
+    "actual": {
+      "completion": {
+        "A": 4,
+        "B": 5
+      },
+      "turnaround": {
+        "A": 4,
+        "B": 4
+      },
+      "mean_turnaround": 4.0
+    }
+  },
+  {
+    "kind": "静态给定轨迹的守恒/指标复核；不是完整算法测试",
+    "algorithm": "priority-preempt",
+    "input": {
+      "A": [
+        0,
+        4
+      ],
+      "B": [
+        1,
+        1
+      ]
+    },
+    "segments": [
+      [
+        "A",
+        0,
+        1
+      ],
+      [
+        "B",
+        1,
+        2
+      ],
+      [
+        "A",
+        2,
+        5
+      ]
+    ],
+    "actual": {
+      "completion": {
+        "A": 5,
+        "B": 2
+      },
+      "turnaround": {
+        "A": 5,
+        "B": 1
+      },
+      "mean_turnaround": 3.0
+    }
+  },
+  {
+    "kind": "静态给定轨迹的守恒/指标复核；不是完整算法测试",
+    "algorithm": "feedback-example",
+    "input": {
+      "A": [
+        0,
+        4
+      ],
+      "B": [
+        0,
+        1
+      ]
+    },
+    "segments": [
+      [
+        "A",
+        0,
+        1
+      ],
+      [
+        "B",
+        1,
+        2
+      ],
+      [
+        "A",
+        2,
+        4
+      ],
+      [
+        "A",
+        4,
+        5
+      ]
+    ],
+    "actual": {
+      "completion": {
+        "A": 5,
+        "B": 2
+      },
+      "turnaround": {
+        "A": 5,
+        "B": 2
+      },
+      "mean_turnaround": 3.5
+    }
+  },
+  {
+    "kind": "预测公式直接代入",
+    "input": {
+      "alpha": 0.5,
+      "initial": 10,
+      "observations": [
+        6,
+        14
+      ]
+    },
+    "expected": [
+      8,
+      11
+    ],
+    "actual": [
+      8,
+      11
+    ]
+  }
+]

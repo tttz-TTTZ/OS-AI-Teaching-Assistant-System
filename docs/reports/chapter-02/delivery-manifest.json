@@ -1,0 +1,56 @@
+{
+  "version": "1.1",
+  "published_on": "2026-10-22",
+  "files": [
+    {
+      "file": "REPORT-V1.1.md",
+      "bytes": 129067,
+      "sha256": "e80ab9817ca8c1f37bd047c980cd4c1aa1fad58c22b9a391b57ac3d281c5e14a"
+    },
+    {
+      "file": "report-v1.1.pdf",
+      "bytes": 2344987,
+      "sha256": "6c6e660b47b7171fb402701e7aaeb390a4174c741bce31fdbfce1c2851fe7f41"
+    },
+    {
+      "file": "report-v1.1.docx",
+      "bytes": 99616,
+      "sha256": "ea4a9c9abc776c51b1c57f09956bc11e24e41bbe089c8b92edb6e9d5e42e30f7"
+    },
+    {
+      "file": "delivery-v1.1.zip",
+      "bytes": 1416273,
+      "sha256": "254890ea38e9d8abb646d6b88efb6349c589e4779b3f3b605b537a01349e6467"
+    },
+    {
+      "file": "slide-coverage-v1.1.csv",
+      "bytes": 41069,
+      "sha256": "e20093f96bc2797e913d27802e8154be411e06deceaa5db3e036233db2475d3b"
+    },
+    {
+      "file": "quotation-audit-v1.1.csv",
+      "bytes": 7562,
+      "sha256": "b62bb7c70c215972362734fdd4fc9a51e2b86342603c71f206dac5d9116d61c9"
+    },
+    {
+      "file": "source-manifest-v1.1.json",
+      "bytes": 3405,
+      "sha256": "c957b160c7a54efbc7155183768869dc1d38cb3a3a7f8094acf1e12e0d666057"
+    },
+    {
+      "file": "knowledge-records-v1.1.json",
+      "bytes": 46055,
+      "sha256": "5075c6c8bb641a56324cc477d22e7e83c2c20bf07101c90362a31ce4b9287b6a"
+    },
+    {
+      "file": "knowledge-graphs-v1.1.json",
+      "bytes": 16253,
+      "sha256": "00287efcb9226cfafdaec0a984afe9ee9ce067cb5a5f1108e23c56d18ffdd28e"
+    },
+    {
+      "file": "algorithm-checks-v1.1.json",
+      "bytes": 25612,
+      "sha256": "bcaa0eec07de0b93ce7df42138f6c1fe25c89311aaa8c475a7458d947ac58cff"
+    }
+  ]
+}

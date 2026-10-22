@@ -1,0 +1,106 @@
+[
+  {
+    "source": "S2-01",
+    "filename": "2.1处理器状态 .pptx",
+    "pages": 14,
+    "hidden": [],
+    "sha256": "2348487086f08590c3a61f068e54e228a62895ab5638220ba48d38dbaaacd0a0",
+    "coverage": "1–14",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-02",
+    "filename": "2.2中断技术 .ppt",
+    "pages": 33,
+    "hidden": [
+      22,
+      23
+    ],
+    "sha256": "254df3bfadd811f51134b924aa803d97913edb8f906690e1103da1119f1b064b",
+    "coverage": "1–33",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-03",
+    "filename": "2.3-1 进程及其状态 .pptx",
+    "pages": 16,
+    "hidden": [],
+    "sha256": "19cee7d6ea4508e923d4743cb67797a928d822addcd2834619e916638e237d8f",
+    "coverage": "1–16",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-04",
+    "filename": "2.3-2 进程的数据描述 .pptx",
+    "pages": 10,
+    "hidden": [],
+    "sha256": "e81273fa14c865e6beec92c2c866636e0de837c13271e230756aff3b94277ac1",
+    "coverage": "1–10",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-05",
+    "filename": "2.3-3 进程管理的实现 .pptx",
+    "pages": 6,
+    "hidden": [],
+    "sha256": "1623e2af4508768f7189544bdc3020f23a390ab0e172309ba1884c5175ec26df",
+    "coverage": "1–6",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-06",
+    "filename": "2.3-4 进程切换与模式切换 .pptx",
+    "pages": 10,
+    "hidden": [],
+    "sha256": "c36c3a072691ab4325305c7d634181b66e96c9e64c2be6498221bbd45b646ee1",
+    "coverage": "1–10",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-07",
+    "filename": "2.4-1 多线程环境概述 .pptx",
+    "pages": 17,
+    "hidden": [],
+    "sha256": "4c5ed935eb75db40f999399f7fd967884fd7031848285470c62c28f6f6d64156",
+    "coverage": "1–17",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-08",
+    "filename": "2.4-2 KLT与ULT .pptx",
+    "pages": 11,
+    "hidden": [],
+    "sha256": "e500737824b8cadfd2a38234390249d324882fe97b8c47a6866f99e319a82729",
+    "coverage": "1–11",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-09",
+    "filename": "2.4-3 多线程实现的混合策略 .pptx",
+    "pages": 7,
+    "hidden": [],
+    "sha256": "871b71008c6ad314da884078b7e7916ebbf9aaaf30fb9645b5f2739b31a3fe08",
+    "coverage": "1–7",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-10",
+    "filename": "2.5-1 处理器调度的层次 .pptx",
+    "pages": 12,
+    "hidden": [],
+    "sha256": "39e4e05defb488441ea6b62071194af9f1ffdc11e9294e7a0b11a4f73c239807",
+    "coverage": "1–12",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  },
+  {
+    "source": "S2-11",
+    "filename": "2.5-2 处理器调度算法 .pptx",
+    "pages": 33,
+    "hidden": [
+      17
+    ],
+    "sha256": "d2c9d59e3ba2ea0a1f1605c803a1e116703ec985ec9dbafad17ac2f4e0c66550",
+    "coverage": "1–33",
+    "limit": "文字及全页静态巡检；原生动画/所有细字未验证"
+  }
+]

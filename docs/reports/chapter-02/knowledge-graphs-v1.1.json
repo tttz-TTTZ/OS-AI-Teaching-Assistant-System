@@ -1,0 +1,526 @@
+[
+  {
+    "id": "CH02-G001",
+    "nodes": [
+      {
+        "id": "CH02-G001-N01",
+        "label": "用户程序"
+      },
+      {
+        "id": "CH02-G001-N02",
+        "label": "系统调用"
+      },
+      {
+        "id": "CH02-G001-N03",
+        "label": "外中断"
+      },
+      {
+        "id": "CH02-G001-N04",
+        "label": "异常"
+      },
+      {
+        "id": "CH02-G001-N05",
+        "label": "内核处理"
+      },
+      {
+        "id": "CH02-G001-N06",
+        "label": "模式切换"
+      },
+      {
+        "id": "CH02-G001-N07",
+        "label": "执行权限"
+      },
+      {
+        "id": "CH02-G001-N08",
+        "label": "返回现场"
+      },
+      {
+        "id": "CH02-G001-N09",
+        "label": "恢复执行"
+      },
+      {
+        "id": "CH02-G001-N10",
+        "label": "进程切换"
+      },
+      {
+        "id": "CH02-G001-N11",
+        "label": "调度决策"
+      },
+      {
+        "id": "CH02-G001-N12",
+        "label": "设备事件"
+      }
+    ],
+    "edges": [
+      {
+        "id": "CH02-G001-E01",
+        "source": "CH02-G001-N01",
+        "target": "CH02-G001-N02",
+        "relation": "可主动发起",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E02",
+        "source": "CH02-G001-N12",
+        "target": "CH02-G001-N03",
+        "relation": "可触发",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E03",
+        "source": "CH02-G001-N01",
+        "target": "CH02-G001-N04",
+        "relation": "执行指令时可能引发",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E04",
+        "source": "CH02-G001-N02",
+        "target": "CH02-G001-N05",
+        "relation": "通过受控入口请求",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E05",
+        "source": "CH02-G001-N03",
+        "target": "CH02-G001-N05",
+        "relation": "允许响应时进入服务",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E06",
+        "source": "CH02-G001-N04",
+        "target": "CH02-G001-N05",
+        "relation": "按异常类型进入处理",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E07",
+        "source": "CH02-G001-N06",
+        "target": "CH02-G001-N07",
+        "relation": "改变",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E08",
+        "source": "CH02-G001-N08",
+        "target": "CH02-G001-N09",
+        "relation": "提供所需的保存状态",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E09",
+        "source": "CH02-G001-N05",
+        "target": "CH02-G001-N11",
+        "relation": "在需要时进行",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E10",
+        "source": "CH02-G001-N11",
+        "target": "CH02-G001-N10",
+        "relation": "可能导致",
+        "condition": "选中执行主体不同于原进程时",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E11",
+        "source": "CH02-G001-N06",
+        "target": "CH02-G001-N10",
+        "relation": "不必伴随",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G001-E12",
+        "source": "CH02-G001-N05",
+        "target": "CH02-G001-N09",
+        "relation": "完成后可能恢复",
+        "condition": "可恢复且满足继续执行条件",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      }
+    ],
+    "source": "S2-01 7–13；S2-02 3–12；S2-06 3–7",
+    "note": "默认从用户态进入；内核内事件和体系结构特例另说。设备事件不代表一定立即被响应。"
+  },
+  {
+    "id": "CH02-G002",
+    "nodes": [
+      {
+        "id": "CH02-G002-N01",
+        "label": "程序"
+      },
+      {
+        "id": "CH02-G002-N02",
+        "label": "进程"
+      },
+      {
+        "id": "CH02-G002-N03",
+        "label": "PCB"
+      },
+      {
+        "id": "CH02-G002-N04",
+        "label": "身份与状态"
+      },
+      {
+        "id": "CH02-G002-N05",
+        "label": "进程映像"
+      },
+      {
+        "id": "CH02-G002-N06",
+        "label": "代码"
+      },
+      {
+        "id": "CH02-G002-N07",
+        "label": "数据与栈"
+      },
+      {
+        "id": "CH02-G002-N08",
+        "label": "保存的现场"
+      },
+      {
+        "id": "CH02-G002-N09",
+        "label": "就绪队列"
+      },
+      {
+        "id": "CH02-G002-N10",
+        "label": "CPU执行现场"
+      }
+    ],
+    "edges": [
+      {
+        "id": "CH02-G002-E01",
+        "source": "CH02-G002-N01",
+        "target": "CH02-G002-N02",
+        "relation": "运行时形成管理实体",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E02",
+        "source": "CH02-G002-N03",
+        "target": "CH02-G002-N04",
+        "relation": "记录",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E03",
+        "source": "CH02-G002-N05",
+        "target": "CH02-G002-N06",
+        "relation": "包含",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E04",
+        "source": "CH02-G002-N05",
+        "target": "CH02-G002-N07",
+        "relation": "包含",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E05",
+        "source": "CH02-G002-N05",
+        "target": "CH02-G002-N03",
+        "relation": "在课件教学模型中包含",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E06",
+        "source": "CH02-G002-N09",
+        "target": "CH02-G002-N03",
+        "relation": "通过标识/链接组织",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E07",
+        "source": "CH02-G002-N03",
+        "target": "CH02-G002-N08",
+        "relation": "保存或引用",
+        "condition": "具体现场位置也可在内核栈等相关结构",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E08",
+        "source": "CH02-G002-N10",
+        "target": "CH02-G002-N08",
+        "relation": "停止执行时保存必要部分",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E09",
+        "source": "CH02-G002-N08",
+        "target": "CH02-G002-N10",
+        "relation": "恢复必要部分后继续执行",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G002-E10",
+        "source": "CH02-G002-N06",
+        "target": "CH02-G002-N02",
+        "relation": "可由多个进程共享",
+        "condition": "共享代码不等于共享所有数据、栈和现场",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      }
+    ],
+    "source": "S2-03 3–8；S2-04 3–10；S2-05 3–4",
+    "note": "字段位置为架构中立抽象；不声称整个PCB必含全部寄存器原始值。"
+  },
+  {
+    "id": "CH02-G003",
+    "nodes": [
+      {
+        "id": "CH02-G003-N01",
+        "label": "进程"
+      },
+      {
+        "id": "CH02-G003-N02",
+        "label": "共享地址空间与资源"
+      },
+      {
+        "id": "CH02-G003-N03",
+        "label": "用户执行线程"
+      },
+      {
+        "id": "CH02-G003-N04",
+        "label": "线程私有状态"
+      },
+      {
+        "id": "CH02-G003-N05",
+        "label": "ULT"
+      },
+      {
+        "id": "CH02-G003-N06",
+        "label": "KLT"
+      },
+      {
+        "id": "CH02-G003-N07",
+        "label": "用户线程库"
+      },
+      {
+        "id": "CH02-G003-N08",
+        "label": "内核调度器"
+      },
+      {
+        "id": "CH02-G003-N09",
+        "label": "CPU"
+      }
+    ],
+    "edges": [
+      {
+        "id": "CH02-G003-E01",
+        "source": "CH02-G003-N01",
+        "target": "CH02-G003-N02",
+        "relation": "提供资源与保护边界",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E02",
+        "source": "CH02-G003-N03",
+        "target": "CH02-G003-N02",
+        "relation": "共享所属进程资源",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E03",
+        "source": "CH02-G003-N03",
+        "target": "CH02-G003-N04",
+        "relation": "各自保存PC/栈等执行信息",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E04",
+        "source": "CH02-G003-N07",
+        "target": "CH02-G003-N05",
+        "relation": "管理和调度",
+        "condition": "纯ULT或M:N用户层模型",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E05",
+        "source": "CH02-G003-N05",
+        "target": "CH02-G003-N06",
+        "relation": "由承载实体承载/映射",
+        "condition": "M:N；many-to-one时多个ULT共用一个承载实体",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E06",
+        "source": "CH02-G003-N08",
+        "target": "CH02-G003-N06",
+        "relation": "选择并分派",
+        "condition": "内核可见执行实体模型",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E07",
+        "source": "CH02-G003-N06",
+        "target": "CH02-G003-N09",
+        "relation": "获分派后占用",
+        "condition": "还受CPU核数与就绪条件限制",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G003-E08",
+        "source": "CH02-G003-N05",
+        "target": "CH02-G003-N09",
+        "relation": "不能绕过承载实体直接占用",
+        "condition": "本图限定的ULT映射模型",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      }
+    ],
+    "source": "S2-07 9–15；S2-08 2–11；S2-09 2–5",
+    "note": "分视图展示many-to-one、内核线程和M:N，不混成一种同时存在的唯一实现。KLT视图也不暗示所有系统都存在单独同名ULT对象。"
+  },
+  {
+    "id": "CH02-G004",
+    "nodes": [
+      {
+        "id": "CH02-G004-N01",
+        "label": "就绪候选集合"
+      },
+      {
+        "id": "CH02-G004-N02",
+        "label": "调度策略"
+      },
+      {
+        "id": "CH02-G004-N03",
+        "label": "FCFS"
+      },
+      {
+        "id": "CH02-G004-N04",
+        "label": "SJF"
+      },
+      {
+        "id": "CH02-G004-N05",
+        "label": "SRTF"
+      },
+      {
+        "id": "CH02-G004-N06",
+        "label": "HRRF"
+      },
+      {
+        "id": "CH02-G004-N07",
+        "label": "RR"
+      },
+      {
+        "id": "CH02-G004-N08",
+        "label": "抢占"
+      },
+      {
+        "id": "CH02-G004-N09",
+        "label": "周转时间"
+      },
+      {
+        "id": "CH02-G004-N10",
+        "label": "首次CPU响应"
+      },
+      {
+        "id": "CH02-G004-N11",
+        "label": "公平性"
+      }
+    ],
+    "edges": [
+      {
+        "id": "CH02-G004-E01",
+        "source": "CH02-G004-N02",
+        "target": "CH02-G004-N01",
+        "relation": "按规则选择执行者",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E02",
+        "source": "CH02-G004-N03",
+        "target": "CH02-G004-N01",
+        "relation": "按到达/入队顺序选择",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E03",
+        "source": "CH02-G004-N04",
+        "target": "CH02-G004-N01",
+        "relation": "按服务长度选择",
+        "condition": "非抢占版本；只选已到达者",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E04",
+        "source": "CH02-G004-N05",
+        "target": "CH02-G004-N01",
+        "relation": "按剩余长度选择",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E05",
+        "source": "CH02-G004-N05",
+        "target": "CH02-G004-N08",
+        "relation": "可触发",
+        "condition": "有严格更短剩余候选时；平局约定见ALG004",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E06",
+        "source": "CH02-G004-N06",
+        "target": "CH02-G004-N01",
+        "relation": "综合等待与服务量选择",
+        "condition": "",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E07",
+        "source": "CH02-G004-N07",
+        "target": "CH02-G004-N08",
+        "relation": "通过量子限制单次占用",
+        "condition": "量子结束且任务未完成",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E08",
+        "source": "CH02-G004-N02",
+        "target": "CH02-G004-N09",
+        "relation": "影响",
+        "condition": "同一输入与统计口径下比较",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E09",
+        "source": "CH02-G004-N02",
+        "target": "CH02-G004-N10",
+        "relation": "影响",
+        "condition": "不是收到应用实际响应的完整模型",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      },
+      {
+        "id": "CH02-G004-E10",
+        "source": "CH02-G004-N02",
+        "target": "CH02-G004-N11",
+        "relation": "影响",
+        "condition": "不能由一次轨迹无条件证明不饥饿",
+        "basis": "T：根据指定课件组织的关系表达，不是课件原图逐字复制"
+      }
+    ],
+    "source": "S2-11 2–26",
+    "note": "策略节点不是宣称所有引擎已支持；SRTF/HRRF仅静态概念，正式题目不是图节点。"
+  }
+]

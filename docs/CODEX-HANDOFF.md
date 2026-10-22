@@ -1,5 +1,7 @@
 # VS Code Codex 交接：账号、资料持久化与阿里云 Windows 部署
 
+> 2026-10-22 第二章分析交付：[完整V1.1报告与下载](reports/chapter-02/README.md)、[下一步Codex实施指令](reports/chapter-02/IMPLEMENTATION.md)。11份PPT/PPTX、169页，未使用教材PDF。本次仅提交文档；24条记录按11核心+1可选单元去重，V001–V021保留。后续按现有工程增量实施第一批，复用FCFS/SJF/RR；不得把第一章直接覆盖发布授权扩展到第二章，不把分析参考计算/动画规格说成已实现。
+
 > 最新：[直接问答、导图默认完整提炼与测验选项布局修复](QUESTION-FIRST-REVIEW.md)。发送问题与生成学习模块分离；不选资料也能问答，导图无需手动开启试点。
 
 > 最新试点：[小节多课件完整文字提炼](SECTION-KNOWLEDGE-PILOT.md)，面向导图与闪卡，费用确认、逐批保存、知识复用与来源核对。合成对比不等于真实DeepSeek教学质量验收。
