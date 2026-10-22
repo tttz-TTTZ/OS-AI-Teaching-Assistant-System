@@ -1,0 +1,906 @@
+[
+  {
+    "id": "CH03-F001",
+    "title": "基址转换与保护",
+    "question": "何时允许基址加偏移？",
+    "start_condition": "合法类型请求输入",
+    "end_condition": "物理地址或明确错误",
+    "nodes": [
+      {
+        "id": "CH03-F001-N01",
+        "label": "验证输入"
+      },
+      {
+        "id": "CH03-F001-N02",
+        "label": "检查偏移范围"
+      },
+      {
+        "id": "CH03-F001-N03",
+        "label": "检查权限"
+      },
+      {
+        "id": "CH03-F001-N04",
+        "label": "计算B+d"
+      },
+      {
+        "id": "CH03-F001-N05",
+        "label": "输出地址"
+      },
+      {
+        "id": "CH03-F001-N06",
+        "label": "范围错误"
+      },
+      {
+        "id": "CH03-F001-N07",
+        "label": "保护错误"
+      },
+      {
+        "id": "CH03-F001-N08",
+        "label": "输入错误"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F001-N01",
+        "condition": "合法",
+        "target": "CH03-F001-N02"
+      },
+      {
+        "source": "CH03-F001-N01",
+        "condition": "非法",
+        "target": "CH03-F001-N08"
+      },
+      {
+        "source": "CH03-F001-N02",
+        "condition": "0≤d<L",
+        "target": "CH03-F001-N03"
+      },
+      {
+        "source": "CH03-F001-N02",
+        "condition": "否则",
+        "target": "CH03-F001-N06"
+      },
+      {
+        "source": "CH03-F001-N03",
+        "condition": "允许",
+        "target": "CH03-F001-N04"
+      },
+      {
+        "source": "CH03-F001-N03",
+        "condition": "拒绝",
+        "target": "CH03-F001-N07"
+      },
+      {
+        "source": "CH03-F001-N04",
+        "condition": "成功",
+        "target": "CH03-F001-N05"
+      }
+    ],
+    "errors_and_wait": "纯计算无I/O等待；溢出/范围错误不访问内存。",
+    "related_records": [
+      "CH03-K001",
+      "CH03-K002"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F002",
+    "title": "连续分配与紧凑分流",
+    "question": "请求为何成功或等待？",
+    "start_condition": "完整布局或受限选择器输入有效",
+    "end_condition": "分配完成或明确未满足",
+    "nodes": [
+      {
+        "id": "CH03-F002-N01",
+        "label": "验证请求"
+      },
+      {
+        "id": "CH03-F002-N02",
+        "label": "按策略查空闲区"
+      },
+      {
+        "id": "CH03-F002-N03",
+        "label": "分配/切分"
+      },
+      {
+        "id": "CH03-F002-N04",
+        "label": "更新表"
+      },
+      {
+        "id": "CH03-F002-N05",
+        "label": "检查总空闲及紧凑条件"
+      },
+      {
+        "id": "CH03-F002-N06",
+        "label": "移动可移动分区"
+      },
+      {
+        "id": "CH03-F002-N07",
+        "label": "等待/失败"
+      },
+      {
+        "id": "CH03-F002-N08",
+        "label": "输入错误"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F002-N01",
+        "condition": "合法",
+        "target": "CH03-F002-N02"
+      },
+      {
+        "source": "CH03-F002-N01",
+        "condition": "非法",
+        "target": "CH03-F002-N08"
+      },
+      {
+        "source": "CH03-F002-N02",
+        "condition": "区长≥请求",
+        "target": "CH03-F002-N03"
+      },
+      {
+        "source": "CH03-F002-N03",
+        "condition": "成功",
+        "target": "CH03-F002-N04"
+      },
+      {
+        "source": "CH03-F002-N02",
+        "condition": "无适合区",
+        "target": "CH03-F002-N05"
+      },
+      {
+        "source": "CH03-F002-N05",
+        "condition": "总量够且允许/可移动且本请求尚未紧凑",
+        "target": "CH03-F002-N06"
+      },
+      {
+        "source": "CH03-F002-N05",
+        "condition": "否则",
+        "target": "CH03-F002-N07"
+      },
+      {
+        "source": "CH03-F002-N06",
+        "condition": "更新基址/表后重查一次",
+        "target": "CH03-F002-N02"
+      }
+    ],
+    "errors_and_wait": "等待须资源事件后重试；紧凑失败不能无限循环；仅选择器模式不执行搬迁。",
+    "related_records": [
+      "CH03-K004",
+      "CH03-K006"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F003",
+    "title": "释放与四类邻接合并",
+    "question": "释放后空闲表怎么变？",
+    "start_condition": "真实分配ID释放",
+    "end_condition": "新布局满足不重叠且相邻空闲已合并",
+    "nodes": [
+      {
+        "id": "CH03-F003-N01",
+        "label": "定位分配ID"
+      },
+      {
+        "id": "CH03-F003-N02",
+        "label": "输入/释放错误"
+      },
+      {
+        "id": "CH03-F003-N03",
+        "label": "检查前后邻接"
+      },
+      {
+        "id": "CH03-F003-N04",
+        "label": "新增空闲项"
+      },
+      {
+        "id": "CH03-F003-N05",
+        "label": "合并前项"
+      },
+      {
+        "id": "CH03-F003-N06",
+        "label": "合并后项"
+      },
+      {
+        "id": "CH03-F003-N07",
+        "label": "合并前后两项"
+      },
+      {
+        "id": "CH03-F003-N08",
+        "label": "更新空闲表与游标"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F003-N01",
+        "condition": "不存在/已释放",
+        "target": "CH03-F003-N02"
+      },
+      {
+        "source": "CH03-F003-N01",
+        "condition": "存在",
+        "target": "CH03-F003-N03"
+      },
+      {
+        "source": "CH03-F003-N03",
+        "condition": "无",
+        "target": "CH03-F003-N04"
+      },
+      {
+        "source": "CH03-F003-N03",
+        "condition": "仅前",
+        "target": "CH03-F003-N05"
+      },
+      {
+        "source": "CH03-F003-N03",
+        "condition": "仅后",
+        "target": "CH03-F003-N06"
+      },
+      {
+        "source": "CH03-F003-N03",
+        "condition": "前后",
+        "target": "CH03-F003-N07"
+      },
+      {
+        "source": "CH03-F003-N04",
+        "condition": "完成",
+        "target": "CH03-F003-N08"
+      },
+      {
+        "source": "CH03-F003-N05",
+        "condition": "完成",
+        "target": "CH03-F003-N08"
+      },
+      {
+        "source": "CH03-F003-N06",
+        "condition": "完成",
+        "target": "CH03-F003-N08"
+      },
+      {
+        "source": "CH03-F003-N07",
+        "condition": "完成",
+        "target": "CH03-F003-N08"
+      }
+    ],
+    "errors_and_wait": "无I/O等待；双重释放/重叠拒绝且状态不变。",
+    "related_records": [
+      "CH03-K005"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F004",
+    "title": "TLB与页表路径",
+    "question": "TLB miss一定缺页吗？",
+    "start_condition": "地址空间/输入有效",
+    "end_condition": "物理地址、F005或错误",
+    "nodes": [
+      {
+        "id": "CH03-F004-N01",
+        "label": "拆分页号/偏移"
+      },
+      {
+        "id": "CH03-F004-N02",
+        "label": "查本地址空间TLB"
+      },
+      {
+        "id": "CH03-F004-N03",
+        "label": "检查缓存权限"
+      },
+      {
+        "id": "CH03-F004-N04",
+        "label": "查页表"
+      },
+      {
+        "id": "CH03-F004-N05",
+        "label": "检查页表权限"
+      },
+      {
+        "id": "CH03-F004-N06",
+        "label": "检查驻留"
+      },
+      {
+        "id": "CH03-F004-N07",
+        "label": "更新TLB"
+      },
+      {
+        "id": "CH03-F004-N08",
+        "label": "输出地址"
+      },
+      {
+        "id": "CH03-F004-N09",
+        "label": "缺页进入F005"
+      },
+      {
+        "id": "CH03-F004-N10",
+        "label": "范围/映射错误"
+      },
+      {
+        "id": "CH03-F004-N11",
+        "label": "保护错误"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F004-N01",
+        "condition": "成功",
+        "target": "CH03-F004-N02"
+      },
+      {
+        "source": "CH03-F004-N02",
+        "condition": "命中且有效",
+        "target": "CH03-F004-N03"
+      },
+      {
+        "source": "CH03-F004-N03",
+        "condition": "允许",
+        "target": "CH03-F004-N08"
+      },
+      {
+        "source": "CH03-F004-N03",
+        "condition": "拒绝",
+        "target": "CH03-F004-N11"
+      },
+      {
+        "source": "CH03-F004-N02",
+        "condition": "未命中",
+        "target": "CH03-F004-N04"
+      },
+      {
+        "source": "CH03-F004-N04",
+        "condition": "合法项",
+        "target": "CH03-F004-N05"
+      },
+      {
+        "source": "CH03-F004-N04",
+        "condition": "非法/无映射",
+        "target": "CH03-F004-N10"
+      },
+      {
+        "source": "CH03-F004-N05",
+        "condition": "允许",
+        "target": "CH03-F004-N06"
+      },
+      {
+        "source": "CH03-F004-N05",
+        "condition": "拒绝",
+        "target": "CH03-F004-N11"
+      },
+      {
+        "source": "CH03-F004-N06",
+        "condition": "在内存",
+        "target": "CH03-F004-N07"
+      },
+      {
+        "source": "CH03-F004-N06",
+        "condition": "合法且允许但不驻留",
+        "target": "CH03-F004-N09"
+      },
+      {
+        "source": "CH03-F004-N07",
+        "condition": "完成",
+        "target": "CH03-F004-N08"
+      }
+    ],
+    "errors_and_wait": "T教学规范先排除非法/未授权访问再进入调入；缓存命中权限可由缓存元数据判断，不额外强制查主存页表。具体异常检测先后仍依架构。",
+    "related_records": [
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K012"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F005",
+    "title": "缺页与脏页处理",
+    "question": "如何安全完成一次缺页？",
+    "start_condition": "合法未驻留页",
+    "end_condition": "原指令重试成功或明确失败",
+    "nodes": [
+      {
+        "id": "CH03-F005-N01",
+        "label": "保护现场"
+      },
+      {
+        "id": "CH03-F005-N02",
+        "label": "获取空闲框"
+      },
+      {
+        "id": "CH03-F005-N03",
+        "label": "选择可替换页"
+      },
+      {
+        "id": "CH03-F005-N04",
+        "label": "检查脏位"
+      },
+      {
+        "id": "CH03-F005-N05",
+        "label": "写回"
+      },
+      {
+        "id": "CH03-F005-N06",
+        "label": "调入"
+      },
+      {
+        "id": "CH03-F005-N07",
+        "label": "更新页表/TLB/分配表"
+      },
+      {
+        "id": "CH03-F005-N08",
+        "label": "恢复并重试"
+      },
+      {
+        "id": "CH03-F005-N09",
+        "label": "等待/资源失败"
+      },
+      {
+        "id": "CH03-F005-N10",
+        "label": "I/O失败"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F005-N01",
+        "condition": "完成",
+        "target": "CH03-F005-N02"
+      },
+      {
+        "source": "CH03-F005-N02",
+        "condition": "有",
+        "target": "CH03-F005-N06"
+      },
+      {
+        "source": "CH03-F005-N02",
+        "condition": "无",
+        "target": "CH03-F005-N03"
+      },
+      {
+        "source": "CH03-F005-N03",
+        "condition": "有候选",
+        "target": "CH03-F005-N04"
+      },
+      {
+        "source": "CH03-F005-N03",
+        "condition": "无候选",
+        "target": "CH03-F005-N09"
+      },
+      {
+        "source": "CH03-F005-N04",
+        "condition": "脏",
+        "target": "CH03-F005-N05"
+      },
+      {
+        "source": "CH03-F005-N04",
+        "condition": "干净",
+        "target": "CH03-F005-N06"
+      },
+      {
+        "source": "CH03-F005-N05",
+        "condition": "成功",
+        "target": "CH03-F005-N06"
+      },
+      {
+        "source": "CH03-F005-N05",
+        "condition": "失败",
+        "target": "CH03-F005-N10"
+      },
+      {
+        "source": "CH03-F005-N06",
+        "condition": "成功",
+        "target": "CH03-F005-N07"
+      },
+      {
+        "source": "CH03-F005-N06",
+        "condition": "失败",
+        "target": "CH03-F005-N10"
+      },
+      {
+        "source": "CH03-F005-N07",
+        "condition": "一致后",
+        "target": "CH03-F005-N08"
+      }
+    ],
+    "errors_and_wait": "写回/读入各自有等待；保留原引用身份，重试不新增A；失败不能泄漏页框或丢脏数据。",
+    "related_records": [
+      "CH03-K012"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F006",
+    "title": "多级页表查找",
+    "question": "每级索引查什么？",
+    "start_condition": "位宽/层级与表状态有效",
+    "end_condition": "地址或具体缺失/保护状态",
+    "nodes": [
+      {
+        "id": "CH03-F006-N01",
+        "label": "拆位段"
+      },
+      {
+        "id": "CH03-F006-N02",
+        "label": "查顶级"
+      },
+      {
+        "id": "CH03-F006-N03",
+        "label": "查下级"
+      },
+      {
+        "id": "CH03-F006-N04",
+        "label": "查最终页项"
+      },
+      {
+        "id": "CH03-F006-N05",
+        "label": "组合地址"
+      },
+      {
+        "id": "CH03-F006-N06",
+        "label": "项无效/范围错"
+      },
+      {
+        "id": "CH03-F006-N07",
+        "label": "下级表缺失"
+      },
+      {
+        "id": "CH03-F006-N08",
+        "label": "数据页不驻留"
+      },
+      {
+        "id": "CH03-F006-N09",
+        "label": "保护错误"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F006-N01",
+        "condition": "完成",
+        "target": "CH03-F006-N02"
+      },
+      {
+        "source": "CH03-F006-N02",
+        "condition": "有效且下级驻留",
+        "target": "CH03-F006-N03"
+      },
+      {
+        "source": "CH03-F006-N02",
+        "condition": "无效",
+        "target": "CH03-F006-N06"
+      },
+      {
+        "source": "CH03-F006-N02",
+        "condition": "下级未驻留",
+        "target": "CH03-F006-N07"
+      },
+      {
+        "source": "CH03-F006-N03",
+        "condition": "有效",
+        "target": "CH03-F006-N04"
+      },
+      {
+        "source": "CH03-F006-N03",
+        "condition": "无效",
+        "target": "CH03-F006-N06"
+      },
+      {
+        "source": "CH03-F006-N04",
+        "condition": "驻留且允许",
+        "target": "CH03-F006-N05"
+      },
+      {
+        "source": "CH03-F006-N04",
+        "condition": "不驻留",
+        "target": "CH03-F006-N08"
+      },
+      {
+        "source": "CH03-F006-N04",
+        "condition": "无权限",
+        "target": "CH03-F006-N09"
+      }
+    ],
+    "errors_and_wait": "基础查找停止并显示缺失；如无页表页调入模型，不伪造自动恢复。",
+    "related_records": [
+      "CH03-K018"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F007",
+    "title": "段式访问与受限扩充",
+    "question": "成功、调段、扩充还是异常？",
+    "start_condition": "段号/偏移/访问类型输入",
+    "end_condition": "地址、等待或错误",
+    "nodes": [
+      {
+        "id": "CH03-F007-N01",
+        "label": "查段/验证"
+      },
+      {
+        "id": "CH03-F007-N02",
+        "label": "检查权限"
+      },
+      {
+        "id": "CH03-F007-N03",
+        "label": "检查偏移"
+      },
+      {
+        "id": "CH03-F007-N04",
+        "label": "检查驻留"
+      },
+      {
+        "id": "CH03-F007-N05",
+        "label": "基址加偏移"
+      },
+      {
+        "id": "CH03-F007-N06",
+        "label": "合法段调入"
+      },
+      {
+        "id": "CH03-F007-N07",
+        "label": "检查增长策略与空间"
+      },
+      {
+        "id": "CH03-F007-N08",
+        "label": "扩充并更新"
+      },
+      {
+        "id": "CH03-F007-N09",
+        "label": "越界/非法段"
+      },
+      {
+        "id": "CH03-F007-N10",
+        "label": "保护错误"
+      },
+      {
+        "id": "CH03-F007-N11",
+        "label": "等待/失败"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F007-N01",
+        "condition": "合法",
+        "target": "CH03-F007-N02"
+      },
+      {
+        "source": "CH03-F007-N01",
+        "condition": "非法",
+        "target": "CH03-F007-N09"
+      },
+      {
+        "source": "CH03-F007-N02",
+        "condition": "允许",
+        "target": "CH03-F007-N03"
+      },
+      {
+        "source": "CH03-F007-N02",
+        "condition": "拒绝",
+        "target": "CH03-F007-N10"
+      },
+      {
+        "source": "CH03-F007-N03",
+        "condition": "0≤d<L",
+        "target": "CH03-F007-N04"
+      },
+      {
+        "source": "CH03-F007-N03",
+        "condition": "超长且配置可扩充",
+        "target": "CH03-F007-N07"
+      },
+      {
+        "source": "CH03-F007-N03",
+        "condition": "否则",
+        "target": "CH03-F007-N09"
+      },
+      {
+        "source": "CH03-F007-N07",
+        "condition": "允许且资源可得",
+        "target": "CH03-F007-N08"
+      },
+      {
+        "source": "CH03-F007-N07",
+        "condition": "否则",
+        "target": "CH03-F007-N11"
+      },
+      {
+        "source": "CH03-F007-N08",
+        "condition": "重查",
+        "target": "CH03-F007-N03"
+      },
+      {
+        "source": "CH03-F007-N04",
+        "condition": "在内存",
+        "target": "CH03-F007-N05"
+      },
+      {
+        "source": "CH03-F007-N04",
+        "condition": "不驻留",
+        "target": "CH03-F007-N06"
+      },
+      {
+        "source": "CH03-F007-N06",
+        "condition": "成功重试",
+        "target": "CH03-F007-N01"
+      },
+      {
+        "source": "CH03-F007-N06",
+        "condition": "失败",
+        "target": "CH03-F007-N11"
+      }
+    ],
+    "errors_and_wait": "T教学规范顺序不同于原图精确检测先后；增长协议未确认时禁用该分支，仅静态解释。",
+    "related_records": [
+      "CH03-K019",
+      "CH03-K020"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F008",
+    "title": "段页式查找",
+    "question": "段表和页表分别定位什么？",
+    "start_condition": "进程/段/页/偏移合法类型",
+    "end_condition": "地址或区分的异常",
+    "nodes": [
+      {
+        "id": "CH03-F008-N01",
+        "label": "验证段"
+      },
+      {
+        "id": "CH03-F008-N02",
+        "label": "定位段页表"
+      },
+      {
+        "id": "CH03-F008-N03",
+        "label": "检查页范围/可选段字节范围"
+      },
+      {
+        "id": "CH03-F008-N04",
+        "label": "查页项"
+      },
+      {
+        "id": "CH03-F008-N05",
+        "label": "组合页框与偏移"
+      },
+      {
+        "id": "CH03-F008-N06",
+        "label": "非法段/页范围"
+      },
+      {
+        "id": "CH03-F008-N07",
+        "label": "段页表缺失"
+      },
+      {
+        "id": "CH03-F008-N08",
+        "label": "缺页"
+      },
+      {
+        "id": "CH03-F008-N09",
+        "label": "保护错误"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F008-N01",
+        "condition": "合法",
+        "target": "CH03-F008-N02"
+      },
+      {
+        "source": "CH03-F008-N01",
+        "condition": "非法",
+        "target": "CH03-F008-N06"
+      },
+      {
+        "source": "CH03-F008-N02",
+        "condition": "存在",
+        "target": "CH03-F008-N03"
+      },
+      {
+        "source": "CH03-F008-N02",
+        "condition": "缺失",
+        "target": "CH03-F008-N07"
+      },
+      {
+        "source": "CH03-F008-N03",
+        "condition": "合法",
+        "target": "CH03-F008-N04"
+      },
+      {
+        "source": "CH03-F008-N03",
+        "condition": "非法",
+        "target": "CH03-F008-N06"
+      },
+      {
+        "source": "CH03-F008-N04",
+        "condition": "驻留且允许",
+        "target": "CH03-F008-N05"
+      },
+      {
+        "source": "CH03-F008-N04",
+        "condition": "不驻留",
+        "target": "CH03-F008-N08"
+      },
+      {
+        "source": "CH03-F008-N04",
+        "condition": "无权限",
+        "target": "CH03-F008-N09"
+      }
+    ],
+    "errors_and_wait": "基础模型只显示缺段/缺页，不在没有相应引擎时自动演示调入。",
+    "related_records": [
+      "CH03-K021"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  },
+  {
+    "id": "CH03-F009",
+    "title": "CLOCK指针扫描",
+    "question": "为何跳过一些页？",
+    "start_condition": "满框缺页且基础CLOCK状态合法",
+    "end_condition": "选择牺牲页并更新指针",
+    "nodes": [
+      {
+        "id": "CH03-F009-N01",
+        "label": "检查当前槽R位"
+      },
+      {
+        "id": "CH03-F009-N02",
+        "label": "清0并前进"
+      },
+      {
+        "id": "CH03-F009-N03",
+        "label": "选择此槽"
+      },
+      {
+        "id": "CH03-F009-N04",
+        "label": "替换并置1"
+      },
+      {
+        "id": "CH03-F009-N05",
+        "label": "指针前进"
+      },
+      {
+        "id": "CH03-F009-N06",
+        "label": "输出状态"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-F009-N01",
+        "condition": "1",
+        "target": "CH03-F009-N02"
+      },
+      {
+        "source": "CH03-F009-N02",
+        "condition": "下一槽",
+        "target": "CH03-F009-N01"
+      },
+      {
+        "source": "CH03-F009-N01",
+        "condition": "0",
+        "target": "CH03-F009-N03"
+      },
+      {
+        "source": "CH03-F009-N03",
+        "condition": "确定",
+        "target": "CH03-F009-N04"
+      },
+      {
+        "source": "CH03-F009-N04",
+        "condition": "完成",
+        "target": "CH03-F009-N05"
+      },
+      {
+        "source": "CH03-F009-N05",
+        "condition": "完成",
+        "target": "CH03-F009-N06"
+      }
+    ],
+    "errors_and_wait": "无外部等待；容量/指针非法拒绝。基础单线程全1时最多m+1次槽检查，不含锁页或并发访问。",
+    "related_records": [
+      "CH03-K015"
+    ],
+    "evidence": "S依据相关记录来源；节点完整化、半开边界及工程异常出口为T，不声称是具体CPU微操作"
+  }
+]

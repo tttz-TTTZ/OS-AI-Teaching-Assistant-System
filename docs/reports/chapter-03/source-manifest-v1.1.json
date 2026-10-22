@@ -1,0 +1,56 @@
+[
+  {
+    "id": "S3-01",
+    "name": "3.1.存储管理基础 .pptx",
+    "slides": 27,
+    "sha256": "bb8e8b845ba55b893fa4a887c812745423f889562fa3e889fc1dc1c497dd46fa",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  },
+  {
+    "id": "S3-02",
+    "name": "3.2 连续分区存储管理 .pptx",
+    "slides": 24,
+    "sha256": "700110fc46e522781d572cc4fa829953b5537289dd89bd3d649bbf4c7db13c37",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  },
+  {
+    "id": "S3-03",
+    "name": "3.3 页式存储管理 .pptx",
+    "slides": 21,
+    "sha256": "d31c13639c905fcb9cffc6b1a5f510a1cad8e5a17337c4c6aeef09ea85927011",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  },
+  {
+    "id": "S3-04",
+    "name": "3.3-4 页面调度 .pptx",
+    "slides": 17,
+    "sha256": "4075ff0b63f11a445c7128f354e4207447dddc00e056b9e01965535c50c4d971",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  },
+  {
+    "id": "S3-05",
+    "name": "3.3-5 反置页表与多级页表 .pptx",
+    "slides": 14,
+    "sha256": "b21053d402e46c720f2a2b1acebcb85c53cccc182f99494de8973311070595a2",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  },
+  {
+    "id": "S3-06",
+    "name": "3.4 段式存储管理 .pptx",
+    "slides": 15,
+    "sha256": "2694966bb0bd9ca49605e1f92b066045153a90b1b8d82cefa32e4af66c17eec1",
+    "hidden_physical_pages": [],
+    "coverage": "全部文字/备注读取、全部静态渲染及逐页图版检查；未播放原生动画/雨课堂交互/宏",
+    "original_ppt_in_repository": false
+  }
+]

@@ -1,0 +1,631 @@
+{
+  "common": {
+    "controls": [
+      "暂停",
+      "上一步",
+      "下一步",
+      "重置",
+      "速度调整"
+    ],
+    "correctness": "先算事件/状态再播放；回退恢复完整快照，不仅移动视觉位置；输入改变创建新运行。",
+    "events": "区分reference/scan/io/tick/retry，只有reference计入A。",
+    "security": "不执行任意AI脚本；无实际模型时不提供虚假运行按钮。",
+    "status": "全部为分析规格，未在本次实现或运行新引擎。"
+  },
+  "specs": [
+    {
+      "id": "CH03-AN001",
+      "name": "分区分配、回收与紧凑",
+      "question": "同一个请求为什么选不同位置？回收后为什么需要合并？",
+      "objects": [
+        "内存区间",
+        "空闲表",
+        "已分配表",
+        "请求",
+        "NF游标"
+      ],
+      "state_variables": [
+        "layout",
+        "holes",
+        "allocations",
+        "reserved",
+        "strategy",
+        "cursor",
+        "scan_index",
+        "run_version"
+      ],
+      "initial_state": "选区模式用S3-02 p24空闲表；完整布局模式需另给所有区域分类，不把未知间隙猜成进程。",
+      "steps": [
+        {
+          "event": "请求到达",
+          "state_change": "验证正数/单位与布局；不改分配状态",
+          "screen": "显示请求28K与当前表",
+          "narration": "先检查输入，空闲总量与连续区是不同指标。"
+        },
+        {
+          "event": "扫描候选",
+          "state_change": "按策略推进scan_index，尚不提交",
+          "screen": "高亮当前区长度与比较",
+          "narration": "这个区只有25K，小于28K，继续查找。"
+        },
+        {
+          "event": "提交分配",
+          "state_change": "生成唯一ID并切分/删除空闲项、更新游标",
+          "screen": "同一时刻更新内存条和表",
+          "narration": "所选区切出请求，剩余区仍空闲。"
+        },
+        {
+          "event": "释放",
+          "state_change": "验证ID并形成临时释放区",
+          "screen": "突出释放区与前后端点",
+          "narration": "相邻必须是物理地址端点相接。"
+        },
+        {
+          "event": "合并",
+          "state_change": "按四类邻接更新空闲表/游标",
+          "screen": "逐个显示被合并表项",
+          "narration": "前后均空闲时，三块合并成一块。"
+        },
+        {
+          "event": "可选紧凑",
+          "state_change": "仅在完整可移动布局下搬迁、原子更新基址/表",
+          "screen": "前后位置与容量守恒对照",
+          "narration": "总空闲没增加，连续性改变了。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "S3-02 p24 FF/BF/WF对照；释放前后邻接。",
+      "boundary_or_error_scenario": "恰好匹配、重复释放、空表、仅总量够、锁定区域阻挡紧凑。",
+      "correctness_checks": [
+        "区间不重叠",
+        "全布局占用+空闲+保留守恒",
+        "失败不改状态",
+        "四类合并与游标更新",
+        "T紧凑例P2[40,70)→[20,50)"
+      ],
+      "related_records": [
+        "CH03-K003",
+        "CH03-K004",
+        "CH03-K005",
+        "CH03-K006"
+      ],
+      "priority": "第二批；可先F002/F003，不要求第一批动画",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN002",
+      "name": "分页地址与TLB路径",
+      "question": "未命中TLB与缺页为何不同？",
+      "objects": [
+        "逻辑地址",
+        "当前地址空间",
+        "TLB",
+        "页表",
+        "页框"
+      ],
+      "state_variables": [
+        "pid_or_asid",
+        "vpn",
+        "offset",
+        "pte",
+        "tlb",
+        "permissions",
+        "physical",
+        "path"
+      ],
+      "initial_state": "S3-03 p5—6页表，P4096；T初始TLB为空。",
+      "steps": [
+        {
+          "event": "拆分地址",
+          "state_change": "计算vpn/offset，不改变驻留",
+          "screen": "位段与整数商/余数",
+          "narration": "8196对应页2，偏移4。"
+        },
+        {
+          "event": "查TLB",
+          "state_change": "读取当前上下文匹配项",
+          "screen": "高亮命中或未命中",
+          "narration": "TLB保存转换，不是程序数据。"
+        },
+        {
+          "event": "合法性和权限检查",
+          "state_change": "从有效缓存项或页表验证；拒绝则终止",
+          "screen": "把错误与缺页分开显示",
+          "narration": "无权限不能通过调入解决。"
+        },
+        {
+          "event": "查页表",
+          "state_change": "TLB miss但页面驻留则取得frame；不驻留转缺页模型",
+          "screen": "高亮页表状态",
+          "narration": "这页已在内存，只是没进TLB。"
+        },
+        {
+          "event": "形成地址",
+          "state_change": "必要时填TLB，再fP+d",
+          "screen": "高亮页框和保持不变的偏移",
+          "narration": "页框1加偏移4，得到4100。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "先访问未命中、同页再次命中。",
+      "boundary_or_error_scenario": "非法页号、读写权限不同、A/B同VPN、修改页表后旧TLB失效。",
+      "correctness_checks": [
+        "4100/39576",
+        "offset不变",
+        "上下文不串用",
+        "非法访问无调入",
+        "命中路径不强制主存页表额外访问"
+      ],
+      "related_records": [
+        "CH03-K008",
+        "CH03-K010"
+      ],
+      "priority": "第二批首个小闭环",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN003",
+      "name": "缺页与脏页I/O",
+      "question": "一次合法缺页如何恢复原指令？",
+      "objects": [
+        "CPU",
+        "OS",
+        "进程",
+        "页框",
+        "页表/TLB",
+        "辅存"
+      ],
+      "state_variables": [
+        "reference_id",
+        "pc",
+        "process_state",
+        "present",
+        "dirty",
+        "victim",
+        "frame_owner",
+        "io_state",
+        "retry_state"
+      ],
+      "initial_state": "T目标页2合法未驻留；分别演示空框和满框；脏牺牲页由已验证选择器或显式场景指定。",
+      "steps": [
+        {
+          "event": "异常进入",
+          "state_change": "保存原引用ID/现场，进程进入相应等待",
+          "screen": "CPU/OS分界泳道",
+          "narration": "这是合法页面未驻留，不是权限错误。"
+        },
+        {
+          "event": "获得页框",
+          "state_change": "空框直接用；否则调用选择器，不抢同一框给两个请求",
+          "screen": "显示空框或牺牲页",
+          "narration": "有空闲框时不需要淘汰。"
+        },
+        {
+          "event": "可选写回",
+          "state_change": "dirty时写回请求→等待→完成后安全复用",
+          "screen": "辅存写方向与dirty状态",
+          "narration": "脏数据写回完成前不能覆盖。"
+        },
+        {
+          "event": "读入",
+          "state_change": "目标页读取；失败走失败状态，成功再提交映射",
+          "screen": "I/O读方向，显示等待而非虚构真实耗时",
+          "narration": "调入和写回是两个事件。"
+        },
+        {
+          "event": "提交映射",
+          "state_change": "更新驻留/所有权/页表/相关TLB",
+          "screen": "多处状态同时变为一致",
+          "narration": "不能只改页框颜色而忘记页表。"
+        },
+        {
+          "event": "恢复重试",
+          "state_change": "恢复现场，重试同一reference_id，完成后才结束",
+          "screen": "回到原指令而非跳到下一条",
+          "narration": "重试不增加新的逻辑引用次数。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "满框、指定脏页牺牲者。",
+      "boundary_or_error_scenario": "干净牺牲页、无可替换框、读写I/O失败、非法地址。",
+      "correctness_checks": [
+        "脏数据不丢失",
+        "等待原因可见",
+        "状态无半提交/框泄漏",
+        "retry不重复计F/A",
+        "回退恢复dirty与I/O状态"
+      ],
+      "related_records": [
+        "CH03-K012"
+      ],
+      "priority": "第二批，先分离选择器与缺页状态机",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN004",
+      "name": "二维数组的访问局部性",
+      "question": "相同赋值次数为何缺页不同？",
+      "objects": [
+        "数组元素",
+        "逻辑页",
+        "单数据框",
+        "循环索引"
+      ],
+      "state_variables": [
+        "i",
+        "j",
+        "address",
+        "page",
+        "resident",
+        "A",
+        "F",
+        "traversal",
+        "layout_assumptions"
+      ],
+      "initial_state": "T先4×4、每行/页4字、一元素一字、对齐、首行页已驻留，忽略其他访问；再切换128参数。",
+      "steps": [
+        {
+          "event": "选择元素",
+          "state_change": "按外内循环更新i/j",
+          "screen": "高亮一个元素",
+          "narration": "循环顺序决定下一个被访问的元素。"
+        },
+        {
+          "event": "计算页面",
+          "state_change": "由地址、元素宽度和P计算页",
+          "screen": "同时高亮对应逻辑页",
+          "narration": "不能直接把“换行”当作缺页。"
+        },
+        {
+          "event": "访问",
+          "state_change": "驻留则H，否则F+1并替换唯一数据框；A+1",
+          "screen": "显示逻辑页和驻留页是否相同",
+          "narration": "按列时下一个元素常在另一页。"
+        },
+        {
+          "event": "比较结束",
+          "state_change": "锁定同条件行列结果",
+          "screen": "显示A、F、前提",
+          "narration": "课件数字依赖一行一页和初始驻留。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "128预驻留：行127/列16383；4×4：3/15。",
+      "boundary_or_error_scenario": "初始为空、元素宽度改变、不对齐、数组规模1；不得沿用原数字。",
+      "correctness_checks": [
+        "地址推导页号",
+        "A=n²",
+        "H+F=A",
+        "初始装入是否计数显式",
+        "不同模型重置运行"
+      ],
+      "related_records": [
+        "CH03-K013"
+      ],
+      "priority": "第二批，先静态代码意图和假设表",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN005",
+      "name": "OPT/FIFO/LRU同步比较",
+      "question": "同一引用为何淘汰不同页面？",
+      "objects": [
+        "共享引用串",
+        "三组固定页框",
+        "FIFO队列",
+        "LRU历史",
+        "OPT后缀"
+      ],
+      "state_variables": [
+        "index",
+        "frames_by_policy",
+        "policy_state",
+        "victim",
+        "F",
+        "A"
+      ],
+      "initial_state": "T同串同m同空态；主例S3-04 p7/p9/p12，3框20引用。",
+      "steps": [
+        {
+          "event": "同步取引用",
+          "state_change": "三个模型读取同一个reference index",
+          "screen": "同一列高亮",
+          "narration": "比较必须使用同串同初始条件。"
+        },
+        {
+          "event": "判断命中",
+          "state_change": "分别H/F，命中更新规则不同",
+          "screen": "显示H/F与内部状态",
+          "narration": "FIFO命中不改装入顺序，LRU更新最近历史。"
+        },
+        {
+          "event": "选择牺牲页",
+          "state_change": "各自按规则，不用前端排序决定",
+          "screen": "显示选择依据而非只闪烁",
+          "narration": "OPT看未来，FIFO看装入，LRU看最近访问。"
+        },
+        {
+          "event": "提交本次",
+          "state_change": "更新固定槽和策略状态，F/A各自累加",
+          "screen": "引用列与槽位、队列分开",
+          "narration": "物理槽没有因显示队列而自动换位置。"
+        },
+        {
+          "event": "结束/容量对照",
+          "state_change": "显示9/15/12，另切Belady独立引用串",
+          "screen": "不把两条串混用",
+          "narration": "FIFO多页框仍可能更多缺页。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "20次引用得到9/15/12；小例4/5/4。",
+      "boundary_or_error_scenario": "页号0、空串、单框、连续重复引用、预装史缺失。",
+      "correctness_checks": [
+        "reference golden traces",
+        "FIFO不重排",
+        "LRU命中更新",
+        "OPT稳定平局",
+        "Belady3框9/4框10"
+      ],
+      "related_records": [
+        "CH03-K014"
+      ],
+      "priority": "第二批，作为首个新算法引擎组",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN006",
+      "name": "CLOCK逐槽扫描",
+      "question": "引用位何时变0，手针何时前进？",
+      "objects": [
+        "环形槽",
+        "页号",
+        "R位",
+        "手针",
+        "当前引用"
+      ],
+      "state_variables": [
+        "frames",
+        "R",
+        "hand",
+        "scan_phase",
+        "current_reference",
+        "F",
+        "A"
+      ],
+      "initial_state": "T完整小例3空框、R全0、hand0；源p17只展示已知局部，不补省略槽。",
+      "steps": [
+        {
+          "event": "命中",
+          "state_change": "对应R置1，hand不动，A+1",
+          "screen": "高亮访问页及其位",
+          "narration": "一次命中不用启动淘汰扫描。"
+        },
+        {
+          "event": "满框缺页",
+          "state_change": "F+1，进入扫描，不再增加A",
+          "screen": "显示手针当前槽",
+          "narration": "接下来的扫描不是新程序引用。"
+        },
+        {
+          "event": "遇R1",
+          "state_change": "清0，手针推进一槽",
+          "screen": "逐次显示1→0",
+          "narration": "给它第二次机会，继续看下一槽。"
+        },
+        {
+          "event": "遇R0",
+          "state_change": "锁定牺牲槽，替换新页R1",
+          "screen": "旧页/新页与引用位同时变化",
+          "narration": "现在才选到本次牺牲页。"
+        },
+        {
+          "event": "结束",
+          "state_change": "手针到下一槽；允许读取下一引用",
+          "screen": "显示最终hand与快照",
+          "narration": "上一步必须恢复手针和所有清过的位。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "源图清45/191、换556→727、hand到5；自拟全1小例。",
+      "boundary_or_error_scenario": "全R1需m+1次槽检查，单框需清位后再次检查；新增锁页时原保证不适用。",
+      "correctness_checks": [
+        "不把scan计A",
+        "页号0合法",
+        "all1有限结束",
+        "回退恢复多个已清位",
+        "不声称等价精确LRU"
+      ],
+      "related_records": [
+        "CH03-K015"
+      ],
+      "priority": "第二批，复用页框播放器",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN007",
+      "name": "段式访问与受限增长",
+      "question": "越界、保护、缺段、增长如何区分？",
+      "objects": [
+        "段表",
+        "访问请求",
+        "连续区",
+        "权限/扩充位"
+      ],
+      "state_variables": [
+        "s",
+        "d",
+        "base",
+        "length",
+        "present",
+        "permissions",
+        "growable",
+        "max_length",
+        "layout",
+        "io"
+      ],
+      "initial_state": "T一驻留段、一合法非驻留段；增长关闭，确认协议后单独开启。",
+      "steps": [
+        {
+          "event": "查段及权限",
+          "state_change": "非法或拒绝则终止，无调入",
+          "screen": "高亮段项/错误出口",
+          "narration": "段不存在与段不驻留不是同一问题。"
+        },
+        {
+          "event": "检查偏移",
+          "state_change": "0≤d<L走正常路径，超长转策略检查",
+          "screen": "显示L−1/L边界",
+          "narration": "长度100时偏移100不合法。"
+        },
+        {
+          "event": "可选增长",
+          "state_change": "仅在上限/资源/权限满足时增加长度和更新表",
+          "screen": "显示至少d+1及增量",
+          "narration": "偏移120需要长度至少121，而非120。"
+        },
+        {
+          "event": "调入或转换",
+          "state_change": "合法未驻留才请求调入，成功后重试",
+          "screen": "区分等待与已完成",
+          "narration": "可扩充位不代表无限增长。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "正常访问与合法缺段；后续再演示长100→121。",
+      "boundary_or_error_scenario": "权限拒绝、增长禁用、上限不足、不可移动区阻挡、I/O失败。",
+      "correctness_checks": [
+        "严格范围",
+        "失败不半更新",
+        "不把任意越界变增长",
+        "不能冒充真实栈增长实现"
+      ],
+      "related_records": [
+        "CH03-K019",
+        "CH03-K020"
+      ],
+      "priority": "第一批F007足够；完整增长第三批暂缓",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    },
+    {
+      "id": "CH03-AN008",
+      "name": "多级/段页式查找路径",
+      "question": "每一级表项指向什么？",
+      "objects": [
+        "地址位段",
+        "目录",
+        "下级页表",
+        "段表",
+        "页框"
+      ],
+      "state_variables": [
+        "split",
+        "indexes",
+        "current_table",
+        "entry",
+        "present",
+        "permissions",
+        "lookup_reads",
+        "physical"
+      ],
+      "initial_state": "T16位4/4/8玩具模型与段1页2框7案例；与32位9/11/12题分开。",
+      "steps": [
+        {
+          "event": "拆位段",
+          "state_change": "校验总位数并生成各索引/偏移",
+          "screen": "着色位段，不以十进制拼接",
+          "narration": "位数划分决定能索引多少项。"
+        },
+        {
+          "event": "查上级",
+          "state_change": "沿选项定位下级表，缺失即停",
+          "screen": "展开当前路径，折叠无关表",
+          "narration": "上级项不是最终数据页框。"
+        },
+        {
+          "event": "查叶项",
+          "state_change": "验证范围/驻留/权限",
+          "screen": "显示具体缺失类型",
+          "narration": "页表页缺失与数据页缺失分开。"
+        },
+        {
+          "event": "形成地址",
+          "state_change": "frame×P+offset；段页式可选字节限长检查",
+          "screen": "高亮结果和累计访存",
+          "narration": "三次访存是有假设的路径计数。"
+        }
+      ],
+      "controls": [
+        "暂停",
+        "上一步",
+        "下一步",
+        "重置",
+        "速度调整"
+      ],
+      "typical_scenario": "0x2345→1349；段1页2偏移6→28678。",
+      "boundary_or_error_scenario": "缺失下级表、非法索引、末页部分有效、9/11/12下级表8KiB假设。",
+      "correctness_checks": [
+        "位数和索引范围",
+        "表项定位正确",
+        "单位一致",
+        "未有I/O模型不伪造自动恢复"
+      ],
+      "related_records": [
+        "CH03-K018",
+        "CH03-K021"
+      ],
+      "priority": "第一批点击/分步图即可，不必立即动画",
+      "implementation_status": "未实现：本次只分析/设计",
+      "source_scope": "S见关联知识记录；具体初态/事件拆分/错误处理为T"
+    }
+  ]
+}

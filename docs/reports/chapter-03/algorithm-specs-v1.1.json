@@ -1,0 +1,348 @@
+{
+  "existing_platform_engines": [
+    "fcfs",
+    "sjf",
+    "rr"
+  ],
+  "existing_memory_template": "仅A/B/C连续分配示意，不是本章分配/回收/置换引擎",
+  "nf_v1_proposal": "T建议NF_v1：空闲表按地址排序；cursor_address定位包含它的空闲项，否则选首个起址≥cursor的项，无则回首项。每项最多扫描一次，从项低端分配；切分后cursor=剩余区起址；整块用尽后指向其后首个空闲项，无则null。释放合并保持cursor地址，由上述定位规则重新解释；查找失败不移动。它是表项游标，不是从区间内部截取请求的字节游标。",
+  "specs": [
+    {
+      "id": "CH03-A001",
+      "name": "最先适应",
+      "aliases": "FF / First Fit",
+      "related_record": "CH03-K004",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "selector_only：合法不重叠空闲区、正整数请求；full_layout另需完整已分配/空闲/保留区、可用范围及真实ID。",
+        "output": "扫描顺序、选区、起址、剩余区、成功/失败；full_layout才维护释放/紧凑与全内存守恒。",
+        "constraints": "同单位；区长≥请求；不重叠；失败不改状态；切分从低地址端，无对齐/元数据开销，若新增开销另开版本。",
+        "cases": "空表、恰好用尽、全部不足、零/负数、重叠、同尺寸平局、NF回绕、重复释放拒绝。"
+      },
+      "steps": [
+        "按起址升序查",
+        "取首个长度≥请求项",
+        "从低端切分/整块使用",
+        "更新表或无变化失败"
+      ],
+      "decision_rules": "按地址顺序首个足够大。",
+      "tie_and_initial_rules": "起址唯一；重复/重叠输入拒绝。",
+      "reference_checks": [
+        "CH03-T-FF"
+      ],
+      "boundaries": "恰好相等必须成功；不预先按尺寸排序。",
+      "visualization": "逐项扫描及地址布局。",
+      "source_refs": [
+        "S3-02 p14,p24"
+      ],
+      "status": "规则S；切分/工程协议T。"
+    },
+    {
+      "id": "CH03-A002",
+      "name": "邻近适应",
+      "aliases": "NF / Next Fit",
+      "related_record": "CH03-K004",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "selector_only：合法不重叠空闲区、正整数请求；full_layout另需完整已分配/空闲/保留区、可用范围及真实ID。",
+        "output": "扫描顺序、选区、起址、剩余区、成功/失败；full_layout才维护释放/紧凑与全内存守恒。",
+        "constraints": "同单位；区长≥请求；不重叠；失败不改状态；切分从低地址端，无对齐/元数据开销，若新增开销另开版本。",
+        "cases": "空表、恰好用尽、全部不足、零/负数、重叠、同尺寸平局、NF回绕、重复释放拒绝。"
+      },
+      "steps": [
+        "按游标定位起始项",
+        "环形扫描至首个足够大项或一圈结束",
+        "分配并维护游标"
+      ],
+      "decision_rules": "见NF_v1协议。",
+      "tie_and_initial_rules": "T建议NF_v1：空闲表按地址排序；cursor_address定位包含它的空闲项，否则选首个起址≥cursor的项，无则回首项。每项最多扫描一次，从项低端分配；切分后cursor=剩余区起址；整块用尽后指向其后首个空闲项，无则null。释放合并保持cursor地址，由上述定位规则重新解释；查找失败不移动。它是表项游标，不是从区间内部截取请求的字节游标。",
+      "reference_checks": [
+        "CH03-T-NF"
+      ],
+      "boundaries": "游标回绕、合并后游标包含于新项、空表/整块用尽。",
+      "visualization": "显示游标起点、回绕和更新。",
+      "source_refs": [
+        "S3-02 p15；p24仅复用空闲表"
+      ],
+      "status": "课件规则不完整；NF_v1为T建议，V011未解决。"
+    },
+    {
+      "id": "CH03-A003",
+      "name": "最优适应",
+      "aliases": "BF / Best Fit",
+      "related_record": "CH03-K004",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "selector_only：合法不重叠空闲区、正整数请求；full_layout另需完整已分配/空闲/保留区、可用范围及真实ID。",
+        "output": "扫描顺序、选区、起址、剩余区、成功/失败；full_layout才维护释放/紧凑与全内存守恒。",
+        "constraints": "同单位；区长≥请求；不重叠；失败不改状态；切分从低地址端，无对齐/元数据开销，若新增开销另开版本。",
+        "cases": "空表、恰好用尽、全部不足、零/负数、重叠、同尺寸平局、NF回绕、重复释放拒绝。"
+      },
+      "steps": [
+        "收集足够大项",
+        "取尺寸最小",
+        "按统一切分更新"
+      ],
+      "decision_rules": "本次选区最小，不保证全局最佳。",
+      "tie_and_initial_rules": "T同长度选低起址。",
+      "reference_checks": [
+        "CH03-T-BF"
+      ],
+      "boundaries": "小剩余区保留；引入最小切分阈值必须另声明。",
+      "visualization": "尺寸比较和地址布局同步。",
+      "source_refs": [
+        "S3-02 p15,p24"
+      ],
+      "status": "S+T。"
+    },
+    {
+      "id": "CH03-A004",
+      "name": "最坏适应",
+      "aliases": "WF / Worst Fit",
+      "related_record": "CH03-K004",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "selector_only：合法不重叠空闲区、正整数请求；full_layout另需完整已分配/空闲/保留区、可用范围及真实ID。",
+        "output": "扫描顺序、选区、起址、剩余区、成功/失败；full_layout才维护释放/紧凑与全内存守恒。",
+        "constraints": "同单位；区长≥请求；不重叠；失败不改状态；切分从低地址端，无对齐/元数据开销，若新增开销另开版本。",
+        "cases": "空表、恰好用尽、全部不足、零/负数、重叠、同尺寸平局、NF回绕、重复释放拒绝。"
+      },
+      "steps": [
+        "取最大足够大项",
+        "按统一切分更新"
+      ],
+      "decision_rules": "最大区也不足则失败。",
+      "tie_and_initial_rules": "T同长度选低起址。",
+      "reference_checks": [
+        "CH03-T-WF"
+      ],
+      "boundaries": "同最大区、恰好匹配、空表。",
+      "visualization": "突出最大区与余量变化。",
+      "source_refs": [
+        "S3-02 p16,p24"
+      ],
+      "status": "S+T。"
+    },
+    {
+      "id": "CH03-A005",
+      "name": "最佳页面置换",
+      "aliases": "OPT / MIN / Belady optimal",
+      "related_record": "CH03-K014",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "判断命中",
+        "有空槽填最低槽",
+        "否则查看后缀未来位置",
+        "淘汰不再访问或下一次最远者"
+      ],
+      "decision_rules": "离线读取完整未来串；不是在线预知。",
+      "tie_and_initial_rules": "T多个同为永不再访问者取最低物理槽。",
+      "reference_checks": [
+        "CH03-T-OPT-SMALL",
+        "CH03-T-OPT-MAIN"
+      ],
+      "boundaries": "末引用、多个永不再用者；初态同条件。",
+      "visualization": "候选下一次引用位置与固定物理槽。",
+      "source_refs": [
+        "S3-04 p6—7"
+      ],
+      "status": "S规则；参考轨迹T协议。"
+    },
+    {
+      "id": "CH03-A006",
+      "name": "先进先出页面置换",
+      "aliases": "FIFO",
+      "related_record": "CH03-K014",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "命中不改队列",
+        "缺页有空槽则填入",
+        "满时出队首并装入队尾"
+      ],
+      "decision_rules": "按装入顺序，非访问顺序。",
+      "tie_and_initial_rules": "T初始空槽低槽填入；预装页须装入顺序。",
+      "reference_checks": [
+        "CH03-T-FIFO-SMALL",
+        "CH03-T-FIFO-MAIN",
+        "CH03-T-BELADY-3",
+        "CH03-T-BELADY-4"
+      ],
+      "boundaries": "命中不入队；页框增加可能Belady。",
+      "visualization": "物理槽与FIFO队列分开。",
+      "source_refs": [
+        "S3-04 p8—10"
+      ],
+      "status": "不能调用CPU FCFS代替。"
+    },
+    {
+      "id": "CH03-A007",
+      "name": "最近最少使用",
+      "aliases": "LRU exact",
+      "related_record": "CH03-K014",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "每次引用更新最近记录",
+        "缺页有空槽填入",
+        "满时淘汰最久未用者"
+      ],
+      "decision_rules": "命中也更新，时间用逻辑引用序号。",
+      "tie_and_initial_rules": "T默认空；高级初态需总顺序或稳定平局协议。",
+      "reference_checks": [
+        "CH03-T-LRU-SMALL",
+        "CH03-T-LRU-MAIN"
+      ],
+      "boundaries": "连续重复引用、预装未知历史拒绝。",
+      "visualization": "物理槽与使用顺序分开。",
+      "source_refs": [
+        "S3-04 p11—12"
+      ],
+      "status": "S+T。"
+    },
+    {
+      "id": "CH03-A008",
+      "name": "时钟页面置换",
+      "aliases": "CLOCK / 基础Second Chance类",
+      "related_record": "CH03-K015",
+      "integration_class": "②新引擎",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "命中置R1不动指针",
+        "空槽从指针找空并装入、前进",
+        "满时R1清0继续、R0替换",
+        "新页R1、指针前进"
+      ],
+      "decision_rules": "基础串行扫描，无锁页/新引用插入；全1需m+1次槽检查即可选择。",
+      "tie_and_initial_rules": "T初始空槽R0、hand0；完整初态要R与hand。",
+      "reference_checks": [
+        "CH03-T-CLOCK-SMALL",
+        "CH03-T-CLOCK-VISUAL"
+      ],
+      "boundaries": "一框、全R1、指针绕回、全命中；扫描不计引用。",
+      "visualization": "环、手针、逐次位变化。",
+      "source_refs": [
+        "S3-04 p15—17"
+      ],
+      "status": "不能调用CPU RR代替；初态/空框协议T。"
+    },
+    {
+      "id": "CH03-A009",
+      "name": "窗口最不常用",
+      "aliases": "LFU（课件周期清零变体）",
+      "related_record": "CH03-K016",
+      "integration_class": "②新引擎，协议确认后",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "每访问计数+1",
+        "TICK将驻留页计数清0",
+        "满框选当前计数最小",
+        "新页完成访问后计数1"
+      ],
+      "decision_rules": "T建议：外部显式TICK，不等同终身LFU；同刻TICK先于引用。",
+      "tie_and_initial_rules": "T同频低槽，新页计数1；采样间隔/真实时间映射仍需确认。",
+      "reference_checks": [
+        "CH03-T-LFU-TICK"
+      ],
+      "boundaries": "清零边界、全0平局、计数上限；TICK不增A。",
+      "visualization": "窗口/epoch、计数与TICK事件。",
+      "source_refs": [
+        "S3-04 p14"
+      ],
+      "status": "V009/V010未解决；不宣称原PPT完整定义这些规则。"
+    },
+    {
+      "id": "CH03-A010",
+      "name": "引用位采样的近似LRU",
+      "aliases": "课件LRU模拟实现，不是精确LRU",
+      "related_record": "CH03-K016",
+      "integration_class": "②新引擎，暂缓",
+      "input_constraints": {
+        "input": "默认正整数页框数、非负整数页号序列、初始全空槽；页号0合法。",
+        "output": "逐引用H/F、牺牲页、固定槽位状态、策略状态、累计F与A；空串F0且F/A=null（无访问）。",
+        "constraints": "程序引用、扫描、I/O、TICK、重试分别记录；默认无锁页/并发引用；高级初始驻留必须提供算法历史，不按页列表猜。",
+        "initial_metadata": "FIFO装入先后；LRU最近访问次序；CLOCK引用位与指针；窗口LFU计数/epoch；近似LRU位、采样和随机协议。",
+        "cases": "单框、重复页、零页、空串、容量超过不同页数、非法容量/状态、初态缺元数据；相同引用串相同初态再比较。"
+      },
+      "steps": [
+        "采样事件清R0",
+        "访问置R1",
+        "从R0集合随机选择"
+      ],
+      "decision_rules": "全1、同刻事件、随机协议不足；不得默默改CLOCK。",
+      "tie_and_initial_rules": "局部T测试按槽排序候选，注入u∈[0,1)，取floor(u*n)；不是PPT完整随机算法。",
+      "reference_checks": [
+        "CH03-T-APPROX-CANDIDATES"
+      ],
+      "boundaries": "无0候选时完整算法未定义；拒绝激活为唯一答案实验。",
+      "visualization": "采样事件、候选集合；暂不完整回放。",
+      "source_refs": [
+        "S3-04 p13"
+      ],
+      "status": "E，V010未解决。"
+    }
+  ],
+  "mechanism_only": [
+    {
+      "id": "CH03-M001",
+      "name": "基址/分页/分段地址转换",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    },
+    {
+      "id": "CH03-M002",
+      "name": "分区释放与邻接合并",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    },
+    {
+      "id": "CH03-M003",
+      "name": "内存紧凑和基址更新",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    },
+    {
+      "id": "CH03-M004",
+      "name": "缺页/脏页/I/O/重试",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    },
+    {
+      "id": "CH03-M005",
+      "name": "多级与反置页表查找",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    },
+    {
+      "id": "CH03-M006",
+      "name": "缺段与段页式异常分流",
+      "integration_class": "③机制演示，不包装成CPU调度实验"
+    }
+  ]
+}

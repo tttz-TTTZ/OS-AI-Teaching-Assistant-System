@@ -1,0 +1,128 @@
+[
+  {
+    "record_id": "CH03-K001",
+    "recommended_type_and_skill": "地址计算与边界判断",
+    "existing_material": "S3-02 p22，题干可用，270K为报告推导",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K002",
+    "recommended_type_and_skill": "共享与权限情境判断",
+    "existing_material": "无独立题，教师编写/审核",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K003",
+    "recommended_type_and_skill": "内零头计算与碎片辨析",
+    "existing_material": "S3-02 p23，图片表独立于p6，25K报告推导",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K004",
+    "recommended_type_and_skill": "按策略选区与解释",
+    "existing_material": "S3-02 p24，NF需另给游标",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K005",
+    "recommended_type_and_skill": "释放后表格/四类邻接",
+    "existing_material": "S3-02 p17为演示，非现成题",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K006",
+    "recommended_type_and_skill": "紧凑与连续空间判断",
+    "existing_material": "S3-02 p20—21为机制图",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K007",
+    "recommended_type_and_skill": "覆盖/对换/虚拟管理对比",
+    "existing_material": "无独立题",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K008",
+    "recommended_type_and_skill": "分页拆分与物理地址计算",
+    "existing_material": "S3-03 p5—6含图片解答",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K009",
+    "recommended_type_and_skill": "有条件的共享代码讨论",
+    "existing_material": "无独立题，争议句不直接判分",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K010",
+    "recommended_type_and_skill": "TLB miss/缺页路径识别",
+    "existing_material": "S3-03 p13—15为依据",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K011",
+    "recommended_type_and_skill": "EAT与前提计算",
+    "existing_material": "S3-03 p12含算例",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K012",
+    "recommended_type_and_skill": "缺页流程排序与脏页分支",
+    "existing_material": "S3-03 p19—21为机制",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K013",
+    "recommended_type_and_skill": "布局与访问顺序比较",
+    "existing_material": "S3-04 p5，须完整前提",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K014",
+    "recommended_type_and_skill": "页框轨迹/缺页数/Belady解释",
+    "existing_material": "S3-04 p7/p9/p10/p12",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K015",
+    "recommended_type_and_skill": "逐次指针/R位跟踪",
+    "existing_material": "S3-04 p17为图示",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K016",
+    "recommended_type_and_skill": "统计窗口/近似规则辨析",
+    "existing_material": "无完整唯一答案题",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K017",
+    "recommended_type_and_skill": "哈希链与完整键辨析",
+    "existing_material": "无独立题",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K018",
+    "recommended_type_and_skill": "容量/位数/访存计算",
+    "existing_material": "S3-05 p8/p13—14",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K019",
+    "recommended_type_and_skill": "段地址/越界/权限",
+    "existing_material": "无独立题，边界先规范",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K020",
+    "recommended_type_and_skill": "缺段/增长分支判断",
+    "existing_material": "S3-06 p10机制图，增长协议未定",
+    "formal_and_personal_separate": true
+  },
+  {
+    "record_id": "CH03-K021",
+    "recommended_type_and_skill": "段表/页表联合查找",
+    "existing_material": "S3-06 p13—15机制图",
+    "formal_and_personal_separate": true
+  }
+]

@@ -1,0 +1,87 @@
+{
+  "format": 1,
+  "scope": "本目录单文件，不含本清单自身和ZIP；ZIP内含清单及全部单文件",
+  "date": "2026-10-22",
+  "files": {
+    "IMPLEMENTATION.md": {
+      "bytes": 8789,
+      "sha256": "30f800b48de2c07a49872cd8391478e710637e5626e3eb7eec48a6bdc8f52b39"
+    },
+    "README.md": {
+      "bytes": 5062,
+      "sha256": "20342786ca49c8a3c86d754997f4eaf19388952e443c097c7f19d6e6de311848"
+    },
+    "REPORT-V1.1.md": {
+      "bytes": 105998,
+      "sha256": "84d0611d5d12c6f97c111298612b9d3ca681b23b6ee7743983f4d25c75d9b91f"
+    },
+    "VALIDATION.md": {
+      "bytes": 3581,
+      "sha256": "75b331bd583ef54f63fbd0ce3d508dce6b602508f0208ebbb1705e21239b400b"
+    },
+    "algorithm-checks-v1.1.json": {
+      "bytes": 64655,
+      "sha256": "bd0442407ebeaff32639041d908cd39dd503a4e228471d734a84849cefcb5cc6"
+    },
+    "algorithm-specs-v1.1.json": {
+      "bytes": 17746,
+      "sha256": "f2179e464970cb1863e16dfe991159192474d2f08ae6941045b840c52e03f165"
+    },
+    "animation-specs-v1.1.json": {
+      "bytes": 21593,
+      "sha256": "f20da0f18a5811f77eea1ba63c5bc7f7732b958041e4b2d6d2c907443f9e7231"
+    },
+    "flow-specs-v1.1.json": {
+      "bytes": 22437,
+      "sha256": "e8d0d1882cfd48ab1ca7e51a4b89c34959ac761d6934694546027874f78772c3"
+    },
+    "knowledge-graphs-v1.1.json": {
+      "bytes": 16347,
+      "sha256": "536bc2bcff929c8fc11a0e915da77936b997fff4b18d7dbeae5f8d1565ae0c03"
+    },
+    "knowledge-records-v1.1.json": {
+      "bytes": 39911,
+      "sha256": "f69d8bddb6aba15481fd58b009d7b63295e818827619f65a9700c0043c2ea786"
+    },
+    "learning-units-v1.1.json": {
+      "bytes": 2870,
+      "sha256": "59d864fbe0301404042e2630eb60c4986ac837fee6866911e58d285d04489027"
+    },
+    "ordinary-content-v1.1.json": {
+      "bytes": 2511,
+      "sha256": "f24b1f8585305f1a32447eefbde42587e979abad5476793718860f6d96435984"
+    },
+    "practice-associations-v1.1.json": {
+      "bytes": 4235,
+      "sha256": "9defc93b915960d910def1df10100751e083b49616f0ce4d51b09837925610dd"
+    },
+    "quotation-audit-v1.1.csv": {
+      "bytes": 4078,
+      "sha256": "04d6983dc0f71723226158e480e3dfcd0d0228306fe702bab48853b81902f0b5"
+    },
+    "render-info.json": {
+      "bytes": 103,
+      "sha256": "e8388ff81b365604372fb93df5a04755149d2376be7e06a42a2fce95631008c8"
+    },
+    "report-v1.1.docx": {
+      "bytes": 59568,
+      "sha256": "92e3d20be5b9e67ebc7dd773977edbb3250ee2fadbfbd4a2ce68a86b40cbf75e"
+    },
+    "report-v1.1.pdf": {
+      "bytes": 124962,
+      "sha256": "3bc9656a5b752290ba63f5ff1ba48e5331f0ef4c1bae706e1aa5d3c39823c06c"
+    },
+    "slide-coverage-v1.1.csv": {
+      "bytes": 18601,
+      "sha256": "a64747c1dbd0834a8489d9c977cb58f31fa0d965f54042167cdcc735cbd09232"
+    },
+    "source-manifest-v1.1.json": {
+      "bytes": 2271,
+      "sha256": "3a0037d4c2cb0555a229af71d213a373b5d8b41d6c3806083c58fcbd5ebd6dcf"
+    },
+    "unresolved-issues-v1.1.json": {
+      "bytes": 10159,
+      "sha256": "a187339ea734c49b3d0dedaf4f9c3a159d7fb5f4136fc2aba41693aa643035b2"
+    }
+  }
+}

@@ -1,0 +1,3079 @@
+{
+  "warning": "这是报告数值/状态参考，不是已接入项目的新引擎；只有总数对应明确课件结果，物理槽位轨迹按本报告稳定平局约定计算。",
+  "checks": [
+    {
+      "id": "CH03-T-OPT-MAIN",
+      "kind": "报告独立参考计算，非项目引擎执行",
+      "algorithm": "opt",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 7
+      },
+      "input": {
+        "references": [
+          7,
+          0,
+          1,
+          2,
+          0,
+          3,
+          0,
+          4,
+          2,
+          3,
+          0,
+          3,
+          2,
+          1,
+          2,
+          0,
+          1,
+          7,
+          0,
+          1
+        ],
+        "frames": 3,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 20,
+        "faults": 9,
+        "fault_rate": 0.45,
+        "final_frames": [
+          7,
+          0,
+          1
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 7,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              7,
+              null,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": 18
+              }
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 0,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              7,
+              0,
+              null
+            ],
+            "faults": 2,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": 18,
+                "0": 5
+              }
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 3,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": 18,
+                "0": 5,
+                "1": 14
+              }
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 2,
+            "result": "F",
+            "victim": 7,
+            "slot": 0,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 9,
+                "0": 5,
+                "1": 14
+              }
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 9,
+                "0": 7,
+                "1": 14
+              }
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 3,
+            "result": "F",
+            "victim": 1,
+            "slot": 2,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 5,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 9,
+                "0": 7,
+                "3": 10
+              }
+            }
+          },
+          {
+            "reference_index": 7,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 5,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 9,
+                "0": 11,
+                "3": 10
+              }
+            }
+          },
+          {
+            "reference_index": 8,
+            "page": 4,
+            "result": "F",
+            "victim": 0,
+            "slot": 1,
+            "frames": [
+              2,
+              4,
+              3
+            ],
+            "faults": 6,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 9,
+                "4": null,
+                "3": 10
+              }
+            }
+          },
+          {
+            "reference_index": 9,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              2,
+              4,
+              3
+            ],
+            "faults": 6,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 13,
+                "4": null,
+                "3": 10
+              }
+            }
+          },
+          {
+            "reference_index": 10,
+            "page": 3,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              2,
+              4,
+              3
+            ],
+            "faults": 6,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 13,
+                "4": null,
+                "3": 12
+              }
+            }
+          },
+          {
+            "reference_index": 11,
+            "page": 0,
+            "result": "F",
+            "victim": 4,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 7,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 13,
+                "0": 16,
+                "3": 12
+              }
+            }
+          },
+          {
+            "reference_index": 12,
+            "page": 3,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 7,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 13,
+                "0": 16,
+                "3": null
+              }
+            }
+          },
+          {
+            "reference_index": 13,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 7,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 15,
+                "0": 16,
+                "3": null
+              }
+            }
+          },
+          {
+            "reference_index": 14,
+            "page": 1,
+            "result": "F",
+            "victim": 3,
+            "slot": 2,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 8,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": 15,
+                "0": 16,
+                "1": 17
+              }
+            }
+          },
+          {
+            "reference_index": 15,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 8,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": null,
+                "0": 16,
+                "1": 17
+              }
+            }
+          },
+          {
+            "reference_index": 16,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 8,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": null,
+                "0": 19,
+                "1": 17
+              }
+            }
+          },
+          {
+            "reference_index": 17,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 8,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": null,
+                "0": 19,
+                "1": 20
+              }
+            }
+          },
+          {
+            "reference_index": 18,
+            "page": 7,
+            "result": "F",
+            "victim": 2,
+            "slot": 0,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 9,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": null,
+                "0": 19,
+                "1": 20
+              }
+            }
+          },
+          {
+            "reference_index": 19,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 9,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": null,
+                "0": null,
+                "1": 20
+              }
+            }
+          },
+          {
+            "reference_index": 20,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 9,
+            "policy_state": {
+              "next_reference_1_based": {
+                "7": null,
+                "0": null,
+                "1": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-OPT-SMALL",
+      "kind": "T自拟参考计算",
+      "algorithm": "opt",
+      "input": {
+        "references": [
+          1,
+          2,
+          1,
+          3,
+          1,
+          2
+        ],
+        "frames": 2,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 6,
+        "faults": 4,
+        "fault_rate": 0.6666666666666666,
+        "final_frames": [
+          2,
+          3
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "next_reference_1_based": {
+                "1": 3
+              }
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "next_reference_1_based": {
+                "1": 3,
+                "2": 6
+              }
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "next_reference_1_based": {
+                "1": 5,
+                "2": 6
+              }
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 3,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              1,
+              3
+            ],
+            "faults": 3,
+            "policy_state": {
+              "next_reference_1_based": {
+                "1": 5,
+                "3": null
+              }
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              3
+            ],
+            "faults": 3,
+            "policy_state": {
+              "next_reference_1_based": {
+                "1": null,
+                "3": null
+              }
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 2,
+            "result": "F",
+            "victim": 1,
+            "slot": 0,
+            "frames": [
+              2,
+              3
+            ],
+            "faults": 4,
+            "policy_state": {
+              "next_reference_1_based": {
+                "2": null,
+                "3": null
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-FIFO-MAIN",
+      "kind": "报告独立参考计算，非项目引擎执行",
+      "algorithm": "fifo",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 9
+      },
+      "input": {
+        "references": [
+          7,
+          0,
+          1,
+          2,
+          0,
+          3,
+          0,
+          4,
+          2,
+          3,
+          0,
+          3,
+          2,
+          1,
+          2,
+          0,
+          1,
+          7,
+          0,
+          1
+        ],
+        "frames": 3,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 20,
+        "faults": 15,
+        "fault_rate": 0.75,
+        "final_frames": [
+          7,
+          0,
+          1
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 7,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              7,
+              null,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                7
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 0,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              7,
+              0,
+              null
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 2,
+            "result": "F",
+            "victim": 7,
+            "slot": 0,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 3,
+            "result": "F",
+            "victim": 0,
+            "slot": 1,
+            "frames": [
+              2,
+              3,
+              1
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 7,
+            "page": 0,
+            "result": "F",
+            "victim": 1,
+            "slot": 2,
+            "frames": [
+              2,
+              3,
+              0
+            ],
+            "faults": 6,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 8,
+            "page": 4,
+            "result": "F",
+            "victim": 2,
+            "slot": 0,
+            "frames": [
+              4,
+              3,
+              0
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                0,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 9,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 1,
+            "frames": [
+              4,
+              2,
+              0
+            ],
+            "faults": 8,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                4,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 10,
+            "page": 3,
+            "result": "F",
+            "victim": 0,
+            "slot": 2,
+            "frames": [
+              4,
+              2,
+              3
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                4,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 11,
+            "page": 0,
+            "result": "F",
+            "victim": 4,
+            "slot": 0,
+            "frames": [
+              0,
+              2,
+              3
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 12,
+            "page": 3,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              0,
+              2,
+              3
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 13,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              0,
+              2,
+              3
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 14,
+            "page": 1,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              0,
+              1,
+              3
+            ],
+            "faults": 11,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 15,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 2,
+            "frames": [
+              0,
+              1,
+              2
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 16,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              0,
+              1,
+              2
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 17,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              0,
+              1,
+              2
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 18,
+            "page": 7,
+            "result": "F",
+            "victim": 0,
+            "slot": 0,
+            "frames": [
+              7,
+              1,
+              2
+            ],
+            "faults": 13,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                7
+              ]
+            }
+          },
+          {
+            "reference_index": 19,
+            "page": 0,
+            "result": "F",
+            "victim": 1,
+            "slot": 1,
+            "frames": [
+              7,
+              0,
+              2
+            ],
+            "faults": 14,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                7,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 20,
+            "page": 1,
+            "result": "F",
+            "victim": 2,
+            "slot": 2,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 15,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-FIFO-SMALL",
+      "kind": "T自拟参考计算",
+      "algorithm": "fifo",
+      "input": {
+        "references": [
+          1,
+          2,
+          1,
+          3,
+          1,
+          2
+        ],
+        "frames": 2,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 6,
+        "faults": 5,
+        "fault_rate": 0.8333333333333334,
+        "final_frames": [
+          2,
+          1
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 3,
+            "result": "F",
+            "victim": 1,
+            "slot": 0,
+            "frames": [
+              3,
+              2
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 1,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              3,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 0,
+            "frames": [
+              2,
+              1
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-LRU-MAIN",
+      "kind": "报告独立参考计算，非项目引擎执行",
+      "algorithm": "lru",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 12
+      },
+      "input": {
+        "references": [
+          7,
+          0,
+          1,
+          2,
+          0,
+          3,
+          0,
+          4,
+          2,
+          3,
+          0,
+          3,
+          2,
+          1,
+          2,
+          0,
+          1,
+          7,
+          0,
+          1
+        ],
+        "frames": 3,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 20,
+        "faults": 12,
+        "fault_rate": 0.6,
+        "final_frames": [
+          1,
+          0,
+          7
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 7,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              7,
+              null,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                7
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 0,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              7,
+              0,
+              null
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              7,
+              0,
+              1
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 2,
+            "result": "F",
+            "victim": 7,
+            "slot": 0,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              1
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 3,
+            "result": "F",
+            "victim": 1,
+            "slot": 2,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                0,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 7,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              2,
+              0,
+              3
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 8,
+            "page": 4,
+            "result": "F",
+            "victim": 2,
+            "slot": 0,
+            "frames": [
+              4,
+              0,
+              3
+            ],
+            "faults": 6,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                0,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 9,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 2,
+            "frames": [
+              4,
+              0,
+              2
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                4,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 10,
+            "page": 3,
+            "result": "F",
+            "victim": 0,
+            "slot": 1,
+            "frames": [
+              4,
+              3,
+              2
+            ],
+            "faults": 8,
+            "policy_state": {
+              "oldest_to_newest": [
+                4,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 11,
+            "page": 0,
+            "result": "F",
+            "victim": 4,
+            "slot": 0,
+            "frames": [
+              0,
+              3,
+              2
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 12,
+            "page": 3,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              0,
+              3,
+              2
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                0,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 13,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              0,
+              3,
+              2
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                3,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 14,
+            "page": 1,
+            "result": "F",
+            "victim": 0,
+            "slot": 0,
+            "frames": [
+              1,
+              3,
+              2
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 15,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              1,
+              3,
+              2
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 16,
+            "page": 0,
+            "result": "F",
+            "victim": 3,
+            "slot": 1,
+            "frames": [
+              1,
+              0,
+              2
+            ],
+            "faults": 11,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 17,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              0,
+              2
+            ],
+            "faults": 11,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                0,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 18,
+            "page": 7,
+            "result": "F",
+            "victim": 2,
+            "slot": 2,
+            "frames": [
+              1,
+              0,
+              7
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                0,
+                1,
+                7
+              ]
+            }
+          },
+          {
+            "reference_index": 19,
+            "page": 0,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              0,
+              7
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                7,
+                0
+              ]
+            }
+          },
+          {
+            "reference_index": 20,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              0,
+              7
+            ],
+            "faults": 12,
+            "policy_state": {
+              "oldest_to_newest": [
+                7,
+                0,
+                1
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-LRU-SMALL",
+      "kind": "T自拟参考计算",
+      "algorithm": "lru",
+      "input": {
+        "references": [
+          1,
+          2,
+          1,
+          3,
+          1,
+          2
+        ],
+        "frames": 2,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 6,
+        "faults": 4,
+        "fault_rate": 0.6666666666666666,
+        "final_frames": [
+          1,
+          2
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 3,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              1,
+              3
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              3
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 1,
+            "frames": [
+              1,
+              2
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-BELADY-3",
+      "kind": "报告参考计算；与课件总数一致",
+      "algorithm": "fifo",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 10
+      },
+      "input": {
+        "references": [
+          1,
+          2,
+          3,
+          4,
+          1,
+          2,
+          5,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "frames": 3,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 12,
+        "faults": 9,
+        "fault_rate": 0.75,
+        "final_frames": [
+          5,
+          3,
+          4
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              null,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2,
+              null
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 3,
+            "result": "F",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              1,
+              2,
+              3
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 4,
+            "result": "F",
+            "victim": 1,
+            "slot": 0,
+            "frames": [
+              4,
+              2,
+              3
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 1,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              4,
+              1,
+              3
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                4,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 2,
+            "frames": [
+              4,
+              1,
+              2
+            ],
+            "faults": 6,
+            "policy_state": {
+              "oldest_to_newest": [
+                4,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 7,
+            "page": 5,
+            "result": "F",
+            "victim": 4,
+            "slot": 0,
+            "frames": [
+              5,
+              1,
+              2
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                5
+              ]
+            }
+          },
+          {
+            "reference_index": 8,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              5,
+              1,
+              2
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                5
+              ]
+            }
+          },
+          {
+            "reference_index": 9,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              5,
+              1,
+              2
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                5
+              ]
+            }
+          },
+          {
+            "reference_index": 10,
+            "page": 3,
+            "result": "F",
+            "victim": 1,
+            "slot": 1,
+            "frames": [
+              5,
+              3,
+              2
+            ],
+            "faults": 8,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                5,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 11,
+            "page": 4,
+            "result": "F",
+            "victim": 2,
+            "slot": 2,
+            "frames": [
+              5,
+              3,
+              4
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                5,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 12,
+            "page": 5,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              5,
+              3,
+              4
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                5,
+                3,
+                4
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-BELADY-4",
+      "kind": "报告参考计算；与课件总数一致",
+      "algorithm": "fifo",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 10
+      },
+      "input": {
+        "references": [
+          1,
+          2,
+          3,
+          4,
+          1,
+          2,
+          5,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "frames": 4,
+        "initial": "empty"
+      },
+      "expected": {
+        "reference_count": 12,
+        "faults": 10,
+        "fault_rate": 0.8333333333333334,
+        "final_frames": [
+          4,
+          5,
+          2,
+          3
+        ],
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              null,
+              null,
+              null
+            ],
+            "faults": 1,
+            "policy_state": {
+              "oldest_to_newest": [
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2,
+              null,
+              null
+            ],
+            "faults": 2,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 3,
+            "page": 3,
+            "result": "F",
+            "victim": null,
+            "slot": 2,
+            "frames": [
+              1,
+              2,
+              3,
+              null
+            ],
+            "faults": 3,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 4,
+            "page": 4,
+            "result": "F",
+            "victim": null,
+            "slot": 3,
+            "frames": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 5,
+            "page": 1,
+            "result": "H",
+            "victim": null,
+            "slot": 0,
+            "frames": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 6,
+            "page": 2,
+            "result": "H",
+            "victim": null,
+            "slot": 1,
+            "frames": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "faults": 4,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 7,
+            "page": 5,
+            "result": "F",
+            "victim": 1,
+            "slot": 0,
+            "frames": [
+              5,
+              2,
+              3,
+              4
+            ],
+            "faults": 5,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          },
+          {
+            "reference_index": 8,
+            "page": 1,
+            "result": "F",
+            "victim": 2,
+            "slot": 1,
+            "frames": [
+              5,
+              1,
+              3,
+              4
+            ],
+            "faults": 6,
+            "policy_state": {
+              "oldest_to_newest": [
+                3,
+                4,
+                5,
+                1
+              ]
+            }
+          },
+          {
+            "reference_index": 9,
+            "page": 2,
+            "result": "F",
+            "victim": 3,
+            "slot": 2,
+            "frames": [
+              5,
+              1,
+              2,
+              4
+            ],
+            "faults": 7,
+            "policy_state": {
+              "oldest_to_newest": [
+                4,
+                5,
+                1,
+                2
+              ]
+            }
+          },
+          {
+            "reference_index": 10,
+            "page": 3,
+            "result": "F",
+            "victim": 4,
+            "slot": 3,
+            "frames": [
+              5,
+              1,
+              2,
+              3
+            ],
+            "faults": 8,
+            "policy_state": {
+              "oldest_to_newest": [
+                5,
+                1,
+                2,
+                3
+              ]
+            }
+          },
+          {
+            "reference_index": 11,
+            "page": 4,
+            "result": "F",
+            "victim": 5,
+            "slot": 0,
+            "frames": [
+              4,
+              1,
+              2,
+              3
+            ],
+            "faults": 9,
+            "policy_state": {
+              "oldest_to_newest": [
+                1,
+                2,
+                3,
+                4
+              ]
+            }
+          },
+          {
+            "reference_index": 12,
+            "page": 5,
+            "result": "F",
+            "victim": 1,
+            "slot": 1,
+            "frames": [
+              4,
+              5,
+              2,
+              3
+            ],
+            "faults": 10,
+            "policy_state": {
+              "oldest_to_newest": [
+                2,
+                3,
+                4,
+                5
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-CLOCK-SMALL",
+      "kind": "T教学协议参考计算；非原课件初态",
+      "input": {
+        "references": [
+          1,
+          2,
+          3,
+          1,
+          4
+        ],
+        "frames": 3,
+        "hand": 0,
+        "initial": "empty"
+      },
+      "expected": {
+        "faults": 4,
+        "reference_count": 5,
+        "frames": [
+          4,
+          2,
+          3
+        ],
+        "bits": [
+          1,
+          0,
+          0
+        ],
+        "hand": 1,
+        "trace": [
+          {
+            "reference_index": 1,
+            "page": 1,
+            "result": "F",
+            "scans": [],
+            "victim": null,
+            "frames": [
+              1,
+              null,
+              null
+            ],
+            "bits": [
+              1,
+              0,
+              0
+            ],
+            "hand": 1,
+            "faults": 1
+          },
+          {
+            "reference_index": 2,
+            "page": 2,
+            "result": "F",
+            "scans": [],
+            "victim": null,
+            "frames": [
+              1,
+              2,
+              null
+            ],
+            "bits": [
+              1,
+              1,
+              0
+            ],
+            "hand": 2,
+            "faults": 2
+          },
+          {
+            "reference_index": 3,
+            "page": 3,
+            "result": "F",
+            "scans": [],
+            "victim": null,
+            "frames": [
+              1,
+              2,
+              3
+            ],
+            "bits": [
+              1,
+              1,
+              1
+            ],
+            "hand": 0,
+            "faults": 3
+          },
+          {
+            "reference_index": 4,
+            "page": 1,
+            "result": "H",
+            "scans": [],
+            "victim": null,
+            "frames": [
+              1,
+              2,
+              3
+            ],
+            "bits": [
+              1,
+              1,
+              1
+            ],
+            "hand": 0,
+            "faults": 3
+          },
+          {
+            "reference_index": 5,
+            "page": 4,
+            "result": "F",
+            "scans": [
+              {
+                "slot": 0,
+                "page": 1,
+                "before": 1,
+                "after": 0
+              },
+              {
+                "slot": 1,
+                "page": 2,
+                "before": 1,
+                "after": 0
+              },
+              {
+                "slot": 2,
+                "page": 3,
+                "before": 1,
+                "after": 0
+              },
+              {
+                "slot": 0,
+                "page": 1,
+                "before": 0,
+                "selected": true
+              }
+            ],
+            "victim": 1,
+            "frames": [
+              4,
+              2,
+              3
+            ],
+            "bits": [
+              1,
+              0,
+              0
+            ],
+            "hand": 1,
+            "faults": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-CLOCK-VISUAL",
+      "kind": "S图片局部人工核对，不补省略环",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 17
+      },
+      "input": {
+        "hand_slot": 2,
+        "visible_scanned": [
+          {
+            "slot": 2,
+            "page": 45,
+            "R": 1
+          },
+          {
+            "slot": 3,
+            "page": 191,
+            "R": 1
+          },
+          {
+            "slot": 4,
+            "page": 556,
+            "R": 0
+          }
+        ],
+        "incoming_page": 727
+      },
+      "expected": {
+        "clear_R_slots": [
+          2,
+          3
+        ],
+        "victim_page": 556,
+        "replaced_slot": 4,
+        "new_R": 1,
+        "next_hand": 5
+      },
+      "unknown": "其他未展开槽位数量/内容未补全"
+    },
+    {
+      "id": "CH03-T-RELOCATION",
+      "kind": "S题干/T复算，无官方答案声明",
+      "source": {
+        "source_id": "S3-02",
+        "physical_page": 22
+      },
+      "input": {
+        "known_logical_K": 100,
+        "known_physical_K": 120,
+        "query_logical_K": 250
+      },
+      "expected": {
+        "base_K": 20,
+        "physical_K": 270
+      }
+    },
+    {
+      "id": "CH03-T-INTERNAL",
+      "kind": "S图片参数/T复算，原页未设答案",
+      "source": {
+        "source_id": "S3-02",
+        "physical_page": 23
+      },
+      "input": {
+        "partition_lengths_K": [
+          8,
+          16,
+          32,
+          32
+        ],
+        "requests_K": [
+          15,
+          30,
+          10
+        ]
+      },
+      "expected": {
+        "partition_numbers": [
+          2,
+          3,
+          4
+        ],
+        "waste_K": [
+          1,
+          2,
+          22
+        ],
+        "total_internal_K": 25
+      }
+    },
+    {
+      "id": "CH03-T-TRANSLATION",
+      "kind": "S图片题及图片解答/T复算",
+      "source": {
+        "source_id": "S3-03",
+        "physical_pages": [
+          5,
+          6
+        ]
+      },
+      "input": {
+        "page_size_bytes": 4096,
+        "page_table": {
+          "0": 8,
+          "1": 4,
+          "2": 1,
+          "3": 9
+        },
+        "logical_addresses": [
+          8196,
+          15000
+        ]
+      },
+      "expected": [
+        {
+          "vpn": 2,
+          "offset": 4,
+          "frame": 1,
+          "physical": 4100
+        },
+        {
+          "vpn": 3,
+          "offset": 2712,
+          "frame": 9,
+          "physical": 39576
+        }
+      ]
+    },
+    {
+      "id": "CH03-T-EAT",
+      "kind": "S给定串行模型/T边界复算",
+      "source": {
+        "source_id": "S3-03",
+        "physical_page": 12
+      },
+      "input": {
+        "ram_ns": 200,
+        "tlb_ns": 40,
+        "hit_rate": 0.9,
+        "page_faults": false,
+        "data_access_included": true
+      },
+      "expected": {
+        "eat_ns": 260,
+        "no_tlb_baseline_ns": 400,
+        "latency_reduction": 0.35,
+        "h0_ns": 440,
+        "h1_ns": 240
+      }
+    },
+    {
+      "id": "CH03-T-ARRAY",
+      "kind": "S结论/T完整化模型复算",
+      "source": {
+        "source_id": "S3-04",
+        "physical_page": 5
+      },
+      "assumptions": [
+        "元素一字",
+        "数组按页对齐",
+        "每行128字且页128字",
+        "一数据页框",
+        "第一页预驻留不计初始装入",
+        "忽略代码与其他访问"
+      ],
+      "expected": {
+        "references": 16384,
+        "row_faults": 127,
+        "column_faults": 16383,
+        "initial_empty_row_faults": 128,
+        "initial_empty_column_faults": 16384,
+        "toy4x4_preloaded": {
+          "row": 3,
+          "column": 15
+        }
+      }
+    },
+    {
+      "id": "CH03-T-TWOLEVEL",
+      "kind": "S题与解答/T单位规范",
+      "source": {
+        "source_id": "S3-05",
+        "physical_pages": [
+          13,
+          14
+        ]
+      },
+      "input": {
+        "virtual_bits": 32,
+        "top_bits": 9,
+        "second_bits": 11,
+        "byte_addressed": true
+      },
+      "expected": {
+        "offset_bits": 12,
+        "page_bytes": 4096,
+        "virtual_pages": 1048576
+      },
+      "note": "未给PTE大小；若额外设4B，则二级表2048项占8192B，不得默认为一页"
+    },
+    {
+      "id": "CH03-T-TABLESIZE",
+      "kind": "S问题/T算术",
+      "source": {
+        "source_id": "S3-05",
+        "physical_page": 8
+      },
+      "input": {
+        "virtual_bits": 32,
+        "page_bytes": 4096,
+        "pte_bytes": 4
+      },
+      "expected": {
+        "entries": 1048576,
+        "bytes": 4194304,
+        "MiB": 4
+      },
+      "optional_64bit_assumption": {
+        "all_64_virtual_bits_used": true,
+        "page_bytes": 4096,
+        "pte_bytes": 4,
+        "entries": 4503599627370496,
+        "bytes": 18014398509481984,
+        "PiB": 16,
+        "note": "仅参数外推，不声称真实64位页表项为4B、虚址完整64位或所有页均有映射"
+      }
+    },
+    {
+      "id": "CH03-T-IPT",
+      "kind": "T自拟哈希碰撞",
+      "input": {
+        "page_bytes": 4096,
+        "query_pid": "B",
+        "query_vpn": 2,
+        "offset": 8,
+        "bucket_chain": [
+          {
+            "frame": 1,
+            "pid": "A",
+            "vpn": 2
+          },
+          {
+            "frame": 3,
+            "pid": "B",
+            "vpn": 2
+          }
+        ]
+      },
+      "expected": {
+        "visited_frames": [
+          1,
+          3
+        ],
+        "matched_frame": 3,
+        "physical": 12296
+      }
+    },
+    {
+      "id": "CH03-T-MULTI-TOY",
+      "kind": "T自拟非真实硬件",
+      "input": {
+        "virtual_bits": 16,
+        "split_bits": [
+          4,
+          4,
+          8
+        ],
+        "logical_hex": "0x2345",
+        "directory_2": "leaf",
+        "leaf_3_frame": 5
+      },
+      "expected": {
+        "top_index": 2,
+        "leaf_index": 3,
+        "offset": 69,
+        "physical": 1349
+      }
+    },
+    {
+      "id": "CH03-T-SEGMENT",
+      "kind": "T自拟半开边界",
+      "input": {
+        "base": 10000,
+        "length": 100,
+        "offsets": [
+          0,
+          99,
+          100
+        ]
+      },
+      "expected": [
+        10000,
+        10099,
+        "越界"
+      ]
+    },
+    {
+      "id": "CH03-T-SEGMENT-GROW",
+      "kind": "T自拟最小增长；完整策略未确认",
+      "input": {
+        "old_length": 100,
+        "offset": 120
+      },
+      "expected": {
+        "minimum_new_length": 121,
+        "minimum_growth": 21
+      }
+    },
+    {
+      "id": "CH03-T-SEGMENT-PAGING",
+      "kind": "T自拟3整页",
+      "input": {
+        "page_bytes": 4096,
+        "segment": 1,
+        "segment_pages": 3,
+        "page": 2,
+        "offset": 6,
+        "frame": 7
+      },
+      "expected": {
+        "physical": 28678,
+        "page_3": "越界",
+        "offset_4096": "非法页内偏移"
+      }
+    },
+    {
+      "id": "CH03-T-FF",
+      "kind": "T选区参考；FF/BF/WF使用S题，NF另给T游标",
+      "source": {
+        "source_id": "S3-02",
+        "physical_pages": [
+          24
+        ]
+      },
+      "input": {
+        "mode": "selector_only",
+        "unit": "K（原题同单位数量，不擅自转字节）",
+        "holes": [
+          {
+            "start": 20,
+            "length": 40
+          },
+          {
+            "start": 70,
+            "length": 25
+          },
+          {
+            "start": 100,
+            "length": 50
+          },
+          {
+            "start": 160,
+            "length": 30
+          }
+        ],
+        "request": 28,
+        "cursor_address": null
+      },
+      "expected": {
+        "chosen_start": 20,
+        "residual_start": 48,
+        "residual_length": 12
+      }
+    },
+    {
+      "id": "CH03-T-NF",
+      "kind": "T选区参考；FF/BF/WF使用S题，NF另给T游标",
+      "source": {
+        "source_id": "S3-02",
+        "physical_pages": [
+          15,
+          24
+        ]
+      },
+      "input": {
+        "mode": "selector_only",
+        "unit": "K（原题同单位数量，不擅自转字节）",
+        "holes": [
+          {
+            "start": 20,
+            "length": 40
+          },
+          {
+            "start": 70,
+            "length": 25
+          },
+          {
+            "start": 100,
+            "length": 50
+          },
+          {
+            "start": 160,
+            "length": 30
+          }
+        ],
+        "request": 28,
+        "cursor_address": 70
+      },
+      "expected": {
+        "chosen_start": 100,
+        "residual_start": 128,
+        "residual_length": 22
+      }
+    },
+    {
+      "id": "CH03-T-BF",
+      "kind": "T选区参考；FF/BF/WF使用S题，NF另给T游标",
+      "source": {
+        "source_id": "S3-02",
+        "physical_pages": [
+          24
+        ]
+      },
+      "input": {
+        "mode": "selector_only",
+        "unit": "K（原题同单位数量，不擅自转字节）",
+        "holes": [
+          {
+            "start": 20,
+            "length": 40
+          },
+          {
+            "start": 70,
+            "length": 25
+          },
+          {
+            "start": 100,
+            "length": 50
+          },
+          {
+            "start": 160,
+            "length": 30
+          }
+        ],
+        "request": 28,
+        "cursor_address": null
+      },
+      "expected": {
+        "chosen_start": 160,
+        "residual_start": 188,
+        "residual_length": 2
+      }
+    },
+    {
+      "id": "CH03-T-WF",
+      "kind": "T选区参考；FF/BF/WF使用S题，NF另给T游标",
+      "source": {
+        "source_id": "S3-02",
+        "physical_pages": [
+          24
+        ]
+      },
+      "input": {
+        "mode": "selector_only",
+        "unit": "K（原题同单位数量，不擅自转字节）",
+        "holes": [
+          {
+            "start": 20,
+            "length": 40
+          },
+          {
+            "start": 70,
+            "length": 25
+          },
+          {
+            "start": 100,
+            "length": 50
+          },
+          {
+            "start": 160,
+            "length": 30
+          }
+        ],
+        "request": 28,
+        "cursor_address": null
+      },
+      "expected": {
+        "chosen_start": 100,
+        "residual_start": 128,
+        "residual_length": 22
+      }
+    },
+    {
+      "id": "CH03-T-LFU-TICK",
+      "kind": "T提议窗口协议参考；需确认",
+      "input": {
+        "frames": 2,
+        "events": [
+          1,
+          2,
+          1,
+          3,
+          "TICK",
+          2
+        ],
+        "tie_break": "lowest_frame_slot",
+        "new_page_count": 1
+      },
+      "expected": {
+        "references": 5,
+        "faults": 4,
+        "final_frames": [
+          2,
+          3
+        ],
+        "final_counts": [
+          1,
+          0
+        ],
+        "victims": [
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "id": "CH03-T-APPROX-CANDIDATES",
+      "kind": "T可控随机输入的局部检验，不补全算法",
+      "input": {
+        "pages": [
+          "A",
+          "B",
+          "C"
+        ],
+        "R": [
+          1,
+          0,
+          0
+        ],
+        "candidate_order": "slot升序",
+        "random_u": 0.75
+      },
+      "expected": {
+        "candidate_slots": [
+          1,
+          2
+        ],
+        "selection_index": 1,
+        "victim_page": "C"
+      },
+      "not_defined": "全部R=1及定时事件优先级，A010完整实验仍阻断"
+    },
+    {
+      "id": "CH03-T-COALESCE",
+      "kind": "T自拟机制",
+      "input": {
+        "free": [
+          [
+            0,
+            10
+          ],
+          [
+            20,
+            30
+          ]
+        ],
+        "allocated_to_release": [
+          10,
+          20
+        ],
+        "interval": "half-open"
+      },
+      "expected": {
+        "free": [
+          [
+            0,
+            30
+          ]
+        ],
+        "total_free": 30
+      }
+    },
+    {
+      "id": "CH03-T-COMPACT",
+      "kind": "T自拟机制",
+      "input": {
+        "usable": [
+          0,
+          100
+        ],
+        "allocated": {
+          "P1": [
+            0,
+            20
+          ],
+          "P2": [
+            40,
+            70
+          ]
+        },
+        "request": 40
+      },
+      "expected": {
+        "before_total_free": 50,
+        "before_max_free": 30,
+        "after_move_P2": [
+          20,
+          50
+        ],
+        "allocated_request": [
+          50,
+          90
+        ],
+        "remaining_free": [
+          90,
+          100
+        ]
+      }
+    }
+  ]
+}

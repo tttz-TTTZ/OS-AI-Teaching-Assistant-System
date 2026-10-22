@@ -1,0 +1,898 @@
+[
+  {
+    "id": "CH03-K001",
+    "name": "地址重定位与边界检查",
+    "section": "3.1.1—3.1.2；3.2.1—3.2.2",
+    "categories": "B/D",
+    "learning_goal": "区分逻辑/物理地址、静态/动态重定位，并判断访问是否越界。",
+    "recommendation_reason": "转换时机、基址加法和边界检查常被混为一个步骤。",
+    "prerequisites": "地址、进程、连续存储区。",
+    "core_explanation": "静态重定位在装入阶段处理需要重定位的地址引用；动态重定位在运行中通过转换机构完成。基址—长度教学模型先验证偏移，再将合法偏移加上当前基址；移动物理区域不应改变程序使用的逻辑偏移。",
+    "rules_and_limits": "T：使用从0开始的半开范围0≤d<L，物理地址B+d；L是长度，不是最大下标。地址范围检查与权限检查分开。本模型不代表所有体系结构只用一个基址寄存器。",
+    "misconception_and_correction": "误解：知道B+d就能访问任意地址。纠正：还要通过范围、映射和权限检查；不是把所有数值常量都按地址重定位。",
+    "example": "S题干复算/T推导：S3-02第22页100K→120K，基址20K，故250K→270K；原页未提供官方答案。",
+    "presentation": "静态/动态对比表回答何时转换；F001展示检查路径；小步调节偏移展示边界。",
+    "sources": [
+      {
+        "source_id": "S3-01",
+        "filename": "3.1.存储管理基础 .pptx",
+        "physical_pages": [
+          9,
+          26
+        ],
+        "quote_page": 9,
+        "short_quote": "静态重定位：在程序装入内存时进行地址转换",
+        "evidence_type": "S-text"
+      },
+      {
+        "source_id": "S3-02",
+        "filename": "3.2 连续分区存储管理 .pptx",
+        "physical_pages": [
+          18,
+          22
+        ],
+        "quote_page": 18,
+        "short_quote": "逻辑地址",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持机制；半开范围与具体演示为T；段长记法仍待确认。",
+    "related_ids": [
+      "CH03-K002",
+      "CH03-K006",
+      "CH03-K019"
+    ],
+    "formal_recommendation": "核心；U001主内容。",
+    "issue_ids": [
+      "CH03-V003",
+      "CH03-V021"
+    ]
+  },
+  {
+    "id": "CH03-K002",
+    "name": "映射、共享与权限检查",
+    "section": "3.1.2；联系3.3.1、3.4.1",
+    "categories": "B/D/E",
+    "learning_goal": "分别判断地址合法、映射存在、当前操作获准。",
+    "recommendation_reason": "能找到物理位置并不代表允许读写，私有与共享也不是权限的充分条件。",
+    "prerequisites": "K001、进程地址空间。",
+    "core_explanation": "不同进程可有映射指向同一物理对象，并具有不同访问权限。合法访问需要范围、映射状态与操作权限共同满足；共享不是为每个进程复制一份内容。",
+    "rules_and_limits": "T：私有内存也可能只读或不可执行；共享内存不必可写。不能将课件简化的“私有区可读可写”扩大成所有系统规律。",
+    "misconception_and_correction": "误解：共享页意味着完全共享地址空间。纠正：共享可限于指定映射，其他区域仍独立。",
+    "example": "T自拟：A与B映射同一只读代码页，执行可被允许，写入走保护异常，不应通过缺页调入“解决”。",
+    "presentation": "G001与权限对比表；共享关系可点击，不必另做完整动画。",
+    "sources": [
+      {
+        "source_id": "S3-01",
+        "filename": "3.1.存储管理基础 .pptx",
+        "physical_pages": [
+          11,
+          12
+        ],
+        "quote_page": 12,
+        "short_quote": "公共区中的共享信息：根据授权",
+        "evidence_type": "S-text"
+      },
+      {
+        "source_id": "S3-06",
+        "filename": "3.4 段式存储管理 .pptx",
+        "physical_pages": [
+          6
+        ],
+        "quote_page": 6,
+        "short_quote": "不满足保护条件则产生保护中断",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持共享保护；通用权限解释为T；泛化表述需规范。",
+    "related_ids": [
+      "CH03-K001",
+      "CH03-K009",
+      "CH03-K010",
+      "CH03-K019",
+      "CH03-K021"
+    ],
+    "formal_recommendation": "合并进入U001/U005/U012，不新增重复独立卡。",
+    "issue_ids": [
+      "CH03-V021"
+    ]
+  },
+  {
+    "id": "CH03-K003",
+    "name": "内零头与外零头",
+    "section": "3.2.1—3.2.2",
+    "categories": "B",
+    "learning_goal": "区分两种碎片位置，并计算固定分区的内零头。",
+    "recommendation_reason": "未分配空闲区与已分配单元内部剩余空间容易混算。",
+    "prerequisites": "固定分区、可变分区、容量。",
+    "core_explanation": "内零头在已分配单元内部；外零头是已分配区之间分散的空闲。连续分配受最大连续空闲区限制，不能只看总空闲量。",
+    "rules_and_limits": "T：仅统计本题已分配分区的内部剩余，未使用整块分区不算该项内零头。简单模型无对齐/元数据/最小切分开销；引入这些因素必须扩充说明。",
+    "misconception_and_correction": "误解：可变分区不浪费空间。纠正：精确切分可减少一种浪费，但仍可能产生外零头。",
+    "example": "S3-02第23页图表长度8/16/32/32K，请求15/30/10K按分区号查找，选择16/32/32K，T复算内零头1+2+22=25K。不可换用第6页另一张表。",
+    "presentation": "双色内存条、计量口径表与手算；静态图已足够。",
+    "sources": [
+      {
+        "source_id": "S3-02",
+        "filename": "3.2 连续分区存储管理 .pptx",
+        "physical_pages": [
+          5,
+          6,
+          8,
+          19,
+          23
+        ],
+        "quote_page": 19,
+        "short_quote": "固定分区方式会产生内存内零头",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持概念与题干；25K是T推导，图片表已人工核对，原题未设答案。",
+    "related_ids": [
+      "CH03-K004",
+      "CH03-K006",
+      "CH03-K008"
+    ],
+    "formal_recommendation": "核心；U002。",
+    "issue_ids": [
+      "CH03-V026"
+    ]
+  },
+  {
+    "id": "CH03-K004",
+    "name": "四种连续分区适配策略",
+    "section": "3.2.2",
+    "categories": "B/C",
+    "learning_goal": "在同一空闲表执行FF/NF/BF/WF，解释本次选择。",
+    "recommendation_reason": "扫描顺序、起点、尺寸比较和平局会改变结果。",
+    "prerequisites": "空闲区、区间与链表。",
+    "core_explanation": "FF选择地址顺序第一个足够大区域；NF从上次扫描位置继续；BF选择足够大的最小区域；WF选择最大可用区域。策略规定选择，不等于自动具备完整内存管理器。",
+    "rules_and_limits": "T：足够大为长度≥请求；从所选区低地址端切分；BF/WF同长度按起址；NF需完整游标协议。优缺点依负载与数据结构，不能保证BF全局最优。",
+    "misconception_and_correction": "误解：最佳适应等于整个请求序列的最佳。纠正：这里只最小化本次选中区域大小。",
+    "example": "S3-02第24页请求28K：FF起址20K、BF160K、WF100K。T另设NF初始从70K项开始则选100K；NF不是原题答案。",
+    "presentation": "并列内存条、逐项扫描、剩余区表；AN001需新引擎。",
+    "sources": [
+      {
+        "source_id": "S3-02",
+        "filename": "3.2 连续分区存储管理 .pptx",
+        "physical_pages": [
+          13,
+          14,
+          15,
+          16,
+          24
+        ],
+        "quote_page": 14,
+        "short_quote": "分配第一个满足长度要求的空闲区",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持四策略；切分、平局和NF协议为T。",
+    "related_ids": [
+      "CH03-K003",
+      "CH03-K005",
+      "CH03-K006"
+    ],
+    "formal_recommendation": "核心；U003。",
+    "issue_ids": [
+      "CH03-V011",
+      "CH03-V023",
+      "CH03-V028"
+    ]
+  },
+  {
+    "id": "CH03-K005",
+    "name": "回收与相邻空闲区合并",
+    "section": "3.2.2",
+    "categories": "B/D",
+    "learning_goal": "处理无邻接、仅前、仅后、前后均邻接四种回收情况。",
+    "recommendation_reason": "表中相邻不必是物理相邻，合并还改变表项与游标。",
+    "prerequisites": "区间、已分配表与空闲表。",
+    "core_explanation": "释放已分配区后检查物理端点是否相接，将相邻空闲区合并。前后都相邻时三块成为一块，不能留下虚假的碎片。",
+    "rules_and_limits": "T：用分配ID释放，拒绝未知ID、双重释放、重叠；改变空闲表时同步修复NF游标。失败不改变状态，区间数量与容量守恒分别检查。",
+    "misconception_and_correction": "误解：直接插入一条空闲记录就完成回收。纠正：还要验证并合并相邻区。",
+    "example": "T自拟：空闲[0,10)、[20,30)，释放已分配[10,20)，结果[0,30)。",
+    "presentation": "四类邻接图、F003、AN001逐步更新表项。",
+    "sources": [
+      {
+        "source_id": "S3-02",
+        "filename": "3.2 连续分区存储管理 .pptx",
+        "physical_pages": [
+          17
+        ],
+        "quote_page": 17,
+        "short_quote": "X终止前",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S图示支持四类变化；区间规范和错误处理为T。",
+    "related_ids": [
+      "CH03-K004",
+      "CH03-K006"
+    ],
+    "formal_recommendation": "核心；合入U003，不另重复建分配概览。",
+    "issue_ids": [
+      "CH03-V011",
+      "CH03-V028"
+    ]
+  },
+  {
+    "id": "CH03-K006",
+    "name": "紧凑、连续空间与重定位",
+    "section": "3.2.2",
+    "categories": "B/D",
+    "learning_goal": "区分总空闲和最大连续空闲，解释移动后基址/表格如何同步。",
+    "recommendation_reason": "空间变化与地址转换、不可移动条件相关。",
+    "prerequisites": "K001/K003/K005。",
+    "core_explanation": "紧凑通过移动可移动区域提高空闲区连续性，不增加总空闲量。逻辑偏移应不变，物理基址及分配元数据改变。",
+    "rules_and_limits": "T：不是总空闲足够就能立即紧凑；需考虑锁定/不可移动区域、共享引用、搬迁开销和一致更新。资源不足或受阻时等待/失败，不无限循环。",
+    "misconception_and_correction": "误解：紧凑能凭空增大可用容量。纠正：它主要改变分布。",
+    "example": "T自拟：可用[0,100)，P1[0,20)、P2[40,70)，空闲20+30；请求40直接失败。将P2移至[20,50)，得到50连续空闲，分配[50,90)后剩10。",
+    "presentation": "前后布局、基址变化表、F002；先分步图而非自由拖拽。",
+    "sources": [
+      {
+        "source_id": "S3-02",
+        "filename": "3.2 连续分区存储管理 .pptx",
+        "physical_pages": [
+          20,
+          21
+        ],
+        "quote_page": 20,
+        "short_quote": "需要动态重定位支撑",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持紧凑与动态重定位；不可移动约束与案例为T。",
+    "related_ids": [
+      "CH03-K001",
+      "CH03-K003",
+      "CH03-K004",
+      "CH03-K005",
+      "CH03-K020"
+    ],
+    "formal_recommendation": "核心；U003的进阶步骤。",
+    "issue_ids": [
+      "CH03-V020",
+      "CH03-V023",
+      "CH03-V028"
+    ]
+  },
+  {
+    "id": "CH03-K007",
+    "name": "局部性、虚拟内存与覆盖/对换",
+    "section": "3.1.3；联系3.1.1、3.4.2",
+    "categories": "B/E",
+    "learning_goal": "解释部分驻留的依据，并区分OS自动管理与用户安排覆盖。",
+    "recommendation_reason": "多个机制都使用辅存但粒度和控制者不同。",
+    "prerequisites": "进程、主存/辅存、程序访问。",
+    "core_explanation": "时间和空间局部性使部分驻留具有实际价值。虚拟内存分离程序使用的地址空间与当前物理驻留；覆盖由程序设计者安排，而按需调页/调段由系统管理。",
+    "rules_and_limits": "T：不把全部页面必须预存交换区、只装第一页或主存与辅存同速当作一般定义。后备来源与映射合法性必须另有元数据。",
+    "misconception_and_correction": "误解：虚拟内存只是把磁盘换个名字当内存。纠正：它是映射、驻留和异常处理等机制的协作。",
+    "example": "T自拟：罕用错误处理代码可暂不驻留，真正访问时再由系统按合法映射处理。",
+    "presentation": "覆盖/对换/请求分页对比表、G003前置说明。定义保留短摘要，重点只讲差异。",
+    "sources": [
+      {
+        "source_id": "S3-01",
+        "filename": "3.1.存储管理基础 .pptx",
+        "physical_pages": [
+          3,
+          13,
+          15,
+          16,
+          17,
+          18
+        ],
+        "quote_page": 16,
+        "short_quote": "随用随调入",
+        "evidence_type": "S-text"
+      },
+      {
+        "source_id": "S3-06",
+        "filename": "3.4 段式存储管理 .pptx",
+        "physical_pages": [
+          8
+        ],
+        "quote_page": 8,
+        "short_quote": "段的调进调出是由OS自动实现的",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持基本思想；一般化解释为T；原文简化与指代见V。",
+    "related_ids": [
+      "CH03-K012",
+      "CH03-K013",
+      "CH03-K020"
+    ],
+    "formal_recommendation": "U004短单元，普通定义不包装成多个难点。",
+    "issue_ids": [
+      "CH03-V005",
+      "CH03-V019",
+      "CH03-V021"
+    ]
+  },
+  {
+    "id": "CH03-K008",
+    "name": "分页地址拆分与页表映射",
+    "section": "3.3.1",
+    "categories": "B/D",
+    "learning_goal": "计算页号、页内偏移与物理地址，并检测无效映射。",
+    "recommendation_reason": "不是十进制数字拼接；需要整数商、余数与合法查表。",
+    "prerequisites": "整数除法、页与页框。",
+    "core_explanation": "页面大小P时，页号是VA整除P，偏移是VA模P；页表映射到页框f，PA=f×P+偏移。分页保持页内偏移不变，页号并不等于页框号。",
+    "rules_and_limits": "T：页号、页框号、地址和范围为整数；非法页号、未定义映射、保护错误分别处理。页号0合法。位示图极性需明示，不从0/1字样推断。 T：按位拆分演示限定P为2的幂；非2幂若允许，仅用商/余数算术，不伪造固定偏移位段。",
+    "misconception_and_correction": "误解：页号相同则物理位置也相同。纠正：映射依地址空间和页表。",
+    "example": "S3-03第5—6页：P4096，0→8/1→4/2→1/3→9；8196→4100，15000→39576。图片解答可核对。",
+    "presentation": "地址位段、表项与页框同步高亮；F004/AN002。",
+    "sources": [
+      {
+        "source_id": "S3-03",
+        "filename": "3.3 页式存储管理 .pptx",
+        "physical_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "quote_page": 3,
+        "short_quote": "页号和单元号",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持机制及图片答案；输入边界为T；第4页重叠数字不作测试。",
+    "related_ids": [
+      "CH03-K009",
+      "CH03-K010",
+      "CH03-K011",
+      "CH03-K012",
+      "CH03-K018"
+    ],
+    "formal_recommendation": "核心；U005。",
+    "issue_ids": [
+      "CH03-V002",
+      "CH03-V026"
+    ]
+  },
+  {
+    "id": "CH03-K009",
+    "name": "页共享的映射与寻址条件",
+    "section": "3.3.1",
+    "categories": "B/E",
+    "learning_goal": "解释不同虚拟页映射同一物理页，并判断代码共享需要哪些假设。",
+    "recommendation_reason": "课件的“代码必须相同页号”不是可直接泛化的规则。",
+    "prerequisites": "K002/K008、地址相关代码概念。",
+    "core_explanation": "多个页表项可以指向同一页框。代码能否映射到不同虚拟地址，取决于寻址和重定位方式，不能仅靠“代码共享”判断。",
+    "rules_and_limits": "T：区分数据共享、特定地址相关代码与位置无关等情形；权限单独维护，不将课件限制变成跨体系结构定律。",
+    "misconception_and_correction": "误解：共享物理页会使整个地址空间都共享。纠正：可以只共享指定页，权限和其他映射仍独立。",
+    "example": "T自拟：A的页2与B的页5映射框7，可表示同一数据页；是否可执行同一代码需另列条件。",
+    "presentation": "两个页表到一个页框的关系图；作为U005小节，无需重复共享动画。",
+    "sources": [
+      {
+        "source_id": "S3-03",
+        "filename": "3.3 页式存储管理 .pptx",
+        "physical_pages": [
+          8
+        ],
+        "quote_page": 8,
+        "short_quote": "不同进程可以使用不同页号共享数据页",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持数据共享；代码条件为T/V，争议句不出直接判分题。",
+    "related_ids": [
+      "CH03-K002",
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K019"
+    ],
+    "formal_recommendation": "限定条件后纳入U005。",
+    "issue_ids": [
+      "CH03-V004"
+    ]
+  },
+  {
+    "id": "CH03-K010",
+    "name": "TLB、页表与地址空间切换",
+    "section": "3.3.2",
+    "categories": "B/D",
+    "learning_goal": "区分TLB未命中与缺页，防止跨进程同VPN误命中。",
+    "recommendation_reason": "缓存映射和缓存数据、页面驻留是不同层次。",
+    "prerequisites": "K008、进程切换。",
+    "core_explanation": "TLB缓存转换信息，未命中时查页表；页表显示已驻留时无需辅存调入。进程切换后不能把旧进程同页号映射用于新进程。",
+    "rules_and_limits": "T：教学实现选择上下文标识或切换清理等协议，不能省略上下文；真正硬件行为依架构。页表修改后的相关TLB失效也应明确。",
+    "misconception_and_correction": "误解：TLB没有就一定要读磁盘。纠正：可能只是需要查驻留页表。",
+    "example": "T自拟：A页1→框4，B页1→框9；切到B后不能沿用A页1映射。",
+    "presentation": "TLB/页表/缺页分流F004、上下文关系G003、AN002。",
+    "sources": [
+      {
+        "source_id": "S3-03",
+        "filename": "3.3 页式存储管理 .pptx",
+        "physical_pages": [
+          10,
+          11,
+          13,
+          14,
+          15
+        ],
+        "quote_page": 13,
+        "short_quote": "若该页不在快表中，则再查主存页表形成绝对地址",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持快表与上下文；标识/失效协议为T。",
+    "related_ids": [
+      "CH03-K008",
+      "CH03-K011",
+      "CH03-K012",
+      "CH03-K018",
+      "CH03-K021"
+    ],
+    "formal_recommendation": "核心；U006。",
+    "issue_ids": [
+      "CH03-V024"
+    ]
+  },
+  {
+    "id": "CH03-K011",
+    "name": "TLB有效访问时间与模型假设",
+    "section": "3.3.2",
+    "categories": "B",
+    "learning_goal": "按路径建立加权公式，明确其是否包含最终数据访问。",
+    "recommendation_reason": "漏计访存及误把缺页I/O包含在简单公式中会导致答案错误。",
+    "prerequisites": "概率、K010。",
+    "core_explanation": "课件的串行TLB、单级驻留页表、无缺页模型：EAT=h(tT+tM)+(1−h)(tT+2tM)。命中省去页表访存，不省最终数据访问。",
+    "rules_and_limits": "T：公式包含数据访问；不直接覆盖并行查找、多级页表、Cache或缺页I/O。时间统一ns。下降35%是延迟减少，不等同吞吐率增加35%。",
+    "misconception_and_correction": "误解：命中路径只计TLB时间。纠正：还需访问数据。",
+    "example": "S3-03第12页：h=.9、tM200ns、tT40ns→260ns；同模型h0→440ns、h1→240ns为T边界推导。",
+    "presentation": "两路径计时条与计算表足够，不必独立动画。",
+    "sources": [
+      {
+        "source_id": "S3-03",
+        "filename": "3.3 页式存储管理 .pptx",
+        "physical_pages": [
+          10,
+          11,
+          12
+        ],
+        "quote_page": 12,
+        "short_quote": "260毫微秒",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S给公式与260；边界和口径解释T。",
+    "related_ids": [
+      "CH03-K010",
+      "CH03-K018"
+    ],
+    "formal_recommendation": "核心；U006计算部分。",
+    "issue_ids": [
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K012",
+    "name": "缺页、脏页写回与原指令重试",
+    "section": "3.3.3",
+    "categories": "B/D",
+    "learning_goal": "完整解释合法缺页从检测到重试，并区分保护错误。",
+    "recommendation_reason": "跨CPU、OS、页框、I/O和进程状态；路径多。",
+    "prerequisites": "K007/K008/K010、异常处理。",
+    "core_explanation": "合法页未驻留触发缺页；OS获取空框或选择牺牲页。脏页需完成写回后再安全复用，随后调入、更新表和TLB、恢复并重试。不是所有缺页都发生替换。",
+    "rules_and_limits": "T：非法/无权限地址不靠调页解决；缺页、写回、读入、扫描分开；同一逻辑引用的重试不重复计数。资源不可用和I/O失败需明确等待/失败，不能丢失脏数据。",
+    "misconception_and_correction": "误解：缺页后跳过原指令或再把重试算新引用。纠正：处理完成重试，统计口径保持同一次引用。",
+    "example": "T自拟：页2不驻留、无空框，外部选择器指定脏页1；写回1→读入2→更新→重试。指定牺牲页只是场景，不暗示某算法必选1。",
+    "presentation": "F005泳道与AN003；CPU/OS/I/O及等待原因同步呈现。",
+    "sources": [
+      {
+        "source_id": "S3-03",
+        "filename": "3.3 页式存储管理 .pptx",
+        "physical_pages": [
+          17,
+          18,
+          19,
+          20,
+          21
+        ],
+        "quote_page": 21,
+        "short_quote": "重执被中断指令",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持主流程；错误与计数协议T；首次第一页定义V。",
+    "related_ids": [
+      "CH03-K007",
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K014",
+      "CH03-K015"
+    ],
+    "formal_recommendation": "核心；U007。",
+    "issue_ids": [
+      "CH03-V005",
+      "CH03-V021",
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K013",
+    "name": "数组布局、访问顺序与缺页率",
+    "section": "3.3.4",
+    "categories": "B/D",
+    "learning_goal": "从循环顺序推出页面引用，并核对缺页统计。",
+    "recommendation_reason": "相同赋值数量不代表相同存储行为；依赖布局假设。",
+    "prerequisites": "二维数组、行优先布局、分页。",
+    "core_explanation": "按行存放且一行恰占一页时，行遍历重复使用当前页；列遍历在单框模型中不断跨页。页序列必须从地址计算得到，不能直接按动画方向加缺页数。",
+    "rules_and_limits": "T前提：一元素一字、页128字、数组按页对齐、仅一个数据页框、第一页预驻留、不计代码等额外访问。原文未逐项列出，属于使课件结论成立的显式教学假设。",
+    "misconception_and_correction": "误解：128与16383适用于任何C实现。纠正：页大小单位、元素宽度、对齐和额外访问改变结果。",
+    "example": "S给结论/T条件化复算：128×128时行访问127缺页、列访问16383；同假设4×4缩小模型为3与15；初始为空则各加1。",
+    "presentation": "数组、页号、唯一数据框及计数同步；AN004。",
+    "sources": [
+      {
+        "source_id": "S3-04",
+        "filename": "3.3-4 页面调度 .pptx",
+        "physical_pages": [
+          3,
+          4,
+          5
+        ],
+        "quote_page": 5,
+        "short_quote": "数组元素按行存放",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持代码意图与结果；精确前提与缩小案例T，图中文字重叠V。",
+    "related_ids": [
+      "CH03-K007",
+      "CH03-K012",
+      "CH03-K014"
+    ],
+    "formal_recommendation": "核心；U008。",
+    "issue_ids": [
+      "CH03-V018",
+      "CH03-V025",
+      "CH03-V026",
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K014",
+    "name": "OPT/FIFO/LRU与Belady异常",
+    "section": "3.3.4",
+    "categories": "B/C",
+    "learning_goal": "按不同历史/未来依据选页，统计缺页并解释增加页框反而更多缺页的反例。",
+    "recommendation_reason": "三个策略规则相近但命中时的状态更新不同。",
+    "prerequisites": "页引用串、驻留、K012。",
+    "core_explanation": "OPT使用未来引用，FIFO按装入顺序，LRU按最近访问。FIFO命中不重排，LRU命中更新最近记录。OPT是离线比较基准，不能称为现实系统预知未来。",
+    "rules_and_limits": "T：默认空框，初始驻留扩展需相应历史；采用固定物理槽位。比较使用同串同初始条件；缺页F/A不重复计重试。FIFO可能Belady，不能笼统声称页框更多总更好。",
+    "misconception_and_correction": "误解：FIFO命中后将该页移到队尾。纠正：那会改变FIFO装入顺序语义。",
+    "example": "S3-04第7/9/12页20次引用3框→OPT9/FIFO15/LRU12；第10页FIFO3框9、4框10。另T小串1,2,1,3,1,2配2框→4/5/4。",
+    "presentation": "G004、逐步表与AN005；共同引用列，不把不同算法物理槽位排列强行统一成访问队列。",
+    "sources": [
+      {
+        "source_id": "S3-04",
+        "filename": "3.3-4 页面调度 .pptx",
+        "physical_pages": [
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "quote_page": 8,
+        "short_quote": "最先调入主存的那一页",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持规则与例题；平局/初始状态T。",
+    "related_ids": [
+      "CH03-K012",
+      "CH03-K013",
+      "CH03-K015",
+      "CH03-K016"
+    ],
+    "formal_recommendation": "核心；U009。",
+    "issue_ids": [
+      "CH03-V007",
+      "CH03-V025",
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K015",
+    "name": "CLOCK引用位与指针扫描",
+    "section": "3.3.4",
+    "categories": "B/C/D",
+    "learning_goal": "区分程序访问置位、扫描清位、替换和指针前进。",
+    "recommendation_reason": "一次缺页可能扫描多次，视觉跳转会漏掉核心机制。",
+    "prerequisites": "循环结构、引用位、K014。",
+    "core_explanation": "访问/装入置引用位1；替换时从指针扫描，遇1清0跳过，遇0选择替换，再前进。基础单线程模型扫描期间不穿插新访问，因而全1也能找到候选。",
+    "rules_and_limits": "T：默认空槽从指针装入并前进；满框命中不移动指针。扫描不是新引用，基础模型不含锁页；若加入锁页必须另定义无候选处理。",
+    "misconception_and_correction": "误解：CLOCK完全等价LRU，或每扫描一次就新增缺页。纠正：它只保留有限使用信息，缺页按引用统计。",
+    "example": "S3-04第17页可核对局部：指针从槽2页45开始，清45/191，替换槽4的556为727，指针到槽5。未展开的环部分不补猜。",
+    "presentation": "F009与AN006，逐次扫描、位变化和回退。",
+    "sources": [
+      {
+        "source_id": "S3-04",
+        "filename": "3.3-4 页面调度 .pptx",
+        "physical_pages": [
+          15,
+          16,
+          17
+        ],
+        "quote_page": 16,
+        "short_quote": "引用标志位清0，并跳过",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持扫描及图片局部；空槽/初始协议T。",
+    "related_ids": [
+      "CH03-K012",
+      "CH03-K014",
+      "CH03-K016"
+    ],
+    "formal_recommendation": "核心；U010。",
+    "issue_ids": [
+      "CH03-V012",
+      "CH03-V025",
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K016",
+    "name": "引用位近似LRU与窗口LFU",
+    "section": "3.3.4",
+    "categories": "B/C/E",
+    "learning_goal": "区分完整最近历史、引用位采样与窗口访问频率。",
+    "recommendation_reason": "同名变体与未定义规则会使实验无唯一答案。",
+    "prerequisites": "K014/K015。",
+    "core_explanation": "课件近似LRU定时清引用位，访问置1，从0位中随机选；课件LFU定时清计数，每次访问加1，淘汰当前窗口计数最小者。两者都不应偷换为终身累计/精确LRU。",
+    "rules_and_limits": "T/V：需时钟事件顺序、时间间隔、平局、新页初始化、随机协议、全为1的处理。不能声称LFU对所有负载都优于LRU或更接近OPT。",
+    "misconception_and_correction": "误解：只要名称是LFU就能唯一复现。纠正：窗口、平局与更新时机必须一致。",
+    "example": "T自拟LFU：2框引用1,2,1,3，先淘汰2；TICK清零后引用2，若同频按槽位则淘汰槽0的1，总5引用4缺页。这不是原课件题目。",
+    "presentation": "对比表与受限候选集案例；未定规则的完整运行按钮不提供。",
+    "sources": [
+      {
+        "source_id": "S3-04",
+        "filename": "3.3-4 页面调度 .pptx",
+        "physical_pages": [
+          13,
+          14
+        ],
+        "quote_page": 14,
+        "short_quote": "时间间隔中断发生后，所有计数器清0",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持部分规则；可执行协议是T，尚需确认，E保留。",
+    "related_ids": [
+      "CH03-K014",
+      "CH03-K015"
+    ],
+    "formal_recommendation": "U010可选进阶，不单独包装两个已完成实验。",
+    "issue_ids": [
+      "CH03-V009",
+      "CH03-V010",
+      "CH03-V025"
+    ]
+  },
+  {
+    "id": "CH03-K017",
+    "name": "反置页表、哈希链与完整键比较",
+    "section": "3.3.5",
+    "categories": "B/D/E",
+    "learning_goal": "解释按物理页框组织的数据如何支持虚拟地址查询。",
+    "recommendation_reason": "组织方向与查找方向易混；哈希值不是完整身份。",
+    "prerequisites": "页表、进程标识、哈希冲突。",
+    "core_explanation": "反置页表按页框组织表项，记录进程标识/虚页号及状态。查询先定位桶，再沿链比较完整键；匹配项的索引给出页框号。没有匹配还需判断映射是否合法，不能为任意地址直接调页。",
+    "rules_and_limits": "T：共享别名与缺失后备元数据超出基本模型；MMU执行转换/维护信息不代表OS置换政策由它独立决定。课件“每框建一页表”应辨析为表项。",
+    "misconception_and_correction": "误解：IPT只能做物理→逻辑转换。纠正：反向组织可通过检索服务虚拟→物理转换。",
+    "example": "T自拟：同桶框1=(A,2)、框3=(B,2)，查询(B,2,8)须跳过框1；P4096得到框3地址12296。",
+    "presentation": "G005、哈希链点击路径；无需完整动画。",
+    "sources": [
+      {
+        "source_id": "S3-05",
+        "filename": "3.3-5 反置页表与多级页表 .pptx",
+        "physical_pages": [
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "quote_page": 5,
+        "short_quote": "MMU遍历哈希链找到所需进程的虚页号",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持组织/链查；正确性解释T；原文角色与措辞V。",
+    "related_ids": [
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K018"
+    ],
+    "formal_recommendation": "U011可选进阶；不与多级页表误合为同一种结构。",
+    "issue_ids": [
+      "CH03-V013",
+      "CH03-V014"
+    ]
+  },
+  {
+    "id": "CH03-K018",
+    "name": "多级页表的空间与访存权衡",
+    "section": "3.3.6",
+    "categories": "B/D",
+    "learning_goal": "算页表大小、拆层级位段，说明稀疏节省与多级访存代价。",
+    "recommendation_reason": "位数、项数、字节与查找层数容易混淆。",
+    "prerequisites": "二进制、K008/K010。",
+    "core_explanation": "平面页表可能很大，多级结构按目录分层组织，对稀疏映射可只建立所需下级表；代价是TLB未命中时更多查表步骤。不是层数更多就一定更省/更快。",
+    "rules_and_limits": "T：32位4KiB页4B项→2^20项、4MiB。二级“三次访存”包含数据、且表驻留无TLB命中。9/11/12是题给划分，不擅自改成10/10/12；若每项4B，2048项的下级表是8KiB，不能硬说一张必占一个4KiB页。",
+    "misconception_and_correction": "误解：“页面长度12位”就是页面12bit。纠正：这里可确定页内偏移12位，字节编址时页4KiB。",
+    "example": "S3-05第13—14页：顶级9位、二级11位、偏移12位，虚页2^20。T玩具模型16位按4/4/8划分，VA0x2345、目录2到叶表、叶3到框5，PA1349。",
+    "presentation": "位段、容量表、F006与可点击路径；64位仅显式假设下算术外推。",
+    "sources": [
+      {
+        "source_id": "S3-05",
+        "filename": "3.3-5 反置页表与多级页表 .pptx",
+        "physical_pages": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14
+        ],
+        "quote_page": 9,
+        "short_quote": "逻辑地址结构有三部分组成",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持层级与题目；玩具模型、单位与边界T；架构细节V。",
+    "related_ids": [
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K011",
+      "CH03-K017",
+      "CH03-K021"
+    ],
+    "formal_recommendation": "核心；U011主内容。",
+    "issue_ids": [
+      "CH03-V015",
+      "CH03-V016",
+      "CH03-V017",
+      "CH03-V026",
+      "CH03-V027"
+    ]
+  },
+  {
+    "id": "CH03-K019",
+    "name": "段式地址转换与段共享",
+    "section": "3.4.1",
+    "categories": "B/D/E",
+    "learning_goal": "查段基址/长度，判断偏移与权限，解释共享映射。",
+    "recommendation_reason": "段是可变长度逻辑单位，不是把固定页换个名称。",
+    "prerequisites": "K001/K002、程序段。",
+    "core_explanation": "按段号查表得到基址、长度和状态，范围及权限检查通过后形成地址。共享段可由不同段表项指向同一物理区域，但各映射权限仍需说明。",
+    "rules_and_limits": "T：从0开始、长度L字节模型用d<L；段号也需合法。段地址寄存器数量和可见性依具体架构，不由示意图推广到所有分段系统。",
+    "misconception_and_correction": "误解：段长L时偏移L也合法。纠正：若L为字节数，最大偏移L−1。",
+    "example": "T自拟：基址10000，长度100；偏移99→10099，偏移100→越界。",
+    "presentation": "段/页对比、F007基础路径、G006；共享沿用K002规则不重复。",
+    "sources": [
+      {
+        "source_id": "S3-06",
+        "filename": "3.4 段式存储管理 .pptx",
+        "physical_pages": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          10
+        ],
+        "quote_page": 6,
+        "short_quote": "不满足保护条件则产生保护中断",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持段表与共享；规范边界T，≤/<冲突V。",
+    "related_ids": [
+      "CH03-K001",
+      "CH03-K002",
+      "CH03-K009",
+      "CH03-K020",
+      "CH03-K021"
+    ],
+    "formal_recommendation": "核心；U012基础。",
+    "issue_ids": [
+      "CH03-V003",
+      "CH03-V019"
+    ]
+  },
+  {
+    "id": "CH03-K020",
+    "name": "缺段与受限段扩充",
+    "section": "3.4.2",
+    "categories": "B/D/E",
+    "learning_goal": "区分不驻留、越界、权限与允许扩充的情况。",
+    "recommendation_reason": "调入不是所有异常的解法；增长需要空间和策略。",
+    "prerequisites": "K006/K019、异常。",
+    "core_explanation": "合法段不驻留时调入；偏移超过现长度时仅在允许增长并满足策略/资源约束时扩充，更新段表和分配信息后重试。不能把所有越界都当自动增长。",
+    "rules_and_limits": "T/V：最大长度、增长粒度、移动/锁定/共享引用、I/O失败和空间不足处理都需定义；向上增长的玩具模型不冒充实际栈实现。",
+    "misconception_and_correction": "误解：可扩充位为1就无限增长。纠正：还受上限、权限和连续空间约束。",
+    "example": "T自拟：长100访问偏移120，最小新长度121，需增加21；不是20。若上限≤120或无法获得空间则失败。",
+    "presentation": "F007分支图先行；AN007分阶段，新增长模型未确认前不做可运行扩充。",
+    "sources": [
+      {
+        "source_id": "S3-06",
+        "filename": "3.4 段式存储管理 .pptx",
+        "physical_pages": [
+          7,
+          8,
+          9,
+          10
+        ],
+        "quote_page": 10,
+        "short_quote": "与S段末端相邻的空闲区长度满足要求",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持机制，详细协议T/V。",
+    "related_ids": [
+      "CH03-K006",
+      "CH03-K007",
+      "CH03-K012",
+      "CH03-K019"
+    ],
+    "formal_recommendation": "U012进阶；完整增长/搬迁暂缓。",
+    "issue_ids": [
+      "CH03-V019",
+      "CH03-V020"
+    ]
+  },
+  {
+    "id": "CH03-K021",
+    "name": "段页式两层映射与异常分流",
+    "section": "3.4.3",
+    "categories": "B/D",
+    "learning_goal": "沿段号、页号和偏移定位物理页框，区分缺段/缺页/越界。",
+    "recommendation_reason": "段表项定位页表，不直接等于最终页框。",
+    "prerequisites": "K008/K010/K018/K019。",
+    "core_explanation": "段表定位某段页表，页表将段内页映射到页框。段内可以非连续物理存放。映射检查包含段存在、页范围、驻留与权限。",
+    "rules_and_limits": "T：TLB键需区分地址空间、段和页；若模型只有页表长度，就只承诺页边界保护；要检查末页实际段字节范围须另给segment_bytes并比较pP+d<L。",
+    "misconception_and_correction": "误解：段页式仍要求整段物理连续。纠正：段内按页映射到不连续页框。",
+    "example": "T自拟：P4096，段1含3整页，页2→框7，偏移6→28678；页3越界。末页部分有效时另测试字节限长，不偷换为页表长。",
+    "presentation": "G006、F008和逐级高亮；完整缺段/缺页状态机后置。",
+    "sources": [
+      {
+        "source_id": "S3-06",
+        "filename": "3.4 段式存储管理 .pptx",
+        "physical_pages": [
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "quote_page": 12,
+        "short_quote": "每一段不必占据连续的存储空间",
+        "evidence_type": "S-text"
+      }
+    ],
+    "evidence_status": "S支持结构；精确键与末页范围T；快表表述V。",
+    "related_ids": [
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K012",
+      "CH03-K018",
+      "CH03-K019",
+      "CH03-K020"
+    ],
+    "formal_recommendation": "核心；U012综合。",
+    "issue_ids": [
+      "CH03-V024",
+      "CH03-V026"
+    ]
+  }
+]

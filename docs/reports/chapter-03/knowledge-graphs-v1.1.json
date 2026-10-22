@@ -1,0 +1,726 @@
+[
+  {
+    "id": "CH03-G001",
+    "title": "地址、映射与权限",
+    "related_records": [
+      "CH03-K001",
+      "CH03-K002",
+      "CH03-K019"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G001-N01",
+        "label": "逻辑地址"
+      },
+      {
+        "id": "CH03-G001-N02",
+        "label": "物理地址"
+      },
+      {
+        "id": "CH03-G001-N03",
+        "label": "基址与偏移"
+      },
+      {
+        "id": "CH03-G001-N04",
+        "label": "合法范围"
+      },
+      {
+        "id": "CH03-G001-N05",
+        "label": "偏移"
+      },
+      {
+        "id": "CH03-G001-N06",
+        "label": "权限"
+      },
+      {
+        "id": "CH03-G001-N07",
+        "label": "访问类型"
+      },
+      {
+        "id": "CH03-G001-N08",
+        "label": "多个虚拟映射"
+      },
+      {
+        "id": "CH03-G001-N09",
+        "label": "同一物理区域"
+      },
+      {
+        "id": "CH03-G001-N10",
+        "label": "合法地址"
+      },
+      {
+        "id": "CH03-G001-N11",
+        "label": "访问获准"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G001-N01",
+        "relation": "经转换得到",
+        "target": "CH03-G001-N02",
+        "evidence": "S",
+        "condition": "合法映射与范围"
+      },
+      {
+        "source": "CH03-G001-N03",
+        "relation": "参与形成",
+        "target": "CH03-G001-N02",
+        "evidence": "S",
+        "condition": "基址—长度模型"
+      },
+      {
+        "source": "CH03-G001-N04",
+        "relation": "约束",
+        "target": "CH03-G001-N05",
+        "evidence": "S",
+        "condition": "0起长度模型T使用d<L"
+      },
+      {
+        "source": "CH03-G001-N06",
+        "relation": "约束",
+        "target": "CH03-G001-N07",
+        "evidence": "S",
+        "condition": "具体读写执行集合需定义"
+      },
+      {
+        "source": "CH03-G001-N08",
+        "relation": "可以指向",
+        "target": "CH03-G001-N09",
+        "evidence": "S",
+        "condition": "共享条件满足"
+      },
+      {
+        "source": "CH03-G001-N10",
+        "relation": "不等同于",
+        "target": "CH03-G001-N11",
+        "evidence": "T",
+        "condition": "仍需检查权限"
+      }
+    ]
+  },
+  {
+    "id": "CH03-G002",
+    "title": "分配、碎片与紧凑",
+    "related_records": [
+      "CH03-K003",
+      "CH03-K004",
+      "CH03-K005",
+      "CH03-K006"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G002-N01",
+        "label": "适配策略"
+      },
+      {
+        "id": "CH03-G002-N02",
+        "label": "空闲区"
+      },
+      {
+        "id": "CH03-G002-N03",
+        "label": "切分"
+      },
+      {
+        "id": "CH03-G002-N04",
+        "label": "剩余空闲区"
+      },
+      {
+        "id": "CH03-G002-N05",
+        "label": "回收"
+      },
+      {
+        "id": "CH03-G002-N06",
+        "label": "已分配区"
+      },
+      {
+        "id": "CH03-G002-N07",
+        "label": "邻接合并"
+      },
+      {
+        "id": "CH03-G002-N08",
+        "label": "空闲区分隔"
+      },
+      {
+        "id": "CH03-G002-N09",
+        "label": "外零头"
+      },
+      {
+        "id": "CH03-G002-N10",
+        "label": "连续分配失败"
+      },
+      {
+        "id": "CH03-G002-N11",
+        "label": "紧凑"
+      },
+      {
+        "id": "CH03-G002-N12",
+        "label": "空闲区连续性"
+      },
+      {
+        "id": "CH03-G002-N13",
+        "label": "重定位支持"
+      },
+      {
+        "id": "CH03-G002-N14",
+        "label": "总空闲容量"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G002-N01",
+        "relation": "选择",
+        "target": "CH03-G002-N02",
+        "evidence": "S",
+        "condition": "区长≥请求"
+      },
+      {
+        "source": "CH03-G002-N03",
+        "relation": "产生",
+        "target": "CH03-G002-N04",
+        "evidence": "S",
+        "condition": "未恰好用完"
+      },
+      {
+        "source": "CH03-G002-N05",
+        "relation": "释放",
+        "target": "CH03-G002-N06",
+        "evidence": "S",
+        "condition": "分配ID真实存在"
+      },
+      {
+        "source": "CH03-G002-N07",
+        "relation": "减少",
+        "target": "CH03-G002-N08",
+        "evidence": "S",
+        "condition": "物理端点相接"
+      },
+      {
+        "source": "CH03-G002-N09",
+        "relation": "可能导致",
+        "target": "CH03-G002-N10",
+        "evidence": "S",
+        "condition": "总空闲够但最大区不足"
+      },
+      {
+        "source": "CH03-G002-N11",
+        "relation": "改变",
+        "target": "CH03-G002-N12",
+        "evidence": "S",
+        "condition": "可移动条件满足"
+      },
+      {
+        "source": "CH03-G002-N11",
+        "relation": "依赖",
+        "target": "CH03-G002-N13",
+        "evidence": "S",
+        "condition": "当前教学模式"
+      },
+      {
+        "source": "CH03-G002-N11",
+        "relation": "不增加",
+        "target": "CH03-G002-N14",
+        "evidence": "T",
+        "condition": "无另行释放/分配事件"
+      }
+    ]
+  },
+  {
+    "id": "CH03-G003",
+    "title": "TLB、页表与缺页",
+    "related_records": [
+      "CH03-K008",
+      "CH03-K010",
+      "CH03-K011",
+      "CH03-K012"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G003-N01",
+        "label": "TLB"
+      },
+      {
+        "id": "CH03-G003-N02",
+        "label": "转换信息"
+      },
+      {
+        "id": "CH03-G003-N03",
+        "label": "页表"
+      },
+      {
+        "id": "CH03-G003-N04",
+        "label": "映射与驻留/保护状态"
+      },
+      {
+        "id": "CH03-G003-N05",
+        "label": "TLB未命中"
+      },
+      {
+        "id": "CH03-G003-N06",
+        "label": "页表查询"
+      },
+      {
+        "id": "CH03-G003-N07",
+        "label": "页面不驻留"
+      },
+      {
+        "id": "CH03-G003-N08",
+        "label": "合法缺页处理"
+      },
+      {
+        "id": "CH03-G003-N09",
+        "label": "脏页淘汰"
+      },
+      {
+        "id": "CH03-G003-N10",
+        "label": "写回"
+      },
+      {
+        "id": "CH03-G003-N11",
+        "label": "调入完成"
+      },
+      {
+        "id": "CH03-G003-N12",
+        "label": "页表及相关TLB状态"
+      },
+      {
+        "id": "CH03-G003-N13",
+        "label": "恢复执行"
+      },
+      {
+        "id": "CH03-G003-N14",
+        "label": "原指令"
+      },
+      {
+        "id": "CH03-G003-N15",
+        "label": "缺页"
+      },
+      {
+        "id": "CH03-G003-N16",
+        "label": "数据Cache未命中"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G003-N01",
+        "relation": "缓存",
+        "target": "CH03-G003-N02",
+        "evidence": "S",
+        "condition": "不是数据Cache"
+      },
+      {
+        "source": "CH03-G003-N03",
+        "relation": "记录",
+        "target": "CH03-G003-N04",
+        "evidence": "S",
+        "condition": "请求分页扩展模型"
+      },
+      {
+        "source": "CH03-G003-N05",
+        "relation": "触发",
+        "target": "CH03-G003-N06",
+        "evidence": "S",
+        "condition": "具体硬件细节模型化"
+      },
+      {
+        "source": "CH03-G003-N07",
+        "relation": "可能触发",
+        "target": "CH03-G003-N08",
+        "evidence": "S",
+        "condition": "先有合法映射"
+      },
+      {
+        "source": "CH03-G003-N09",
+        "relation": "需要",
+        "target": "CH03-G003-N10",
+        "evidence": "S",
+        "condition": "后备目标与I/O有效"
+      },
+      {
+        "source": "CH03-G003-N11",
+        "relation": "更新",
+        "target": "CH03-G003-N12",
+        "evidence": "S",
+        "condition": "保持一致性"
+      },
+      {
+        "source": "CH03-G003-N13",
+        "relation": "重试",
+        "target": "CH03-G003-N14",
+        "evidence": "S",
+        "condition": "可重启教学指令"
+      },
+      {
+        "source": "CH03-G003-N05",
+        "relation": "区别于",
+        "target": "CH03-G003-N15",
+        "evidence": "T",
+        "condition": "同层次事件不混淆"
+      },
+      {
+        "source": "CH03-G003-N15",
+        "relation": "区别于",
+        "target": "CH03-G003-N16",
+        "evidence": "T",
+        "condition": "成本与层次不同"
+      }
+    ]
+  },
+  {
+    "id": "CH03-G004",
+    "title": "访问历史与页面选择",
+    "related_records": [
+      "CH03-K013",
+      "CH03-K014",
+      "CH03-K015",
+      "CH03-K016"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G004-N01",
+        "label": "FIFO"
+      },
+      {
+        "id": "CH03-G004-N02",
+        "label": "装入顺序"
+      },
+      {
+        "id": "CH03-G004-N03",
+        "label": "LRU"
+      },
+      {
+        "id": "CH03-G004-N04",
+        "label": "最近访问历史"
+      },
+      {
+        "id": "CH03-G004-N05",
+        "label": "OPT"
+      },
+      {
+        "id": "CH03-G004-N06",
+        "label": "未来引用"
+      },
+      {
+        "id": "CH03-G004-N07",
+        "label": "CLOCK"
+      },
+      {
+        "id": "CH03-G004-N08",
+        "label": "引用位"
+      },
+      {
+        "id": "CH03-G004-N09",
+        "label": "局部性"
+      },
+      {
+        "id": "CH03-G004-N10",
+        "label": "页面引用模式"
+      },
+      {
+        "id": "CH03-G004-N11",
+        "label": "引用串与页框数"
+      },
+      {
+        "id": "CH03-G004-N12",
+        "label": "缺页次数"
+      },
+      {
+        "id": "CH03-G004-N13",
+        "label": "Belady异常"
+      },
+      {
+        "id": "CH03-G004-N14",
+        "label": "离线下界比较基准"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G004-N01",
+        "relation": "依据",
+        "target": "CH03-G004-N02",
+        "evidence": "S",
+        "condition": "命中不重排"
+      },
+      {
+        "source": "CH03-G004-N03",
+        "relation": "依据",
+        "target": "CH03-G004-N04",
+        "evidence": "S",
+        "condition": "命中更新"
+      },
+      {
+        "source": "CH03-G004-N05",
+        "relation": "依据",
+        "target": "CH03-G004-N06",
+        "evidence": "S",
+        "condition": "离线比较"
+      },
+      {
+        "source": "CH03-G004-N07",
+        "relation": "利用",
+        "target": "CH03-G004-N08",
+        "evidence": "S",
+        "condition": "基础CLOCK协议"
+      },
+      {
+        "source": "CH03-G004-N09",
+        "relation": "影响",
+        "target": "CH03-G004-N10",
+        "evidence": "S",
+        "condition": "具体程序布局"
+      },
+      {
+        "source": "CH03-G004-N11",
+        "relation": "影响",
+        "target": "CH03-G004-N12",
+        "evidence": "S",
+        "condition": "还依算法与初态"
+      },
+      {
+        "source": "CH03-G004-N01",
+        "relation": "可能出现",
+        "target": "CH03-G004-N13",
+        "evidence": "S",
+        "condition": "给出课件反例"
+      },
+      {
+        "source": "CH03-G004-N05",
+        "relation": "提供",
+        "target": "CH03-G004-N14",
+        "evidence": "T",
+        "condition": "同串同容量同初始条件"
+      }
+    ]
+  },
+  {
+    "id": "CH03-G005",
+    "title": "页表组织与查找代价",
+    "related_records": [
+      "CH03-K017",
+      "CH03-K018"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G005-N01",
+        "label": "普通页表"
+      },
+      {
+        "id": "CH03-G005-N02",
+        "label": "映射"
+      },
+      {
+        "id": "CH03-G005-N03",
+        "label": "反置页表"
+      },
+      {
+        "id": "CH03-G005-N04",
+        "label": "表项"
+      },
+      {
+        "id": "CH03-G005-N05",
+        "label": "哈希链"
+      },
+      {
+        "id": "CH03-G005-N06",
+        "label": "反置页表查询"
+      },
+      {
+        "id": "CH03-G005-N07",
+        "label": "多级页表"
+      },
+      {
+        "id": "CH03-G005-N08",
+        "label": "稀疏映射"
+      },
+      {
+        "id": "CH03-G005-N09",
+        "label": "下级页表数量"
+      },
+      {
+        "id": "CH03-G005-N10",
+        "label": "更多层级"
+      },
+      {
+        "id": "CH03-G005-N11",
+        "label": "未命中时查表步骤"
+      },
+      {
+        "id": "CH03-G005-N12",
+        "label": "TLB"
+      },
+      {
+        "id": "CH03-G005-N13",
+        "label": "多次查表代价"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G005-N01",
+        "relation": "按虚页组织",
+        "target": "CH03-G005-N02",
+        "evidence": "S",
+        "condition": "每进程逻辑映射"
+      },
+      {
+        "source": "CH03-G005-N03",
+        "relation": "按页框组织",
+        "target": "CH03-G005-N04",
+        "evidence": "S",
+        "condition": "纠正每框一整表措辞V013"
+      },
+      {
+        "source": "CH03-G005-N05",
+        "relation": "支持",
+        "target": "CH03-G005-N06",
+        "evidence": "S",
+        "condition": "比较完整键"
+      },
+      {
+        "source": "CH03-G005-N07",
+        "relation": "通过分层索引组织",
+        "target": "CH03-G005-N02",
+        "evidence": "S",
+        "condition": "不是反置页表"
+      },
+      {
+        "source": "CH03-G005-N08",
+        "relation": "可能减少",
+        "target": "CH03-G005-N09",
+        "evidence": "T",
+        "condition": "按需建立的模型"
+      },
+      {
+        "source": "CH03-G005-N10",
+        "relation": "可能增加",
+        "target": "CH03-G005-N11",
+        "evidence": "S",
+        "condition": "各级驻留，计数不含/含数据明确"
+      },
+      {
+        "source": "CH03-G005-N12",
+        "relation": "缓解",
+        "target": "CH03-G005-N13",
+        "evidence": "S",
+        "condition": "命中及上下文有效"
+      }
+    ]
+  },
+  {
+    "id": "CH03-G006",
+    "title": "分段与分页的结合",
+    "related_records": [
+      "CH03-K009",
+      "CH03-K019",
+      "CH03-K020",
+      "CH03-K021"
+    ],
+    "nodes": [
+      {
+        "id": "CH03-G006-N01",
+        "label": "段"
+      },
+      {
+        "id": "CH03-G006-N02",
+        "label": "程序逻辑结构"
+      },
+      {
+        "id": "CH03-G006-N03",
+        "label": "页"
+      },
+      {
+        "id": "CH03-G006-N04",
+        "label": "固定尺寸单元"
+      },
+      {
+        "id": "CH03-G006-N05",
+        "label": "段页式"
+      },
+      {
+        "id": "CH03-G006-N06",
+        "label": "分段与分页"
+      },
+      {
+        "id": "CH03-G006-N07",
+        "label": "段表"
+      },
+      {
+        "id": "CH03-G006-N08",
+        "label": "段对应页表"
+      },
+      {
+        "id": "CH03-G006-N09",
+        "label": "页表"
+      },
+      {
+        "id": "CH03-G006-N10",
+        "label": "物理页框"
+      },
+      {
+        "id": "CH03-G006-N11",
+        "label": "同一段"
+      },
+      {
+        "id": "CH03-G006-N12",
+        "label": "不连续页框"
+      },
+      {
+        "id": "CH03-G006-N13",
+        "label": "段共享"
+      },
+      {
+        "id": "CH03-G006-N14",
+        "label": "映射与权限"
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH03-G006-N01",
+        "relation": "表达",
+        "target": "CH03-G006-N02",
+        "evidence": "S",
+        "condition": "课程分段模型"
+      },
+      {
+        "source": "CH03-G006-N03",
+        "relation": "划分",
+        "target": "CH03-G006-N04",
+        "evidence": "S",
+        "condition": "页面与页框等尺寸"
+      },
+      {
+        "source": "CH03-G006-N05",
+        "relation": "结合",
+        "target": "CH03-G006-N06",
+        "evidence": "S",
+        "condition": "不是两套孤立流程"
+      },
+      {
+        "source": "CH03-G006-N07",
+        "relation": "定位",
+        "target": "CH03-G006-N08",
+        "evidence": "S",
+        "condition": "合法段"
+      },
+      {
+        "source": "CH03-G006-N09",
+        "relation": "定位",
+        "target": "CH03-G006-N10",
+        "evidence": "S",
+        "condition": "合法驻留页"
+      },
+      {
+        "source": "CH03-G006-N11",
+        "relation": "可以分布于",
+        "target": "CH03-G006-N12",
+        "evidence": "S",
+        "condition": "段页式"
+      },
+      {
+        "source": "CH03-G006-N13",
+        "relation": "需要",
+        "target": "CH03-G006-N14",
+        "evidence": "S",
+        "condition": "不是无条件可写"
+      }
+    ]
+  }
+]
