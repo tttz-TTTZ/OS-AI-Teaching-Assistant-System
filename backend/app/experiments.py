@@ -174,23 +174,27 @@ def preview(ident: int, body: Version, user=Depends(teacher)):
 def publish(ident: int, body: Version, user=Depends(teacher)):
     with database() as db:
         db.execute("BEGIN IMMEDIATE")
-        row = checked(db, ident, body.edit_version)
-        data = revision(db, row["draft_revision_id"])
-        chapter = visible_chapter(db, data["chapter_id"], user)
-        if not chapter["published"] or not chapter["course_published"]:
-            raise HTTPException(422, "请先发布所属课程和章节")
-        if not all(data[k].strip() for k in ["objectives", "instructions", "tasks"]):
-            raise HTTPException(422, "请补齐学习目标、操作说明和观察任务")
-        if not db.execute(
-            "SELECT 1 FROM experiment_previews WHERE user_id=? AND revision_id=?",
-            (user["id"], row["draft_revision_id"]),
-        ).fetchone():
-            raise HTTPException(422, "请先试运行当前草稿")
-        db.execute(
-            "UPDATE experiments SET published_revision_id=draft_revision_id,edit_version=edit_version+1 WHERE id=?",
-            (ident,),
-        )
-        return expose(db, get(db, "experiments", ident), user, True)
+        return publish_in(db, ident, body, user)
+
+
+def publish_in(db, ident, body, user):
+    row = checked(db, ident, body.edit_version)
+    data = revision(db, row["draft_revision_id"])
+    chapter = visible_chapter(db, data["chapter_id"], user)
+    if not chapter["published"] or not chapter["course_published"]:
+        raise HTTPException(422, "请先发布所属课程和章节")
+    if not all(data[k].strip() for k in ["objectives", "instructions", "tasks"]):
+        raise HTTPException(422, "请补齐学习目标、操作说明和观察任务")
+    if not db.execute(
+        "SELECT 1 FROM experiment_previews WHERE user_id=? AND revision_id=?",
+        (user["id"], row["draft_revision_id"]),
+    ).fetchone():
+        raise HTTPException(422, "请先试运行当前草稿")
+    db.execute(
+        "UPDATE experiments SET published_revision_id=draft_revision_id,edit_version=edit_version+1 WHERE id=?",
+        (ident,),
+    )
+    return expose(db, get(db, "experiments", ident), user, True)
 
 
 @router.post("/teacher/experiments/{ident}/withdraw")

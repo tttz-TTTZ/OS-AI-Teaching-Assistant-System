@@ -172,5 +172,6 @@ V8新增document_ai_indexes、personal_ai_jobs、personal_ai_attempts，备份�
 - `GET /api/teacher/chapter-content/chapter02/status?chapter_id=<实际ID>`：返回所选课程已导入记录或`result:null`，有记录时包含最初目标章和真实单元/实验ID。
 - `POST /api/teacher/chapter-content/chapter02/plan`：请求`{"chapter_id":123,"section_map":{"2.1":456}}`，其中ID仅示意，须选择本机实际目标。返回目标/目录复用或冲突提示和已有导入状态；不写数据库。映射可省略。
 - `POST /api/teacher/chapter-content/chapter02/import`：同上请求，单事务保存12个知识草稿、必要的新小节草稿和3个FCFS/SJF/RR实验草稿；返回`points/sections/experiments`真实ID。不会改目标章名或自动发布。
+- `POST /api/teacher/chapter-content/chapter02/publish`：同上请求，按用户直接发布授权执行。先成套备份数据库/上传文件，再在一个事务中导入或使用已导入当前草稿，发布目标章、相关小节、12单元，真实调用FCFS/SJF/RR验证并发布3个实验。任意失败全事务回滚。返回`direct_published/published_count/backup`及原真实ID；重复调用返回`already_published:true`，不覆盖后续修改、不恢复已撤回内容。未发布课程409；学生403；跨章移动/归档/改变算法或链接越界409。备份位置在数据库同级`backups/before-chapter02-publish-*`，不返回给学生。不会新增迁移或在启动时自动发布；不改目标标题。
 
 `section_map`只接受包中的目录编号和同章小节ID。未显式映射时只有唯一、同编号且同标题的小节可自动复用；有歧义/冲突409，跨章422，不发生部分写入。重复同课程同包同目标返回原ID与`already_imported:true`，不覆盖教师修改；换目标或包哈希改变409，不偷偷覆盖。发布/版本/资料绑定均继续使用既有接口。

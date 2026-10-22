@@ -384,114 +384,117 @@ def change_publication(
 ):
     with database() as db:
         db.execute("BEGIN IMMEDIATE")
-        point = get(db, "knowledge_points", ident)
-        if point["edit_version"] != body.expected_version:
-            raise HTTPException(409, "内容已变化，请重新加载")
-        if action == "restore":
-            revision = get(db, "knowledge_revisions", body.revision_id)
-            if revision["point_id"] != ident:
-                raise HTTPException(404, "版本不存在")
-            return save_revision(
-                db,
-                point,
-                Content(
-                    **json.loads(revision["body"]),
-                    expected_version=body.expected_version,
-                ),
-                user,
-            )
-        if action == "publish":
-            data = Content(**body_of(db, point), expected_version=body.expected_version)
-            validate_refs(db, data, ident)
-            required = ["intro", "concept", "explanation", "case", "mistake", "summary"]
-            missing = [
-                k
-                for k in required
-                if not any(b.kind == k and b.text.strip() for b in data.blocks)
-            ]
-            if missing or not data.objectives.strip():
-                names = {
-                    "intro": "问题导入",
-                    "concept": "核心概念",
-                    "explanation": "原理精讲",
-                    "case": "典型案例",
-                    "mistake": "易错点",
-                    "summary": "总结",
-                }
-                missing_names = [names[k] for k in missing]
-                if not data.objectives.strip():
-                    missing_names.insert(0, "学习目标")
-                raise HTTPException(422, "发布前请补齐：" + "、".join(missing_names))
-            if not point["draft_revision_id"]:
-                raise HTTPException(422, "请先保存新教材草稿")
-            from .simulations import simulate
+        return change_publication_in(db, ident, action, body, user)
 
-            for block in data.blocks:
-                if block.kind == "interaction":
-                    if not block.config:
-                        raise HTTPException(422, "交互块尚未选择模板")
-                    simulate(block.config)
-                if block.kind == "image" and (
-                    not block.asset_id or not block.alt.strip()
-                ):
-                    raise HTTPException(422, "图片尚未上传或缺少替代文字")
-                if block.kind == "chart" and (
-                    not block.labels or len(block.labels) != len(block.values)
-                ):
-                    raise HTTPException(422, "图表缺少数据或标签数量不匹配")
-            chapter = get(db, "chapters", data.chapter_id)
-            if (
-                not chapter["published"]
-                or not get(db, "courses", chapter["course_id"])["published"]
-                or (
-                    data.section_id
-                    and not get(db, "sections", data.section_id)["published"]
-                )
+
+def change_publication_in(db, ident, action, body, user):
+    """Single-record publication shared by explicit bulk publication in one transaction."""
+    point = get(db, "knowledge_points", ident)
+    if point["edit_version"] != body.expected_version:
+        raise HTTPException(409, "内容已变化，请重新加载")
+    if action == "restore":
+        revision = get(db, "knowledge_revisions", body.revision_id)
+        if revision["point_id"] != ident:
+            raise HTTPException(404, "版本不存在")
+        return save_revision(
+            db,
+            point,
+            Content(
+                **json.loads(revision["body"]),
+                expected_version=body.expected_version,
+            ),
+            user,
+        )
+    if action == "publish":
+        data = Content(**body_of(db, point), expected_version=body.expected_version)
+        validate_refs(db, data, ident)
+        required = ["intro", "concept", "explanation", "case", "mistake", "summary"]
+        missing = [
+            k
+            for k in required
+            if not any(b.kind == k and b.text.strip() for b in data.blocks)
+        ]
+        if missing or not data.objectives.strip():
+            names = {
+                "intro": "问题导入",
+                "concept": "核心概念",
+                "explanation": "原理精讲",
+                "case": "典型案例",
+                "mistake": "易错点",
+                "summary": "总结",
+            }
+            missing_names = [names[k] for k in missing]
+            if not data.objectives.strip():
+                missing_names.insert(0, "学习目标")
+            raise HTTPException(422, "发布前请补齐：" + "、".join(missing_names))
+        if not point["draft_revision_id"]:
+            raise HTTPException(422, "请先保存新教材草稿")
+        from .simulations import simulate
+
+        for block in data.blocks:
+            if block.kind == "interaction":
+                if not block.config:
+                    raise HTTPException(422, "交互块尚未选择模板")
+                simulate(block.config)
+            if block.kind == "image" and (not block.asset_id or not block.alt.strip()):
+                raise HTTPException(422, "图片尚未上传或缺少替代文字")
+            if block.kind == "chart" and (
+                not block.labels or len(block.labels) != len(block.values)
             ):
-                raise HTTPException(422, "请先发布所属课程、章和小节")
-            if data.chapter_id != point["chapter_id"]:
-                linked = db.execute(
-                    "SELECT question_id FROM question_knowledge WHERE point_id=?",
-                    (ident,),
-                ).fetchall()
-                for row in linked:
-                    other = db.execute(
-                        "SELECT 1 FROM question_knowledge q JOIN knowledge_points k ON k.id=q.point_id WHERE q.question_id=? AND k.id<>? AND k.chapter_id<>?",
-                        (row[0], ident, data.chapter_id),
-                    ).fetchone()
-                    if other:
-                        raise HTTPException(
-                            409, "该知识点有跨章共用题目，请先在题库调整关联再移动"
-                        )
-                    db.execute(
-                        "UPDATE questions SET chapter_id=?,version=version+1 WHERE id=?",
-                        (data.chapter_id, row[0]),
+                raise HTTPException(422, "图表缺少数据或标签数量不匹配")
+        chapter = get(db, "chapters", data.chapter_id)
+        if (
+            not chapter["published"]
+            or not get(db, "courses", chapter["course_id"])["published"]
+            or (
+                data.section_id
+                and not get(db, "sections", data.section_id)["published"]
+            )
+        ):
+            raise HTTPException(422, "请先发布所属课程、章和小节")
+        if data.chapter_id != point["chapter_id"]:
+            linked = db.execute(
+                "SELECT question_id FROM question_knowledge WHERE point_id=?",
+                (ident,),
+            ).fetchall()
+            for row in linked:
+                other = db.execute(
+                    "SELECT 1 FROM question_knowledge q JOIN knowledge_points k ON k.id=q.point_id WHERE q.question_id=? AND k.id<>? AND k.chapter_id<>?",
+                    (row[0], ident, data.chapter_id),
+                ).fetchone()
+                if other:
+                    raise HTTPException(
+                        409, "该知识点有跨章共用题目，请先在题库调整关联再移动"
                     )
-            text = "\n\n".join(b.text for b in data.blocks if b.kind != "image")
-            db.execute(
-                "UPDATE knowledge_points SET published=1,archived_at=NULL,published_revision_id=draft_revision_id,chapter_id=?,title=?,content=?,lab_path=? WHERE id=?",
-                (
-                    data.chapter_id,
-                    data.title,
-                    text,
-                    "/student/experiments" if data.lab else None,
-                    ident,
-                ),
-            )
-        else:
-            db.execute(
-                "UPDATE knowledge_points SET published=0,archived_at=CASE WHEN ?='archive' THEN CURRENT_TIMESTAMP ELSE archived_at END WHERE id=?",
-                (action, ident),
-            )
+                db.execute(
+                    "UPDATE questions SET chapter_id=?,version=version+1 WHERE id=?",
+                    (data.chapter_id, row[0]),
+                )
+        text = "\n\n".join(b.text for b in data.blocks if b.kind != "image")
         db.execute(
-            "UPDATE knowledge_points SET edit_version=edit_version+1 WHERE id=?",
-            (ident,),
+            "UPDATE knowledge_points SET published=1,archived_at=NULL,published_revision_id=draft_revision_id,chapter_id=?,title=?,content=?,lab_path=? WHERE id=?",
+            (
+                data.chapter_id,
+                data.title,
+                text,
+                "/student/experiments" if data.lab else None,
+                ident,
+            ),
         )
+    else:
         db.execute(
-            "INSERT INTO content_events(point_id,actor_id,action,revision_id) VALUES (?,?,?,?)",
-            (ident, user["id"], action, point["draft_revision_id"]),
+            "UPDATE knowledge_points SET published=0,archived_at=CASE WHEN ?='archive' THEN CURRENT_TIMESTAMP ELSE archived_at END WHERE id=?",
+            (action, ident),
         )
-        return {"ok": True, "edit_version": point["edit_version"] + 1}
+    db.execute(
+        "UPDATE knowledge_points SET edit_version=edit_version+1 WHERE id=?",
+        (ident,),
+    )
+    db.execute(
+        "INSERT INTO content_events(point_id,actor_id,action,revision_id) VALUES (?,?,?,?)",
+        (ident, user["id"], action, point["draft_revision_id"]),
+    )
+    return {"ok": True, "edit_version": point["edit_version"] + 1}
 
 
 @router.get("/teacher/learning-content/{ident}/history")

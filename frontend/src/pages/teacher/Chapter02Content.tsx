@@ -31,6 +31,8 @@ type Result = {
   chapter_id: number;
   already_imported: boolean;
   package_changed?: boolean;
+  direct_published?: boolean;
+  already_published?: boolean;
   points: { code: string; id: number }[];
   sections: Record<string, number>;
   experiments: { code: string; id: number; algorithm: string }[];
@@ -50,8 +52,8 @@ type Plan = {
 const base = "/teacher/chapter-content/chapter02";
 const stages = [
   ["preview", "阅读预填内容"],
-  ["target", "选择目录并保存草稿"],
-  ["review", "审核与后续修改"],
+  ["target", "选择目录并应用"],
+  ["review", "发布状态与后续修改"],
 ] as const;
 
 export default function Chapter02Content() {
@@ -158,11 +160,29 @@ export default function Chapter02Content() {
       setBusy(false);
     }
   }
+  async function publishNow() {
+    if (busy || !chapter) return;
+    setError("");
+    setBusy(true);
+    try {
+      const saved = await request<Result>(base + "/publish", {
+        method: "POST",
+        body: JSON.stringify({ chapter_id: chapter, section_map: mapping }),
+      });
+      setResult(saved);
+      navigate({ stage: "review" });
+      window.scrollTo(0, 0);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   const item = data?.items.find((i) => i.code === selected) || data?.items[0];
   return (
     <AuthoringPage
       title="第二章预填内容与审核"
-      description="先看内容，再选择现有课程目录。保存后逐项审核和修改，学生只阅读发布版本。"
+      description="选择目标目录后可直接发布，无需逐项审核；以后需要时再修改。"
       back={{ to: "/teacher/knowledge", label: "返回知识点管理" }}
     >
       <Notice error={error} />
@@ -247,7 +267,9 @@ export default function Chapter02Content() {
               <section className="authoring-card">
                 <details>
                   <summary>来源与24条内容记录（教师核对）</summary>
-                  <p>{data.notice}</p>
+                  <p>
+                    按最新授权可直接发布；来源与待核实事项保留供以后修订，也可选择只保存草稿。
+                  </p>
                   {data.sources.map((s) => (
                     <p key={s.id}>
                       {s.id} · {s.filename} · {s.slides}页
@@ -303,7 +325,7 @@ export default function Chapter02Content() {
           )}
           {stage === "target" && (
             <section className="authoring-card authoring-form">
-              <h2>将草稿放到哪里？</h2>
+              <h2>将第二章内容放到哪里？</h2>
               <p>
                 不会自动猜测第二章ID，也不会重命名或清空已有章节。新建小节默认未发布；已有小节的标题和发布状态保留。
               </p>
@@ -370,9 +392,27 @@ export default function Chapter02Content() {
                   <h3>确认导入预览</h3>
                   <p>
                     目标：{plan.chapter.title}，课程{plan.chapter.course_id}
-                    。新增12份知识草稿、3份实验草稿，不自动发布。
+                    。可直接发布12个单元和3个已有引擎实验；已有草稿使用当前内容，不覆盖修改。
                   </p>
-                  <p>{plan.notice}</p>
+                  <p>
+                    直接发布前会成套备份并运行内容及算法校验，同时发布目标章和包内单元所在小节；不改其他章，不扩大未发布课程的公开范围。
+                  </p>
+                  {(!result || result.chapter_id === chapter) && (
+                    <button
+                      disabled={
+                        busy ||
+                        !!result?.direct_published ||
+                        plan.sections.some((s) => s.conflict)
+                      }
+                      onClick={publishNow}
+                    >
+                      {busy
+                        ? "正在校验并发布…"
+                        : result?.direct_published
+                          ? "已直接发布"
+                          : "直接应用并发布"}
+                    </button>
+                  )}
                   {plan.sections.map((s) => (
                     <p key={s.code}>
                       {s.code} {s.title} →{" "}
@@ -428,11 +468,11 @@ export default function Chapter02Content() {
           )}
           {stage === "review" && (
             <section className="authoring-card">
-              <h2>审核草稿，保留后续修改</h2>
+              <h2>发布状态，保留后续修改</h2>
               {!result ? (
                 <>
                   <p>
-                    尚未选择已导入的目标章。保存草稿后，这里会提供真实编辑和发布入口。
+                    尚未选择已导入的目标章。先选择目标并应用，这里会提供后续修改入口。
                   </p>
                   <button onClick={() => navigate({ stage: "target" })}>
                     选择目标章 →
@@ -441,11 +481,19 @@ export default function Chapter02Content() {
               ) : (
                 <>
                   <p role="status">
-                    草稿已保存。不会自动发布；重复导入不覆盖后续修改。
+                    {result.direct_published
+                      ? "第二章已直接发布。重复应用不会覆盖之后的修改；后续可见性以各内容当前发布状态为准。"
+                      : "已保存草稿，可直接发布，无需逐项审核。"}
                   </p>
                   <p>
-                    先检查所属课程、章和小节的发布状态，再进入知识点预览发布。实验还需要在原实验页面试运行并发布。
+                    直接发布会检查内容、重算已有算法并完成发布。后续修改仍使用原编辑器；保存新草稿不会立即改变学生正在阅读的版本。
                   </p>
+                  {!result.direct_published &&
+                    result.chapter_id === chapter && (
+                      <button disabled={busy} onClick={publishNow}>
+                        {busy ? "正在校验并发布…" : "直接发布已有内容"}
+                      </button>
+                    )}
                   <h3>1. 目录与编号</h3>
                   {Object.entries(result.sections).map(([code, id]) => (
                     <p key={code}>
@@ -471,7 +519,7 @@ export default function Chapter02Content() {
                       </div>
                     </div>
                   ))}
-                  <h3>3. 已有引擎的实验草稿</h3>
+                  <h3>3. 已有引擎的教学实验</h3>
                   {result.experiments.map((e) => (
                     <p key={e.id}>
                       <Link to={`/teacher/experiments/${e.id}/preview`}>

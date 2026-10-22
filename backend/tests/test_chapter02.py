@@ -337,3 +337,117 @@ def test_persistence_backup_restores_import_state(clients, tmp_path):
             db.execute("SELECT result_json FROM chapter_content_imports").fetchone()[0]
         )
         assert record["points"] == result["points"] and len(record["experiments"]) == 3
+
+
+def test_direct_publish_visible_backup_and_repeat_preserves_withdrawal(clients):
+    from app.persistence import validate_backup
+
+    t, s, cid = clients
+    before = counts()
+    response = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["direct_published"] and result["published_count"] == 12
+    assert not result["already_published"]
+    backup = Path(result["backup"])
+    validate_backup(backup)
+    with sqlite3.connect(backup / "assistant.db") as db:
+        assert (
+            db.execute("SELECT count(*) FROM chapter_content_imports").fetchone()[0]
+            == before[-1]
+        )
+    for point in result["points"]:
+        assert s.get(f"/api/learning-content/{point['id']}").status_code == 200
+    assert {x["algorithm"] for x in s.get("/api/experiments").json()} == {
+        "fcfs",
+        "sjf",
+        "rr",
+    }
+    point = result["points"][0]
+    path = f"/api/teacher/learning-content/{point['id']}"
+    current = t.get(path).json()
+    assert (
+        t.post(
+            path + "/withdraw", json={"expected_version": current["edit_version"]}
+        ).status_code
+        == 200
+    )
+    edited = payload(t.get(path).json())
+    edited["title"] = "老师之后修改且撤回的内容"
+    assert t.put(path, json=edited).status_code == 200
+    backups = list(backup.parent.iterdir())
+    again = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert again.status_code == 200 and again.json()["already_published"]
+    assert t.get(path).json()["title"] == edited["title"]
+    assert s.get(f"/api/learning-content/{point['id']}").status_code == 404
+    assert list(backup.parent.iterdir()) == backups
+    assert t.post(BASE + "/publish", json={"chapter_id": 1}).status_code == 409
+
+
+def test_direct_publish_uses_current_teacher_revision(clients):
+    t, s, cid = clients
+    result = t.post(BASE + "/import", json={"chapter_id": cid}).json()
+    point = result["points"][0]
+    path = f"/api/teacher/learning-content/{point['id']}"
+    edited = payload(t.get(path).json())
+    edited["title"] = "保留教师自行修订的标题"
+    assert t.put(path, json=edited).status_code == 200
+    with main.database() as db:
+        revision_before = db.execute(
+            "SELECT draft_revision_id FROM knowledge_points WHERE id=?", (point["id"],)
+        ).fetchone()[0]
+    response = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert response.status_code == 200, response.text
+    with main.database() as db:
+        assert (
+            db.execute(
+                "SELECT draft_revision_id FROM knowledge_points WHERE id=?",
+                (point["id"],),
+            ).fetchone()[0]
+            == revision_before
+        )
+    assert (
+        s.get(f"/api/learning-content/{point['id']}").json()["title"] == edited["title"]
+    )
+    assert counts()[-1] == 1
+
+
+def test_direct_publish_late_failure_rolls_back_everything(clients, monkeypatch):
+    from app import scheduling
+
+    t, s, cid = clients
+    with main.database() as db:
+        db.execute("UPDATE chapters SET published=0 WHERE id=?", (cid,))
+    before = counts()
+    original = scheduling.calculate
+    called = []
+
+    def fail_rr(algorithm, body):
+        called.append(algorithm)
+        if algorithm == "rr":
+            raise HTTPException(422, "模拟RR运行失败")
+        return original(algorithm, body)
+
+    monkeypatch.setattr(scheduling, "calculate", fail_rr)
+    response = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert response.status_code == 422, response.text
+    assert called == ["fcfs", "sjf", "rr"]
+    assert counts() == before
+    with main.database() as db:
+        assert (
+            db.execute("SELECT published FROM chapters WHERE id=?", (cid,)).fetchone()[
+                0
+            ]
+            == 0
+        )
+    assert s.get("/api/experiments").json() == []
+
+
+def test_direct_publish_rejects_student_and_unpublished_course(clients):
+    t, s, cid = clients
+    assert s.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 403
+    before = counts()
+    with main.database() as db:
+        db.execute("UPDATE courses SET published=0")
+    assert t.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 409
+    assert counts() == before

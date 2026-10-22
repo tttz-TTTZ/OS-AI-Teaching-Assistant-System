@@ -95,7 +95,7 @@ const accounts = JSON.parse(
     await t.getByRole("group", { name: /CH02-G001/ }).waitFor();
     await unit.selectOption("CH02-U005");
     await t.getByRole("group", { name: /CH02-F004/ }).waitFor();
-    await t.getByRole("button", { name: /选择目录并保存草稿/ }).click();
+    await t.getByRole("button", { name: /选择目录并应用/ }).click();
     if ((await t.getByLabel("第二章目标章节").inputValue()) !== "")
       throw Error("擅自选择目标章");
     await t.getByLabel("第二章目标章节").selectOption(String(target.id));
@@ -116,7 +116,7 @@ const accounts = JSON.parse(
       .click();
     await t
       .getByRole("status")
-      .filter({ hasText: "草稿已保存。不会自动发布" })
+      .filter({ hasText: "已保存草稿，可直接发布" })
       .waitFor();
     const saved = await (
       await api(t, "get", endpoint + `/status?chapter_id=${target.id}`)
@@ -135,27 +135,16 @@ const accounts = JSON.parse(
       .getByRole("link", { name: "预览发布", exact: true })
       .first()
       .waitFor();
-    // Use real existing directory APIs, then the real authoring screen to publish.
-    const secs = await (
-      await api(t, "get", `/sections?chapter_id=${target.id}`)
-    ).json();
-    for (const sec of secs) {
-      const { id, ...body } = sec;
-      if (
-        (
-          await api(t, "put", `/teacher/sections/${id}`, {
-            ...body,
-            published: true,
-          })
-        ).status() !== 200
-      )
-        throw Error("目录发布失败");
-    }
-    await t.goto(base + `/teacher/knowledge/${point.id}/preview`);
-    await t.getByRole("button", { name: "发布当前草稿", exact: true }).click();
+    // Publish existing drafts using the real one-click teacher screen.
     await t
-      .getByText("知识点已发布，学生现在可以阅读", { exact: true })
+      .getByRole("button", { name: "直接发布已有内容", exact: true })
+      .click();
+    await t
+      .getByRole("status")
+      .filter({ hasText: "第二章已直接发布" })
       .waitFor();
+    if ((await api(s, "get", `/learning-content/${point.id}`)).status() !== 200)
+      throw Error("直接发布后学生无法阅读");
     await s.goto(
       base + `/student/knowledge?chapter=${target.id}&point=${point.id}`,
     );
@@ -190,24 +179,9 @@ const accounts = JSON.parse(
       )
     )
       throw Error("AI问题未带概念上下文");
-    // Existing RR editor/run UI and its deterministic engine are reused.
+    // Bulk publication ran the existing engines; student uses the existing RR UI.
     const rr = result.experiments.find((x) => x.algorithm === "rr");
-    await t.goto(base + `/teacher/experiments/${rr.id}/preview`);
-    await t
-      .getByRole("button", { name: "试运行当前草稿", exact: true })
-      .click();
-    await t.getByRole("button", { name: "发布教学实验", exact: true }).click();
     const related = result.points.find((p) => p.code === "CH02-U011");
-    const d = await (
-      await api(t, "get", `/teacher/learning-content/${related.id}`)
-    ).json();
-    const published = await api(
-      t,
-      "post",
-      `/teacher/learning-content/${related.id}/publish`,
-      { expected_version: d.edit_version },
-    );
-    if (published.status() !== 200) throw Error("RR知识单元发布失败");
     await s.goto(
       base + `/student/knowledge?chapter=${target.id}&point=${related.id}`,
     );
@@ -223,7 +197,7 @@ const accounts = JSON.parse(
     await s.waitForURL(`**/student/experiments/${rr.id}?**`);
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "第二章：目录冲突映射、草稿保存/刷新/幂等、越权拒绝、教师发布、学生分步图示/键盘/刷新、AI上下文与真实RR入口通过",
+      "第二章：目录冲突映射、草稿保存/刷新/幂等、越权拒绝、一键发布、学生分步图示/键盘/刷新、AI上下文与真实RR入口通过",
     );
   } finally {
     await browser.close();
