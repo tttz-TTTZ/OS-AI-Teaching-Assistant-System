@@ -1,4 +1,4 @@
-"""第三章显式预填：只追加草稿，不猜章ID、不发布、不覆盖教师修改。"""
+"""第三章显式预填和一键发布：不猜章ID，不覆盖教师修改。"""
 
 import hashlib
 import json
@@ -75,7 +75,10 @@ def status_for(db, package, chapter):
 
 @router.get("/chapter03")
 def package_view(user=Depends(teacher)):
-    return load_package()
+    return {
+        **load_package(),
+        "notice": "已预填12个单元，选择目标目录后可一键应用并发布，无需逐项审核；保留后续修改权。",
+    }
 
 
 @router.get("/chapter03/status")
@@ -99,7 +102,7 @@ def plan(body: ImportRequest, user=Depends(teacher)):
             result=status_for(db, package, chapter),
             units=len(package["items"]),
             experiments=0,
-            notice="检查不写入；只追加待审核草稿，不发布目录、不覆盖已有内容。",
+            notice="检查不写入；可一键应用并发布，或仅保存草稿；不覆盖已有修改。",
         )
 
 
@@ -108,87 +111,188 @@ def import_package(body: ImportRequest, user=Depends(teacher)):
     # Existing database() context rolls back all writes on an exception.
     with database() as db:
         db.execute("BEGIN IMMEDIATE")
-        package = load_package()
-        digest = fingerprint()
-        chapter = visible_chapter(db, body.chapter_id, user)
-        # Validate all models before the first write, including related targets.
-        codes = {item["code"] for item in package["items"]}
-        for item in package["items"]:
-            content_for(package, item, body.chapter_id, None)
-            if set(item["related"]) - codes:
-                raise HTTPException(422, "内容包关联目标无效；未写入")
-        old = prior(db, package, chapter)
-        if old:
-            if old["chapter_id"] != body.chapter_id or old["package_hash"] != digest:
-                raise HTTPException(
-                    409, "本课程已导入此包，但目标章或版本不同；未覆盖已有内容"
-                )
-            result = json.loads(old["result_json"])
-            if any(result["sections"].get(k) != v for k, v in body.section_map.items()):
-                raise HTTPException(409, "已导入目录请在现有编辑页调整；未重复导入")
-            return {**result, "already_imported": True}
-        sections = resolve_sections(db, package, body)
-        if any(s["conflict"] for s in sections):
-            raise HTTPException(409, "现有目录编号冲突，请明确映射到已有小节；未写入")
-        # Inspect revision history, including archived/renamed content. Never take it over.
-        for row in db.execute(
-            "SELECT r.body FROM knowledge_revisions r JOIN knowledge_points k ON k.id=r.point_id JOIN chapters c ON c.id=k.chapter_id WHERE c.course_id=?",
-            (chapter["course_id"],),
-        ):
-            if json.loads(row["body"]).get("code", "").startswith("CH03-"):
-                raise HTTPException(
-                    409, "本课程已有CH03历史内容，请先核对；不自动复制或覆盖"
-                )
-        section_ids = {}
-        for s in sections:
-            section_ids[s["code"]] = (
-                s["id"]
-                or db.execute(
-                    "INSERT INTO sections(chapter_id,code,title,sort_order,published) VALUES(?,?,?,?,0)",
-                    (body.chapter_id, s["code"], s["title"], len(section_ids) * 10),
-                ).lastrowid
+        return import_into(db, body, user)
+
+
+def import_into(db, body, user):
+    package = load_package()
+    digest = fingerprint()
+    chapter = visible_chapter(db, body.chapter_id, user)
+    # Validate all models before the first write, including related targets.
+    codes = {item["code"] for item in package["items"]}
+    for item in package["items"]:
+        content_for(package, item, body.chapter_id, None)
+        if set(item["related"]) - codes:
+            raise HTTPException(422, "内容包关联目标无效；未写入")
+    old = prior(db, package, chapter)
+    if old:
+        if old["chapter_id"] != body.chapter_id or old["package_hash"] != digest:
+            raise HTTPException(
+                409, "本课程已导入此包，但目标章或版本不同；未覆盖已有内容"
             )
-        ids = {
-            item["code"]: db.execute(
-                "INSERT INTO knowledge_points(chapter_id,title,content,published) VALUES(?,?,?,0)",
-                (body.chapter_id, item["title"], ""),
+        result = json.loads(old["result_json"])
+        if any(result["sections"].get(k) != v for k, v in body.section_map.items()):
+            raise HTTPException(409, "已导入目录请在现有编辑页调整；未重复导入")
+        return {**result, "already_imported": True}
+    sections = resolve_sections(db, package, body)
+    if any(s["conflict"] for s in sections):
+        raise HTTPException(409, "现有目录编号冲突，请明确映射到已有小节；未写入")
+    # Inspect revision history, including archived/renamed content. Never take it over.
+    for row in db.execute(
+        "SELECT r.body FROM knowledge_revisions r JOIN knowledge_points k ON k.id=r.point_id JOIN chapters c ON c.id=k.chapter_id WHERE c.course_id=?",
+        (chapter["course_id"],),
+    ):
+        if json.loads(row["body"]).get("code", "").startswith("CH03-"):
+            raise HTTPException(
+                409, "本课程已有CH03历史内容，请先核对；不自动复制或覆盖"
+            )
+    section_ids = {}
+    for s in sections:
+        section_ids[s["code"]] = (
+            s["id"]
+            or db.execute(
+                "INSERT INTO sections(chapter_id,code,title,sort_order,published) VALUES(?,?,?,?,0)",
+                (body.chapter_id, s["code"], s["title"], len(section_ids) * 10),
             ).lastrowid
-            for item in package["items"]
-        }
-        points = []
-        for item in package["items"]:
-            content = content_for(
-                package, item, body.chapter_id, section_ids[item["section"]]
+        )
+    ids = {
+        item["code"]: db.execute(
+            "INSERT INTO knowledge_points(chapter_id,title,content,published) VALUES(?,?,?,0)",
+            (body.chapter_id, item["title"], ""),
+        ).lastrowid
+        for item in package["items"]
+    }
+    points = []
+    for item in package["items"]:
+        content = content_for(
+            package, item, body.chapter_id, section_ids[item["section"]]
+        )
+        content.related_ids = [ids[c] for c in item["related"]]
+        saved = save_revision(
+            db, get(db, "knowledge_points", ids[item["code"]]), content, user
+        )
+        points.append(
+            dict(
+                code=item["code"],
+                id=saved["id"],
+                revision_id=saved["revision_id"],
+                edit_version=saved["edit_version"],
             )
-            content.related_ids = [ids[c] for c in item["related"]]
-            saved = save_revision(
-                db, get(db, "knowledge_points", ids[item["code"]]), content, user
+        )
+    result = dict(
+        package_id=package["package_id"],
+        chapter_id=body.chapter_id,
+        sections=section_ids,
+        points=points,
+        experiments=[],
+        already_imported=False,
+    )
+    db.execute(
+        "INSERT INTO chapter_content_imports(course_id,chapter_id,package_id,package_hash,actor_id,result_json) VALUES(?,?,?,?,?,?)",
+        (
+            chapter["course_id"],
+            body.chapter_id,
+            package["package_id"],
+            digest,
+            user["id"],
+            json.dumps(result, ensure_ascii=False),
+        ),
+    )
+    return result
+
+
+def published_result(db, package, body, user):
+    chapter = visible_chapter(db, body.chapter_id, user)
+    old = prior(db, package, chapter)
+    if not old:
+        return None
+    if old["chapter_id"] != body.chapter_id or old["package_hash"] != fingerprint():
+        raise HTTPException(409, "本课程已导入此包，但目标章或版本不同；未覆盖已有内容")
+    result = json.loads(old["result_json"])
+    if any(result["sections"].get(k) != v for k, v in body.section_map.items()):
+        raise HTTPException(409, "已导入目录请在现有编辑页调整；未重复发布")
+    return result if result.get("direct_published") else None
+
+
+@router.post("/chapter03/publish")
+def direct_publish(body: ImportRequest, user=Depends(teacher)):
+    """按用户授权一次性发布本包当前内容；重复调用不恢复撤回项。"""
+    from datetime import datetime, timezone
+    from .main import DB_PATH
+    from .persistence import backup_data
+    from .digital import Action, body_of, change_publication_in
+
+    package = load_package()
+    with database() as db:
+        chapter = visible_chapter(db, body.chapter_id, user)
+        done = published_result(db, package, body, user)
+        if done:
+            return {**done, "already_published": True}
+        if not chapter["course_published"]:
+            raise HTTPException(
+                409, "所属课程未发布；请先发布课程，未扩大整门课程公开范围"
             )
-            points.append(
-                dict(
-                    code=item["code"],
-                    id=saved["id"],
-                    revision_id=saved["revision_id"],
-                    edit_version=saved["edit_version"],
+    backup = backup_data(
+        DB_PATH,
+        DB_PATH.parent
+        / "backups"
+        / (
+            "before-chapter03-publish-"
+            + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        ),
+    )
+    with database() as db:
+        db.execute("BEGIN IMMEDIATE")
+        done = published_result(db, package, body, user)
+        if done:
+            return {**done, "already_published": True}
+        chapter = visible_chapter(db, body.chapter_id, user)
+        if not chapter["course_published"]:
+            raise HTTPException(409, "课程已撤回；未发布第三章")
+        result = import_into(db, body, user)
+        db.execute("UPDATE chapters SET published=1 WHERE id=?", (body.chapter_id,))
+        for record in result["points"]:
+            point = get(db, "knowledge_points", record["id"])
+            content = Content(**body_of(db, point))
+            if (
+                point["archived_at"]
+                or point["chapter_id"] != body.chapter_id
+                or content.chapter_id != body.chapter_id
+            ):
+                raise HTTPException(409, "包内知识点已归档或跨章移动；未覆盖或恢复")
+            if content.section_id:
+                section = get(db, "sections", content.section_id)
+                if section["chapter_id"] != body.chapter_id:
+                    raise HTTPException(409, "小节归属已变化；未跨章发布")
+                db.execute(
+                    "UPDATE sections SET published=1 WHERE id=?", (content.section_id,)
                 )
-            )
-        result = dict(
-            package_id=package["package_id"],
-            chapter_id=body.chapter_id,
-            sections=section_ids,
-            points=points,
-            experiments=[],
-            already_imported=False,
+            if (
+                not point["published"]
+                or point["published_revision_id"] != point["draft_revision_id"]
+            ):
+                change_publication_in(
+                    db,
+                    point["id"],
+                    "publish",
+                    Action(expected_version=point["edit_version"]),
+                    user,
+                )
+            record["edit_version"] = get(db, "knowledge_points", point["id"])[
+                "edit_version"
+            ]
+        result.update(
+            direct_published=True,
+            already_published=False,
+            published_count=len(result["points"]),
+            backup=str(backup),
         )
         db.execute(
-            "INSERT INTO chapter_content_imports(course_id,chapter_id,package_id,package_hash,actor_id,result_json) VALUES(?,?,?,?,?,?)",
+            "UPDATE chapter_content_imports SET result_json=? WHERE course_id=? AND package_id=?",
             (
-                chapter["course_id"],
-                body.chapter_id,
-                package["package_id"],
-                digest,
-                user["id"],
                 json.dumps(result, ensure_ascii=False),
+                chapter["course_id"],
+                package["package_id"],
             ),
         )
         return result

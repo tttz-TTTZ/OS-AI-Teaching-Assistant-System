@@ -116,6 +116,7 @@ def test_authorization_and_read_only_plan(clients):
         ("get", "/status?chapter_id=" + str(cid)),
         ("post", "/plan"),
         ("post", "/import"),
+        ("post", "/publish"),
     ]:
         kwargs = {"json": {"chapter_id": cid}} if method == "post" else {}
         assert getattr(s, method)(BASE + suffix, **kwargs).status_code == 403
@@ -130,7 +131,6 @@ def test_authorization_and_read_only_plan(clients):
     assert t.post(BASE + "/import", json={}).status_code == 422
     assert t.post(BASE + "/import", json={"chapter_id": 0}).status_code == 422
     assert t.post(BASE + "/import", json={"chapter_id": 999999}).status_code == 404
-    assert t.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 404
     assert counts() == before
 
 
@@ -391,3 +391,120 @@ def test_student_projection_keeps_conditions_and_manual_diagram_notes():
         ]
         == original["diagram"]["note"]
     )
+
+
+def test_direct_publish_twelve_units_with_backup_and_no_fake_engines(clients):
+    t, s, cid = clients
+    with main.database() as db:
+        db.execute("UPDATE chapters SET published=0 WHERE id=?", (cid,))
+        old = [
+            tuple(r) for r in db.execute("SELECT * FROM knowledge_points ORDER BY id")
+        ]
+    r = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert r.status_code == 200, r.text
+    result = r.json()
+    assert result["direct_published"] and result["published_count"] == 12
+    backup = Path(result["backup"])
+    assert (backup / "assistant.db").exists() and (backup / "manifest.json").exists()
+    visible = s.get("/api/learning-content", params={"chapter_id": cid}).json()
+    assert len(visible) == 12
+    assert all(
+        s.get("/api/learning-content/" + str(p["id"])).status_code == 200
+        for p in result["points"]
+    )
+    assert s.get("/api/experiments").json() == []
+    with main.database() as db:
+        assert [
+            tuple(
+                db.execute(
+                    "SELECT * FROM knowledge_points WHERE id=?", (r[0],)
+                ).fetchone()
+            )
+            for r in old
+        ] == old
+    assert t.post(BASE + "/publish", json={"chapter_id": 1}).status_code == 409
+
+
+def test_direct_publish_preserves_current_edits_and_does_not_republish_withdrawn(
+    clients,
+):
+    t, s, cid = clients
+    result = t.post(BASE + "/import", json={"chapter_id": cid}).json()
+    path = "/api/teacher/learning-content/" + str(result["points"][0]["id"])
+    edit = payload(t.get(path).json())
+    edit["title"] = "直接发布前老师修改的内容"
+    assert t.put(path, json=edit).status_code == 200
+    result = t.post(BASE + "/publish", json={"chapter_id": cid}).json()
+    assert (
+        s.get("/api/learning-content/" + str(result["points"][0]["id"])).json()["title"]
+        == edit["title"]
+    )
+    draft = t.get(path).json()
+    assert (
+        t.post(
+            path + "/withdraw", json={"expected_version": draft["edit_version"]}
+        ).status_code
+        == 200
+    )
+    before = counts()
+    backups = list(Path(result["backup"]).parent.iterdir())
+    again = t.post(BASE + "/publish", json={"chapter_id": cid}).json()
+    assert again["already_published"] and counts() == before
+    assert list(Path(result["backup"]).parent.iterdir()) == backups
+    assert (
+        s.get("/api/learning-content/" + str(result["points"][0]["id"])).status_code
+        == 404
+    )
+
+
+def test_late_publication_failure_rolls_back_whole_batch(clients, monkeypatch):
+    from app import digital
+
+    t, s, cid = clients
+    before = counts()
+    real = digital.change_publication_in
+    calls = 0
+
+    def fail_last(*args):
+        nonlocal calls
+        calls += 1
+        if calls == 12:
+            raise HTTPException(422, "末条校验失败")
+        return real(*args)
+
+    monkeypatch.setattr(digital, "change_publication_in", fail_last)
+    r = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert r.status_code == 422 and calls == 12 and counts() == before
+    with main.database() as db:
+        assert db.execute("SELECT count(*) FROM knowledge_revisions").fetchone()[0] == 0
+        assert (
+            db.execute(
+                "SELECT count(*) FROM sections WHERE chapter_id=?", (cid,)
+            ).fetchone()[0]
+            == 0
+        )
+
+
+def test_unpublished_course_and_backup_failure_prevent_publication(
+    clients, monkeypatch
+):
+    from app import persistence
+
+    t, s, cid = clients
+    before = counts()
+    with main.database() as db:
+        course = db.execute(
+            "SELECT course_id FROM chapters WHERE id=?", (cid,)
+        ).fetchone()[0]
+        db.execute("UPDATE courses SET published=0 WHERE id=?", (course,))
+    assert t.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 409
+    assert counts() == before
+    with main.database() as db:
+        db.execute("UPDATE courses SET published=1 WHERE id=?", (course,))
+
+    def fail(*args):
+        raise HTTPException(503, "备份失败")
+
+    monkeypatch.setattr(persistence, "backup_data", fail)
+    assert t.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 503
+    assert counts() == before

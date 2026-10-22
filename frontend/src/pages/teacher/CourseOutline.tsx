@@ -100,7 +100,7 @@ export default function CourseOutline({
           className="button secondary"
           to="/teacher/chapter-content/chapter03"
         >
-          第三章预填与审核
+          第三章一键发布
         </Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">

@@ -61,6 +61,7 @@ type Result = {
   chapter_id: number;
   package_changed?: boolean;
   already_imported: boolean;
+  direct_published?: boolean;
   sections: Record<string, number>;
   points: { code: string; id: number }[];
 };
@@ -78,8 +79,8 @@ type Plan = {
 const base = "/teacher/chapter-content/chapter03";
 const stages = [
   ["preview", "阅读预填内容"],
-  ["target", "选择目录，保存草稿"],
-  ["review", "修改、审核与发布"],
+  ["target", "选择目录，一键发布"],
+  ["review", "发布状态与后续修改"],
 ] as const;
 
 export default function Chapter03Content() {
@@ -201,6 +202,25 @@ export default function Chapter03Content() {
       setBusy(false);
     }
   }
+  async function publishNow() {
+    if (!chapter || busy || loadingTarget) return;
+    setError("");
+    setBusy(true);
+    try {
+      setResult(
+        await request<Result>(base + "/publish", {
+          method: "POST",
+          body: JSON.stringify({ chapter_id: chapter, section_map: mapping }),
+        }),
+      );
+      navigate({ stage: "review" });
+      window.scrollTo(0, 0);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   const unit =
     data?.items.find((i) => i.code === params.get("unit")) || data?.items[0];
   const courseName = (id: number) =>
@@ -209,8 +229,8 @@ export default function Chapter03Content() {
   const targetLocked = busy || loadingTarget;
   return (
     <AuthoringPage
-      title="第三章预填内容与审核"
-      description="工程师已预填12个学习单元。先看内容，再选择真实课程目录，最后进入现有编辑器修改、审核和发布。"
+      title="第三章内容与发布"
+      description="已预填12个学习单元，选择目标目录后可直接全部发布，无需逐项审核，以后随时修改。"
       back={{ to: "/teacher/knowledge", label: "返回知识点管理" }}
     >
       <Notice error={error} />
@@ -464,7 +484,7 @@ export default function Chapter03Content() {
                   <p>
                     目标：{courseName(plan.chapter.course_id)} /{" "}
                     {plan.chapter.title}
-                    。将追加12个单元草稿，不创建实验、不发布章或小节。
+                    。可直接发布12个单元及其所属章、小节；已有草稿使用当前内容，保留你的修改。
                   </p>
                   {plan.sections.map((s) => (
                     <p key={s.code}>
@@ -476,6 +496,26 @@ export default function Chapter03Content() {
                           : "新建未发布小节"}
                     </p>
                   ))}
+                  <p>
+                    发布前自动备份并校验，全部成功才发布；不创建尚未支持的实验，不改其他章节。
+                  </p>
+                  {(!result || result.chapter_id === chapter) && (
+                    <button
+                      disabled={
+                        targetLocked ||
+                        !!result?.direct_published ||
+                        !!result?.package_changed ||
+                        plan.sections.some((s) => s.conflict)
+                      }
+                      onClick={publishNow}
+                    >
+                      {busy
+                        ? "正在备份并发布…"
+                        : result?.direct_published
+                          ? "已直接发布"
+                          : "直接应用并发布全部内容"}
+                    </button>
+                  )}
                   {result ? (
                     <>
                       <p role="status">
@@ -493,7 +533,7 @@ export default function Chapter03Content() {
                           })
                         }
                       >
-                        查看已有导入与审核入口
+                        查看发布状态与修改入口
                       </button>
                     </>
                   ) : (
@@ -524,7 +564,7 @@ export default function Chapter03Content() {
           )}
           {stage === "review" && (
             <section className="authoring-card">
-              <h2>修改、审核与发布</h2>
+              <h2>发布状态与后续修改</h2>
               {!result ? (
                 <>
                   <p>先选择已导入的目标章，这里会显示每个单元的编辑入口。</p>
@@ -535,12 +575,23 @@ export default function Chapter03Content() {
               ) : (
                 <>
                   <p role="status">
-                    导入登记已保存。各项当前发布状态以现有编辑器为准，重复导入不会恢复或覆盖后续修改。
+                    {result.direct_published
+                      ? "第三章已直接发布。以后可随时修改，重复操作不会覆盖修改或恢复已撤回内容。"
+                      : "导入登记已保存。已有草稿可一键全部发布，无需逐项审核。"}
                   </p>
                   <p>
-                    先在目录中核对并发布目标课程、章和所用小节，再逐个预览发布知识单元。保存新草稿不会立刻改变学生正在阅读的发布版本。
+                    发布时自动处理目标章和所用小节。后续修改沿用现有编辑器；保存新草稿不会立刻改变学生正在阅读的发布版本。
                   </p>
-                  <h3>1. 核对目录与编号</h3>
+                  {!result.direct_published &&
+                    result.chapter_id === chapter && (
+                      <button
+                        disabled={targetLocked || !!result.package_changed}
+                        onClick={publishNow}
+                      >
+                        {busy ? "正在备份并发布…" : "直接发布已有全部内容"}
+                      </button>
+                    )}
+                  <h3>1. 目录与编号</h3>
                   <Link to={`/teacher/chapters/${result.chapter_id}/edit`}>
                     修改目标章名称、编号、页码与发布状态
                   </Link>
@@ -551,7 +602,7 @@ export default function Chapter03Content() {
                       </Link>
                     </p>
                   ))}
-                  <h3>2. 逐个修改与审核</h3>
+                  <h3>2. 需要时再修改内容</h3>
                   {result.points.map((p) => (
                     <div className="module-row" key={p.id}>
                       <span>

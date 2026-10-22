@@ -82,11 +82,9 @@ const accounts = JSON.parse(
     )
       throw Error("学生可导入教师内容");
     await t.goto(base + "/teacher/knowledge");
+    await t.getByRole("link", { name: "第三章一键发布", exact: true }).click();
     await t
-      .getByRole("link", { name: "第三章预填与审核", exact: true })
-      .click();
-    await t
-      .getByRole("heading", { name: "第三章预填内容与审核", exact: true })
+      .getByRole("heading", { name: "第三章内容与发布", exact: true })
       .waitFor();
     const select = t.getByLabel("预填学习单元");
     await select.waitFor();
@@ -95,9 +93,7 @@ const accounts = JSON.parse(
     await t.getByRole("group", { name: /CH03-G001/ }).waitFor();
     await select.selectOption("CH03-U006");
     await t.getByRole("group", { name: /CH03-F004/ }).waitFor();
-    if (await t.getByRole("button", { name: /直接.*发布/ }).count())
-      throw Error("第三章存在直接发布按钮");
-    await t.getByRole("button", { name: /选择目录，保存草稿/ }).click();
+    await t.getByRole("button", { name: /选择目录，一键发布/ }).click();
     if ((await t.getByLabel("第三章目标章节").inputValue()) !== "")
       throw Error("自动选择了目标");
     await t.getByLabel("第三章目标章节").selectOption(String(target.id));
@@ -139,27 +135,17 @@ const accounts = JSON.parse(
       .getByRole("link", { name: "预览发布", exact: true })
       .first()
       .waitFor();
-    // Directory publication remains an explicit teacher action, using existing endpoints.
-    const sections = await (
-      await api(t, "get", `/sections?chapter_id=${target.id}`)
-    ).json();
-    for (const section of sections) {
-      const { id, ...body } = section;
-      if (
-        !(
-          await api(t, "put", `/teacher/sections/${id}`, {
-            ...body,
-            published: true,
-          })
-        ).ok()
-      )
-        throw Error("目录发布失败");
-    }
-    await t.goto(base + `/teacher/knowledge/${point.id}/preview`);
-    await t.getByRole("button", { name: "发布当前草稿", exact: true }).click();
     await t
-      .getByText("知识点已发布，学生现在可以阅读", { exact: true })
+      .getByRole("button", { name: "直接发布已有全部内容", exact: true })
+      .click();
+    await t
+      .getByRole("status")
+      .filter({ hasText: "第三章已直接发布" })
       .waitFor();
+    const visible = await (
+      await api(s, "get", `/learning-content?chapter_id=${target.id}`)
+    ).json();
+    if (visible.length !== 12) throw Error("未全部发布12个单元");
     await s.goto(
       base + `/student/knowledge?chapter=${target.id}&point=${point.id}`,
     );
@@ -227,7 +213,7 @@ const accounts = JSON.parse(
     await t.setViewportSize({ width: 390, height: 844 });
     await t.goto(base + "/teacher/chapter-content/chapter03");
     await t.getByLabel("预填学习单元").waitFor();
-    await t.getByRole("button", { name: /选择目录，保存草稿/ }).click();
+    await t.getByRole("button", { name: /选择目录，一键发布/ }).click();
     await t.getByLabel("第三章目标章节").waitFor();
     if (process.env.CH03_ARTIFACT_DIR)
       await t.screenshot({
@@ -235,7 +221,7 @@ const accounts = JSON.parse(
       });
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "第三章：12单元、显式目录/冲突映射、幂等草稿、学生越权/未发布拒绝、教师审核发布、图示键盘/刷新、资料空态、私人笔记、AI上下文和窄屏操作通过；无新算法/动画。",
+      "第三章：12单元、显式目录/冲突映射、幂等草稿、学生越权/未发布拒绝、一键发布全部12单元、图示键盘/刷新、资料空态、私人笔记、AI上下文和窄屏操作通过；无新算法/动画。",
     );
   } finally {
     await browser.close();
