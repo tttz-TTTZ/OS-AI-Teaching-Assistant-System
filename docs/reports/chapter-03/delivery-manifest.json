@@ -3,6 +3,10 @@
   "scope": "本目录单文件，不含本清单自身和ZIP；ZIP内含清单及全部单文件",
   "date": "2026-10-22",
   "files": {
+    ".gitattributes": {
+      "bytes": 58,
+      "sha256": "73a426c1731b62fa4c804ed75b70394f85437b7287820cc70f0fba9a24dabad4"
+    },
     "IMPLEMENTATION.md": {
       "bytes": 8789,
       "sha256": "30f800b48de2c07a49872cd8391478e710637e5626e3eb7eec48a6bdc8f52b39"
@@ -56,8 +60,8 @@
       "sha256": "9defc93b915960d910def1df10100751e083b49616f0ce4d51b09837925610dd"
     },
     "quotation-audit-v1.1.csv": {
-      "bytes": 4078,
-      "sha256": "04d6983dc0f71723226158e480e3dfcd0d0228306fe702bab48853b81902f0b5"
+      "bytes": 4045,
+      "sha256": "7834ffdf999b173878b897a090890624e686cc39eb620e230e73b16858a055e9"
     },
     "render-info.json": {
       "bytes": 103,
@@ -72,8 +76,8 @@
       "sha256": "3bc9656a5b752290ba63f5ff1ba48e5331f0ef4c1bae706e1aa5d3c39823c06c"
     },
     "slide-coverage-v1.1.csv": {
-      "bytes": 18601,
-      "sha256": "a64747c1dbd0834a8489d9c977cb58f31fa0d965f54042167cdcc735cbd09232"
+      "bytes": 18482,
+      "sha256": "c0a0ba36f9bcf0f9ef1fca0b11e9203af1bad7f59a0855b6116e368a5b74f84d"
     },
     "source-manifest-v1.1.json": {
       "bytes": 2271,
