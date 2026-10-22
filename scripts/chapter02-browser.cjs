@@ -73,6 +73,17 @@ const accounts = JSON.parse(
         published: true,
       })
     ).json();
+    const retired = [];
+    for (const title of ["进程与线程", "先来先服务 FCFS"]) {
+      const response = await api(t, "post", "/teacher/knowledge", {
+        chapter_id: target.id,
+        title,
+        content: "待移除的旧示例",
+        published: true,
+      });
+      if (response.status() !== 201) throw Error("旧内容夹具创建失败");
+      retired.push((await response.json()).id);
+    }
     const endpoint = "/teacher/chapter-content/chapter02";
     if (
       (
@@ -143,6 +154,16 @@ const accounts = JSON.parse(
       .getByRole("status")
       .filter({ hasText: "第二章已直接发布" })
       .waitFor();
+    const visible = await (
+      await api(s, "get", `/learning-content?chapter_id=${target.id}`)
+    ).json();
+    if (visible.length !== 12 || visible.some((p) => retired.includes(p.id)))
+      throw Error("两个旧条目未从第二章移除");
+    await s.goto(base + `/student/knowledge?chapter=${target.id}`);
+    await s.getByText(visible[0].title, { exact: true }).waitFor();
+    for (const title of ["进程与线程", "先来先服务 FCFS"])
+      if (await s.getByRole("heading", { name: title, exact: true }).count())
+        throw Error("学生列表仍显示旧知识点");
     if ((await api(s, "get", `/learning-content/${point.id}`)).status() !== 200)
       throw Error("直接发布后学生无法阅读");
     await s.goto(
@@ -197,7 +218,7 @@ const accounts = JSON.parse(
     await s.waitForURL(`**/student/experiments/${rr.id}?**`);
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "第二章：目录冲突映射、草稿保存/刷新/幂等、越权拒绝、一键发布、学生分步图示/键盘/刷新、AI上下文与真实RR入口通过",
+      "第二章：目录冲突映射、草稿保存/刷新/幂等、越权拒绝、一键发布并移除两个旧示例、学生分步图示/键盘/刷新、AI上下文与真实RR入口通过",
     );
   } finally {
     await browser.close();

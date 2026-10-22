@@ -166,6 +166,8 @@ V8新增document_ai_indexes、personal_ai_jobs、personal_ai_attempts，备份�
 
 ## 第二章预填内容包（2026-10-22）
 
+最新补丁：第二章直接发布同时归档本目标章中旧“进程与线程”“先来先服务 FCFS”条目（排除新包登记ID）；结果增加`legacy_cleanup_version:1`和`retired_legacy_point_ids`。已发布安装在后端启动时补处理，实际有旧条目时先成套备份，结果保存`legacy_cleanup_backup`。不新增接口/表，不清空个人记录、不影响其他章或现有实验。
+
 以下接口仅教师可调用；写请求沿用会话和CSRF校验。学生调用返回403。无本章启动时自动导入接口。
 
 - `GET /api/teacher/chapter-content/chapter02`：12单元、24分析记录、来源、摘要、21核实事项及3个已有引擎实验的预填包；不是已发布内容。

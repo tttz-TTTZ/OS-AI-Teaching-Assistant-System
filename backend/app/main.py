@@ -40,6 +40,9 @@ async def lifespan(app):
     from .chapter_apply import auto_apply_chapter
 
     auto_apply_chapter()
+    from .chapter02 import retire_published_legacy
+
+    retire_published_legacy()
     yield
 
 

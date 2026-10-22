@@ -451,3 +451,153 @@ def test_direct_publish_rejects_student_and_unpublished_course(clients):
         db.execute("UPDATE courses SET published=0")
     assert t.post(BASE + "/publish", json={"chapter_id": cid}).status_code == 409
     assert counts() == before
+
+
+def add_legacy(t, cid):
+    result = []
+    for title in chapter02.LEGACY_TITLES:
+        r = t.post(
+            "/api/teacher/knowledge",
+            json={
+                "chapter_id": cid,
+                "title": title,
+                "content": "待移除的旧示例",
+                "published": True,
+            },
+        )
+        assert r.status_code == 201, r.text
+        result.append(r.json()["id"])
+    return result
+
+
+def test_direct_publish_retires_only_two_named_legacy_points(clients):
+    t, s, cid = clients
+    old_ids = add_legacy(t, cid)
+    other_chapter = add_legacy(t, 1)
+    other = t.post(
+        "/api/teacher/knowledge",
+        json={
+            "chapter_id": cid,
+            "title": "教师自行补充内容",
+            "content": "仍需保留",
+            "published": True,
+        },
+    ).json()["id"]
+    with main.database() as db:
+        sid = db.execute(
+            "SELECT id FROM users WHERE username='ch02student'"
+        ).fetchone()[0]
+        db.execute(
+            "INSERT INTO knowledge_progress(user_id,point_id,note) VALUES(?,?,?)",
+            (sid, old_ids[0], "保留个人笔记"),
+        )
+        db.execute("INSERT INTO document_knowledge_points VALUES(1,?)", (old_ids[0],))
+    response = t.post(BASE + "/publish", json={"chapter_id": cid})
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["retired_legacy_point_ids"] == old_ids
+    for path in ["/api/knowledge", "/api/learning-content"]:
+        visible = s.get(path, params={"chapter_id": cid}).json()
+        assert not set(old_ids) & {p["id"] for p in visible}
+        assert len(visible) == 13  # 12 new units plus the unrelated teacher addition
+    assert all(s.get(f"/api/knowledge/{ident}").status_code == 404 for ident in old_ids)
+    assert s.get(f"/api/knowledge/{other}").status_code == 200
+    assert all(
+        s.get(f"/api/knowledge/{ident}").status_code == 200 for ident in other_chapter
+    )
+    assert {e["algorithm"] for e in s.get("/api/experiments").json()} == {
+        "fcfs",
+        "sjf",
+        "rr",
+    }
+    with main.database() as db:
+        assert (
+            db.execute(
+                "SELECT note FROM knowledge_progress WHERE point_id=?", (old_ids[0],)
+            ).fetchone()[0]
+            == "保留个人笔记"
+        )
+        assert (
+            db.execute(
+                "SELECT count(*) FROM document_knowledge_points WHERE knowledge_point_id=?",
+                (old_ids[0],),
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            db.execute(
+                "SELECT count(*) FROM content_events WHERE action='chapter02_legacy_archive'"
+            ).fetchone()[0]
+            == 2
+        )
+    with sqlite3.connect(Path(result["backup"]) / "assistant.db") as db:
+        assert (
+            db.execute(
+                "SELECT archived_at FROM knowledge_points WHERE id=?", (old_ids[0],)
+            ).fetchone()[0]
+            is None
+        )
+
+
+def old_published_installation(t, cid):
+    result = t.post(BASE + "/publish", json={"chapter_id": cid}).json()
+    # Simulate an installation published using b97199e, before this cleanup existed.
+    result.pop("legacy_cleanup_version")
+    result.pop("retired_legacy_point_ids")
+    with main.database() as db:
+        db.execute(
+            "UPDATE chapter_content_imports SET result_json=? WHERE chapter_id=?",
+            (json.dumps(result), cid),
+        )
+    return add_legacy(t, cid)
+
+
+def test_restart_cleans_already_published_installation_once(clients):
+    t, s, cid = clients
+    old_ids = old_published_installation(t, cid)
+    assert s.get(f"/api/knowledge/{old_ids[0]}").status_code == 200
+    with TestClient(main.app):  # real lifespan performs the upgrade
+        assert s.get(f"/api/knowledge/{old_ids[0]}").status_code == 404
+    result = t.get(BASE + "/status", params={"chapter_id": cid}).json()["result"]
+    assert result["retired_legacy_point_ids"] == old_ids
+    backup = Path(result["legacy_cleanup_backup"])
+    from app.persistence import validate_backup
+
+    validate_backup(backup)
+    snapshots = sorted(backup.parent.iterdir())
+    with TestClient(main.app):
+        assert s.get(f"/api/knowledge/{old_ids[1]}").status_code == 404
+    assert sorted(backup.parent.iterdir()) == snapshots
+    assert (
+        t.get(BASE + "/status", params={"chapter_id": cid}).json()["result"] == result
+    )
+    assert len(s.get("/api/learning-content", params={"chapter_id": cid}).json()) == 12
+
+
+def test_cleanup_waits_for_new_publication_and_never_removes_other_content(clients):
+    t, s, cid = clients
+    old_ids = add_legacy(t, cid)
+    t.post(BASE + "/import", json={"chapter_id": cid})
+    chapter02.retire_published_legacy()
+    assert all(s.get(f"/api/knowledge/{ident}").status_code == 200 for ident in old_ids)
+    result = t.get(BASE + "/status", params={"chapter_id": cid}).json()["result"]
+    assert "legacy_cleanup_version" not in result
+
+
+def test_cleanup_backup_failure_preserves_old_content(clients, monkeypatch):
+    from app import persistence
+
+    t, s, cid = clients
+    old_ids = old_published_installation(t, cid)
+
+    def fail(*args):
+        raise OSError("模拟磁盘不足")
+
+    monkeypatch.setattr(persistence, "backup_data", fail)
+    with pytest.raises(OSError):
+        chapter02.retire_published_legacy()
+    assert all(s.get(f"/api/knowledge/{ident}").status_code == 200 for ident in old_ids)
+    assert (
+        "legacy_cleanup_version"
+        not in t.get(BASE + "/status", params={"chapter_id": cid}).json()["result"]
+    )

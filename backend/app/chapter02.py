@@ -382,6 +382,7 @@ def direct_publish(body: ImportRequest, user=Depends(teacher)):
             published_count=len(result["points"]),
             backup=str(backup),
         )
+        retire_legacy_in(db, result, user["id"])
         db.execute(
             "UPDATE chapter_content_imports SET result_json=? WHERE course_id=? AND package_id=?",
             (
@@ -391,3 +392,97 @@ def direct_publish(body: ImportRequest, user=Depends(teacher)):
             ),
         )
         return result
+
+
+LEGACY_TITLES = ("进程与线程", "先来先服务 FCFS")
+
+
+def legacy_candidates(db, result):
+    keep = {p["id"] for p in result["points"]}
+    return [
+        dict(row)
+        for row in db.execute(
+            "SELECT * FROM knowledge_points WHERE chapter_id=? AND title IN (?,?) AND archived_at IS NULL",
+            (result["chapter_id"], *LEGACY_TITLES),
+        )
+        if row["id"] not in keep
+    ]
+
+
+def retire_legacy_in(db, result, actor_id):
+    """仅移除用户指定的两个旧条目；归档保留历史，不删算法和个人记录。"""
+    if not result.get("direct_published") or result.get("legacy_cleanup_version"):
+        return
+    retired = []
+    for point in legacy_candidates(db, result):
+        db.execute(
+            "UPDATE knowledge_points SET archived_at=CURRENT_TIMESTAMP,edit_version=edit_version+1 WHERE id=?",
+            (point["id"],),
+        )
+        db.execute(
+            "INSERT INTO content_events(point_id,actor_id,action,revision_id) VALUES(?,?,?,?)",
+            (
+                point["id"],
+                actor_id,
+                "chapter02_legacy_archive",
+                point["published_revision_id"],
+            ),
+        )
+        retired.append(point["id"])
+    result.update(legacy_cleanup_version=1, retired_legacy_point_ids=retired)
+
+
+def retire_published_legacy():
+    """为已发布过第二章的本地数据库执行一次补丁；以导入登记定位，不猜章ID。"""
+    from datetime import datetime, timezone
+    from .main import DB_PATH
+    from .persistence import backup_data
+
+    with database() as db:
+        entries = [
+            dict(r)
+            for r in db.execute(
+                "SELECT i.* FROM chapter_content_imports i JOIN chapters c ON c.id=i.chapter_id AND c.course_id=i.course_id WHERE i.package_id=?",
+                (load_package()["package_id"],),
+            )
+        ]
+    for entry in entries:
+        result = json.loads(entry["result_json"])
+        if not result.get("direct_published") or result.get("legacy_cleanup_version"):
+            continue
+        with database() as db:
+            candidates = legacy_candidates(db, result)
+        backup = None
+        if candidates:
+            backup = backup_data(
+                DB_PATH,
+                DB_PATH.parent
+                / "backups"
+                / (
+                    "before-chapter02-legacy-cleanup-"
+                    + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+                ),
+            )
+        with database() as db:
+            db.execute("BEGIN IMMEDIATE")
+            current = db.execute(
+                "SELECT result_json FROM chapter_content_imports WHERE id=?",
+                (entry["id"],),
+            ).fetchone()
+            if not current:
+                continue
+            result = json.loads(current["result_json"])
+            if not result.get("direct_published") or result.get(
+                "legacy_cleanup_version"
+            ):
+                continue
+            # 若并发修改使原本空的候选变为非空，必须先备份再重启重试。
+            if backup is None and legacy_candidates(db, result):
+                raise RuntimeError("第二章旧内容在检查后发生变化；未归档，请重启重试")
+            retire_legacy_in(db, result, entry["actor_id"])
+            if backup:
+                result["legacy_cleanup_backup"] = str(backup)
+            db.execute(
+                "UPDATE chapter_content_imports SET result_json=? WHERE id=?",
+                (json.dumps(result, ensure_ascii=False), entry["id"]),
+            )
