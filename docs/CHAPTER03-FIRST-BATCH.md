@@ -1,5 +1,7 @@
 # 第三章第一批交付：预填内容、教师审核与学生阅读
 
+> 后续更正：平台实际采用第四章、4.*目录及拆分后的13单元，见[第四章迁移与页表拆分](CHAPTER04-LOCATION-FIX.md)。本文保留先前阶段记录，当前行为以最新更正为准。
+
 > 最新：用户已授权不再逐项审核，改为[一键应用并发布](CHAPTER03-DIRECT-PUBLISH.md)。以下为第一批草稿阶段记录；涉及必须逐个审核或没有直接发布入口的描述已被最新说明取代。
 
 2026-10-22，分支 `feat/development-foundation`。依据 [实施指令](reports/chapter-03/IMPLEMENTATION.md) 和 [完整V1.1报告](reports/chapter-03/REPORT-V1.1.md)。本轮使用已复核报告及JSON，不声称重新读取原PPT，不使用教材PDF补充为课件原文。

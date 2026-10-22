@@ -11,6 +11,7 @@ from .access import visible_chapter
 from .auth import teacher
 from .chapter_content import router
 from .chapter_import import prior, resolve_sections
+from .chapter04_content import application_package, target_is_memory
 from .digital import Content, database, get, save_revision
 
 PACKAGE = Path(__file__).resolve().parents[1] / "content" / "chapter03.json"
@@ -18,6 +19,10 @@ PACKAGE = Path(__file__).resolve().parents[1] / "content" / "chapter03.json"
 
 def load_package():
     return json.loads(PACKAGE.read_text(encoding="utf-8"))
+
+
+def current_package():
+    return application_package(load_package())
 
 
 def content_for(package, item, chapter_id, section_id):
@@ -75,10 +80,7 @@ def status_for(db, package, chapter):
 
 @router.get("/chapter03")
 def package_view(user=Depends(teacher)):
-    return {
-        **load_package(),
-        "notice": "已预填12个单元，选择目标目录后可一键应用并发布，无需逐项审核；保留后续修改权。",
-    }
+    return current_package()
 
 
 @router.get("/chapter03/status")
@@ -86,14 +88,14 @@ def status(chapter_id: int, user=Depends(teacher)):
     with database() as db:
         return {
             "result": status_for(
-                db, load_package(), visible_chapter(db, chapter_id, user)
+                db, current_package(), visible_chapter(db, chapter_id, user)
             )
         }
 
 
 @router.post("/chapter03/plan")
 def plan(body: ImportRequest, user=Depends(teacher)):
-    package = load_package()
+    package = current_package()
     with database() as db:
         chapter = visible_chapter(db, body.chapter_id, user)
         return dict(
@@ -115,7 +117,7 @@ def import_package(body: ImportRequest, user=Depends(teacher)):
 
 
 def import_into(db, body, user):
-    package = load_package()
+    package = current_package()
     digest = fingerprint()
     chapter = visible_chapter(db, body.chapter_id, user)
     # Validate all models before the first write, including related targets.
@@ -187,6 +189,11 @@ def import_into(db, body, user):
         experiments=[],
         already_imported=False,
     )
+    if len(package["items"]) == 13 and target_is_memory(chapter):
+        db.execute(
+            "UPDATE chapters SET textbook_number=4 WHERE id=?", (body.chapter_id,)
+        )
+        result["chapter04_correction_v1"] = True
     db.execute(
         "INSERT INTO chapter_content_imports(course_id,chapter_id,package_id,package_hash,actor_id,result_json) VALUES(?,?,?,?,?,?)",
         (
@@ -222,7 +229,7 @@ def direct_publish(body: ImportRequest, user=Depends(teacher)):
     from .persistence import backup_data
     from .digital import Action, body_of, change_publication_in
 
-    package = load_package()
+    package = current_package()
     with database() as db:
         chapter = visible_chapter(db, body.chapter_id, user)
         done = published_result(db, package, body, user)

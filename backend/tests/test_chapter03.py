@@ -43,7 +43,7 @@ def test_reviewed_package_models_and_source_coverage(clients):
     t, s, cid = clients
     p = t.get(BASE).json()
     assert len(p["sources"]) == 6 and sum(x["slides"] for x in p["sources"]) == 118
-    assert len(p["items"]) == 12 and len(p["records"]) == 21 and len(p["issues"]) == 28
+    assert len(p["items"]) == 13 and len(p["records"]) == 21 and len(p["issues"]) == 28
     assert p["experiments"] == [] and len(p["summaries"]) == 8
     ids = [r for item in p["items"] for r in item["record_ids"]]
     assert len(ids) == len(set(ids)) == 21
@@ -72,7 +72,7 @@ def test_reviewed_package_models_and_source_coverage(clients):
                 1 <= n <= source[ref["source_id"]]["slides"]
                 for n in ref["physical_pages"]
             )
-    assert len([d for d in diagrams.values() if d.type == "relation"]) == 6
+    assert len([d for d in diagrams.values() if d.type == "relation"]) == 7
     assert len([d for d in diagrams.values() if d.type == "flow"]) == 9
     assert sum(len(d.edges) for d in diagrams.values() if d.type == "relation") == 45
     flow = diagrams["CH03-F004"]
@@ -124,7 +124,7 @@ def test_authorization_and_read_only_plan(clients):
     r = t.post(BASE + "/plan", json={"chapter_id": cid})
     assert (
         r.status_code == 200
-        and r.json()["units"] == 12
+        and r.json()["units"] == 13
         and r.json()["experiments"] == 0
     )
     assert counts() == before
@@ -150,7 +150,7 @@ def test_drafts_idempotent_preserve_old_data_and_teacher_changes(clients):
     r = t.post(BASE + "/import", json={"chapter_id": cid})
     assert r.status_code == 200, r.text
     result = r.json()
-    assert len(result["points"]) == 12 and result["experiments"] == []
+    assert len(result["points"]) == 13 and result["experiments"] == []
     assert all(
         s.get("/api/learning-content/" + str(p["id"])).status_code == 404
         for p in result["points"]
@@ -204,7 +204,7 @@ def test_directory_conflict_explicit_mapping_and_foreign_section(clients):
         "/api/teacher/sections",
         json={
             "chapter_id": cid,
-            "code": "3.1",
+            "code": "4.1",
             "title": "教师自己的基础节",
             "published": True,
         },
@@ -219,7 +219,7 @@ def test_directory_conflict_explicit_mapping_and_foreign_section(clients):
         "/api/teacher/sections",
         json={"chapter_id": 1, "code": "foreign", "title": "其他章"},
     ).json()
-    for mapping in [{"bad": old["id"]}, {"3.1": foreign["id"]}]:
+    for mapping in [{"bad": old["id"]}, {"4.1": foreign["id"]}]:
         assert (
             t.post(
                 BASE + "/plan", json={"chapter_id": cid, "section_map": mapping}
@@ -233,16 +233,16 @@ def test_directory_conflict_explicit_mapping_and_foreign_section(clients):
             == 422
         )
     imported = t.post(
-        BASE + "/import", json={"chapter_id": cid, "section_map": {"3.1": old["id"]}}
+        BASE + "/import", json={"chapter_id": cid, "section_map": {"4.1": old["id"]}}
     ).json()
-    assert imported["sections"]["3.1"] == old["id"]
+    assert imported["sections"]["4.1"] == old["id"]
     with main.database() as db:
         row = db.execute("SELECT * FROM sections WHERE id=?", (old["id"],)).fetchone()
         assert row["title"] == old["title"] and row["published"] == 1
     assert (
         t.post(
             BASE + "/import",
-            json={"chapter_id": cid, "section_map": {"3.1": foreign["id"]}},
+            json={"chapter_id": cid, "section_map": {"4.1": foreign["id"]}},
         ).status_code
         == 409
     )
@@ -363,7 +363,7 @@ def test_import_survives_backup_restore(clients, tmp_path):
             db.execute(
                 "SELECT count(*) FROM knowledge_points WHERE digital_managed=1"
             ).fetchone()[0]
-            == 12
+            == 13
         )
 
 
@@ -403,11 +403,11 @@ def test_direct_publish_twelve_units_with_backup_and_no_fake_engines(clients):
     r = t.post(BASE + "/publish", json={"chapter_id": cid})
     assert r.status_code == 200, r.text
     result = r.json()
-    assert result["direct_published"] and result["published_count"] == 12
+    assert result["direct_published"] and result["published_count"] == 13
     backup = Path(result["backup"])
     assert (backup / "assistant.db").exists() and (backup / "manifest.json").exists()
     visible = s.get("/api/learning-content", params={"chapter_id": cid}).json()
-    assert len(visible) == 12
+    assert len(visible) == 13
     assert all(
         s.get("/api/learning-content/" + str(p["id"])).status_code == 200
         for p in result["points"]
@@ -468,13 +468,13 @@ def test_late_publication_failure_rolls_back_whole_batch(clients, monkeypatch):
     def fail_last(*args):
         nonlocal calls
         calls += 1
-        if calls == 12:
+        if calls == 13:
             raise HTTPException(422, "末条校验失败")
         return real(*args)
 
     monkeypatch.setattr(digital, "change_publication_in", fail_last)
     r = t.post(BASE + "/publish", json={"chapter_id": cid})
-    assert r.status_code == 422 and calls == 12 and counts() == before
+    assert r.status_code == 422 and calls == 13 and counts() == before
     with main.database() as db:
         assert db.execute("SELECT count(*) FROM knowledge_revisions").fetchone()[0] == 0
         assert (

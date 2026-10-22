@@ -43,6 +43,9 @@ async def lifespan(app):
     from .chapter02 import retire_published_legacy
 
     retire_published_legacy()
+    from .chapter04_correction import auto_correct
+
+    auto_correct()
     yield
 
 
@@ -362,5 +365,7 @@ from . import chapter_apply  # register direct-apply route before including rout
 from . import chapter02  # register explicit chapter02 draft routes, no startup writes
 
 from . import chapter03  # explicit teacher draft routes only; no startup apply
+
+from . import chapter04_correction  # targeted location/number correction
 
 app.include_router(chapter_content_router)

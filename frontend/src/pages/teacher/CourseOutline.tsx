@@ -56,7 +56,7 @@ export default function CourseOutline({
         <div className="outline-point" key={p.id}>
           <div>
             <strong>
-              {p.code} {p.title}
+              {p.code?.startsWith("CH03-") ? p.title : `${p.code} ${p.title}`}
             </strong>
             <small>
               {p.published ? "已有发布版本" : "内容待编写"} ·{" "}
@@ -98,9 +98,9 @@ export default function CourseOutline({
         </Link>
         <Link
           className="button secondary"
-          to="/teacher/chapter-content/chapter03"
+          to="/teacher/chapter-content/chapter04"
         >
-          第三章一键发布
+          第四章存储管理
         </Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
@@ -168,7 +168,11 @@ export default function CourseOutline({
                   <small>
                     课程章节 · {c.published ? "已发布" : "尚未发布"}
                   </small>
-                  <h2>{c.title}</h2>
+                  <h2>
+                    {c.textbook_number === 4 && !/^第.*章/.test(c.title)
+                      ? `第四章 ${c.title}`
+                      : c.title}
+                  </h2>
                 </div>
                 <div className="row-actions">
                   {!library && (

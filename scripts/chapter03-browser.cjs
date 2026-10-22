@@ -62,14 +62,14 @@ const accounts = JSON.parse(
     const endpoint = "/teacher/chapter-content/chapter03";
     const target = await (
       await api(t, "post", "/teacher/chapters", {
-        title: "第三章隔离验收：存储管理",
+        title: "存储管理",
         published: true,
       })
     ).json();
     const old = await (
       await api(t, "post", "/teacher/sections", {
         chapter_id: target.id,
-        code: "3.1",
+        code: "4.1",
         title: "教师定制基础节",
         published: true,
       })
@@ -82,27 +82,27 @@ const accounts = JSON.parse(
     )
       throw Error("学生可导入教师内容");
     await t.goto(base + "/teacher/knowledge");
-    await t.getByRole("link", { name: "第三章一键发布", exact: true }).click();
+    await t.getByRole("link", { name: "第四章存储管理", exact: true }).click();
     await t
-      .getByRole("heading", { name: "第三章内容与发布", exact: true })
+      .getByRole("heading", { name: "第四章内容与发布", exact: true })
       .waitFor();
     const select = t.getByLabel("预填学习单元");
     await select.waitFor();
-    if ((await select.locator("option").count()) !== 12)
-      throw Error("没有12个单元");
+    if ((await select.locator("option").count()) !== 13)
+      throw Error("没有13个单元");
     await t.getByRole("group", { name: /CH03-G001/ }).waitFor();
     await select.selectOption("CH03-U006");
     await t.getByRole("group", { name: /CH03-F004/ }).waitFor();
     await t.getByRole("button", { name: /选择目录，一键发布/ }).click();
-    if ((await t.getByLabel("第三章目标章节").inputValue()) !== "")
+    if ((await t.getByLabel("第四章目标章节").inputValue()) !== "")
       throw Error("自动选择了目标");
-    await t.getByLabel("第三章目标章节").selectOption(String(target.id));
+    await t.getByLabel("第四章目标章节").selectOption(String(target.id));
     await t
       .getByRole("button", { name: "检查目标与目录", exact: true })
       .click();
     await t.getByText(/编号冲突：请在上方明确映射/).waitFor();
     await t
-      .getByLabel("小节映射 3.1", { exact: true })
+      .getByLabel("小节映射 4.1", { exact: true })
       .selectOption(String(old.id));
     await t
       .getByRole("button", { name: "检查目标与目录", exact: true })
@@ -110,7 +110,7 @@ const accounts = JSON.parse(
     await t.getByText(/复用「教师定制基础节」/).waitFor();
     await t.getByRole("checkbox", { name: /我已核对目标章节与小节/ }).check();
     await t
-      .getByRole("button", { name: "保存12个单元草稿", exact: true })
+      .getByRole("button", { name: "保存13个单元草稿", exact: true })
       .click();
     await t.getByRole("status").filter({ hasText: "导入登记已保存" }).waitFor();
     const result = (
@@ -126,7 +126,7 @@ const accounts = JSON.parse(
     ).json();
     if (
       !again.already_imported ||
-      again.points.length !== 12 ||
+      again.points.length !== 13 ||
       again.experiments.length
     )
       throw Error("重导未幂等或制造假实验");
@@ -140,12 +140,12 @@ const accounts = JSON.parse(
       .click();
     await t
       .getByRole("status")
-      .filter({ hasText: "第三章已直接发布" })
+      .filter({ hasText: "第四章已直接发布" })
       .waitFor();
     const visible = await (
       await api(s, "get", `/learning-content?chapter_id=${target.id}`)
     ).json();
-    if (visible.length !== 12) throw Error("未全部发布12个单元");
+    if (visible.length !== 13) throw Error("未全部发布13个单元");
     await s.goto(
       base + `/student/knowledge?chapter=${target.id}&point=${point.id}`,
     );
@@ -214,14 +214,14 @@ const accounts = JSON.parse(
     await t.goto(base + "/teacher/chapter-content/chapter03");
     await t.getByLabel("预填学习单元").waitFor();
     await t.getByRole("button", { name: /选择目录，一键发布/ }).click();
-    await t.getByLabel("第三章目标章节").waitFor();
+    await t.getByLabel("第四章目标章节").waitFor();
     if (process.env.CH03_ARTIFACT_DIR)
       await t.screenshot({
         path: path.join(process.env.CH03_ARTIFACT_DIR, "teacher-mobile.png"),
       });
     if (errors.length) throw Error(errors.join("\n"));
     console.log(
-      "第三章：12单元、显式目录/冲突映射、幂等草稿、学生越权/未发布拒绝、一键发布全部12单元、图示键盘/刷新、资料空态、私人笔记、AI上下文和窄屏操作通过；无新算法/动画。",
+      "第四章：13单元、显式目录/冲突映射、幂等草稿、学生越权/未发布拒绝、一键发布全部13单元、图示键盘/刷新、资料空态、私人笔记、AI上下文和窄屏操作通过；无新算法/动画。",
     );
   } finally {
     await browser.close();

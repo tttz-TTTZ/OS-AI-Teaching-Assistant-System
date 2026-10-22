@@ -62,6 +62,7 @@ type Result = {
   package_changed?: boolean;
   already_imported: boolean;
   direct_published?: boolean;
+  chapter04_correction_v1?: boolean;
   sections: Record<string, number>;
   points: { code: string; id: number }[];
 };
@@ -221,6 +222,25 @@ export default function Chapter03Content() {
       setBusy(false);
     }
   }
+  async function correctLocation() {
+    if (!chapter || busy || loadingTarget) return;
+    setError("");
+    setBusy(true);
+    try {
+      setResult(
+        await request<Result>(base + "/correct-location", {
+          method: "POST",
+          body: JSON.stringify({ chapter_id: chapter, section_map: mapping }),
+        }),
+      );
+      navigate({ stage: "review" });
+      window.scrollTo(0, 0);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   const unit =
     data?.items.find((i) => i.code === params.get("unit")) || data?.items[0];
   const courseName = (id: number) =>
@@ -229,12 +249,12 @@ export default function Chapter03Content() {
   const targetLocked = busy || loadingTarget;
   return (
     <AuthoringPage
-      title="第三章内容与发布"
-      description="已预填12个学习单元，选择目标目录后可直接全部发布，无需逐项审核，以后随时修改。"
+      title="第四章内容与发布"
+      description="已预填13个学习单元，选择目标目录后可直接全部发布，无需逐项审核，以后随时修改。"
       back={{ to: "/teacher/knowledge", label: "返回知识点管理" }}
     >
       <Notice error={error} />
-      {!data && !error && <p role="status">正在读取第三章内容…</p>}
+      {!data && !error && <p role="status">正在读取第四章内容…</p>}
       {error && (
         <button className="secondary" onClick={() => setReload((x) => x + 1)}>
           重新加载
@@ -242,7 +262,7 @@ export default function Chapter03Content() {
       )}
       {data && (
         <>
-          <nav className="authoring-steps" aria-label="第三章内容步骤">
+          <nav className="authoring-steps" aria-label="第四章内容步骤">
             {stages.map(([key, label], i) => (
               <button
                 key={key}
@@ -405,12 +425,12 @@ export default function Chapter03Content() {
             <section className="authoring-card authoring-form">
               <h2>将存储管理内容放到哪里？</h2>
               <p>
-                课件第三章不等于数据库ID3。请选择真实课程下的目标章；不会重命名、清空、归档或自动发布原有内容。
+                请选择实际的“存储管理/内存管理”章节，平台采用第四章及4.*小节编号；原PPT文件名和来源编号保持原样。
               </p>
               <label>
                 目标课程与章节
                 <select
-                  aria-label="第三章目标章节"
+                  aria-label="第四章目标章节"
                   value={chapter || ""}
                   disabled={busy}
                   onChange={(e) => navigate({ chapter: e.target.value })}
@@ -484,7 +504,7 @@ export default function Chapter03Content() {
                   <p>
                     目标：{courseName(plan.chapter.course_id)} /{" "}
                     {plan.chapter.title}
-                    。可直接发布12个单元及其所属章、小节；已有草稿使用当前内容，保留你的修改。
+                    。可直接发布13个单元及其所属章、小节；已有草稿使用当前内容，保留你的修改。
                   </p>
                   {plan.sections.map((s) => (
                     <p key={s.code}>
@@ -516,6 +536,27 @@ export default function Chapter03Content() {
                           : "直接应用并发布全部内容"}
                     </button>
                   )}
+                  {result &&
+                    (!result.chapter04_correction_v1 ||
+                      result.chapter_id !== chapter) && (
+                      <div className="notice">
+                        <p>
+                          这批存储管理内容已导入到章节ID {result.chapter_id}
+                          。如果放错了位置，可迁移到当前选择的存储管理章，同时修正4.*编号、拆分页表内容，并归档原章的旧死锁示例。已有知识点和笔记会保留。
+                        </p>
+                        <button
+                          disabled={
+                            targetLocked ||
+                            plan.sections.some((s) => s.conflict)
+                          }
+                          onClick={correctLocation}
+                        >
+                          {busy
+                            ? "正在备份并修正…"
+                            : "迁移到此章并修正第四章目录"}
+                        </button>
+                      </div>
+                    )}
                   {result ? (
                     <>
                       <p role="status">
@@ -554,7 +595,7 @@ export default function Chapter03Content() {
                         }
                         onClick={save}
                       >
-                        {busy ? "正在保存…" : "保存12个单元草稿"}
+                        {busy ? "正在保存…" : "保存13个单元草稿"}
                       </button>
                     </>
                   )}
@@ -574,9 +615,14 @@ export default function Chapter03Content() {
                 </>
               ) : (
                 <>
+                  {result.chapter04_correction_v1 && (
+                    <p role="status">
+                      第四章目录已修正，反置页表和多级页表已分别归入4.3.5、4.3.6。
+                    </p>
+                  )}
                   <p role="status">
                     {result.direct_published
-                      ? "第三章已直接发布。以后可随时修改，重复操作不会覆盖修改或恢复已撤回内容。"
+                      ? "第四章已直接发布。以后可随时修改，重复操作不会覆盖修改或恢复已撤回内容。"
                       : "导入登记已保存。已有草稿可一键全部发布，无需逐项审核。"}
                   </p>
                   <p>

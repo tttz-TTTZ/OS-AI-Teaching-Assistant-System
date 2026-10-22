@@ -182,6 +182,10 @@ function App() {
           element={<Chapter02Content />}
         />
         <Route
+          path="chapter-content/chapter04"
+          element={<Chapter03Content />}
+        />
+        <Route
           path="chapter-content/chapter03"
           element={<Chapter03Content />}
         />

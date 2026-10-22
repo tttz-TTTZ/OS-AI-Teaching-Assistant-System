@@ -31,7 +31,12 @@ def wait_ready(url: str, process: subprocess.Popen) -> None:
     raise RuntimeError("服务启动超时")
 
 
-def run(chapter_only=False, chapter02_only=False, chapter03_only=False) -> None:
+def run(
+    chapter_only=False,
+    chapter02_only=False,
+    chapter03_only=False,
+    correction_only=False,
+) -> None:
     # 先拒绝端口冲突，避免误连已经运行的个人开发实例。
     for port in (8010, 5174):
         with socket.socket() as probe:
@@ -50,6 +55,7 @@ def run(chapter_only=False, chapter02_only=False, chapter03_only=False) -> None:
         os.environ["CHAPTER01_AUTO_APPLY"] = (
             "0"  # old fixtures; direct apply has dedicated verification
         )
+        os.environ["CHAPTER04_AUTO_CORRECT"] = "0"
         sys.path.insert(0, str(ROOT / "backend"))
         from app.main import DB_PATH
         from app.migrations import migrate
@@ -134,30 +140,45 @@ def run(chapter_only=False, chapter02_only=False, chapter03_only=False) -> None:
                     cwd=ROOT,
                     check=True,
                 )
-                if not chapter_only and not chapter02_only and not chapter03_only:
+                if (
+                    not chapter_only
+                    and not chapter02_only
+                    and not chapter03_only
+                    and not correction_only
+                ):
                     subprocess.run(
                         ["node", str(ROOT / "scripts/browser-check.cjs")],
                         env=env,
                         cwd=ROOT,
                         check=True,
                     )
-                if not chapter02_only and not chapter03_only:
+                if not chapter02_only and not chapter03_only and not correction_only:
                     subprocess.run(
                         ["node", str(ROOT / "scripts/chapter-content-browser.cjs")],
                         env=env,
                         cwd=ROOT,
                         check=True,
                     )
-                if not chapter_only and not chapter03_only:
+                if not chapter_only and not chapter03_only and not correction_only:
                     subprocess.run(
                         ["node", str(ROOT / "scripts/chapter02-browser.cjs")],
                         env=env,
                         cwd=ROOT,
                         check=True,
                     )
-                if not chapter_only and not chapter02_only:
+                if not chapter_only and not chapter02_only and not correction_only:
                     subprocess.run(
                         ["node", str(ROOT / "scripts/chapter03-browser.cjs")],
+                        env=env,
+                        cwd=ROOT,
+                        check=True,
+                    )
+                if correction_only:
+                    subprocess.run(
+                        [
+                            "node",
+                            str(ROOT / "scripts/chapter04-correction-browser.cjs"),
+                        ],
                         env=env,
                         cwd=ROOT,
                         check=True,
@@ -192,7 +213,27 @@ if __name__ == "__main__":
         action="store_true",
         help="仅运行第三章预填审核/学生阅读浏览器验收及HTTP冒烟",
     )
+    parser.add_argument(
+        "--chapter04-correction-only",
+        action="store_true",
+        help="仅运行第四章迁移/目录修正验收",
+    )
     args = parser.parse_args()
-    if sum((args.chapter_content_only, args.chapter02_only, args.chapter03_only)) > 1:
+    if (
+        sum(
+            (
+                args.chapter_content_only,
+                args.chapter02_only,
+                args.chapter03_only,
+                args.chapter04_correction_only,
+            )
+        )
+        > 1
+    ):
         parser.error("只能选择一个专项验收范围")
-    run(args.chapter_content_only, args.chapter02_only, args.chapter03_only)
+    run(
+        args.chapter_content_only,
+        args.chapter02_only,
+        args.chapter03_only,
+        args.chapter04_correction_only,
+    )
