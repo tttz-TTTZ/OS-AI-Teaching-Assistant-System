@@ -392,7 +392,7 @@ export default function Knowledge() {
         <div className="study-point-row" key={p.id}>
           <div>
             <small>
-              {/^CH0[12]-/.test(p.code || "")
+              {/^CH0[123]-/.test(p.code || "")
                 ? p.emphasis || "知识点"
                 : p.code || "知识点"}
               {p.minutes ? ` · 建议 ${p.minutes} 分钟` : ""}
@@ -524,7 +524,7 @@ export default function Knowledge() {
             <>
               <header className="study-heading study-lesson-heading">
                 <span>
-                  {/^CH0[12]-/.test(detail.code || "")
+                  {/^CH0[123]-/.test(detail.code || "")
                     ? "知识学习"
                     : detail.code || "知识学习"}
                 </span>

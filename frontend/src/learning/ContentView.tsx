@@ -23,7 +23,7 @@ export default function ContentView({
         <>
           <div className="toolbar">
             <span className="badge">
-              {!preview && /^CH0[12]-/.test(content.code || "")
+              {!preview && /^CH0[123]-/.test(content.code || "")
                 ? "本节要点"
                 : content.code || "课程知识点"}
             </span>

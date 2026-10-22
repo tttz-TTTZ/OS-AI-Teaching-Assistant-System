@@ -35,6 +35,7 @@ import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
 import ChapterContent from "./pages/teacher/ChapterContent";
 import Chapter02Content from "./pages/teacher/Chapter02Content";
+import Chapter03Content from "./pages/teacher/Chapter03Content";
 import { Page, Notice } from "./components";
 const student = [
   ["dashboard", "学习首页"],
@@ -179,6 +180,10 @@ function App() {
         <Route
           path="chapter-content/chapter02"
           element={<Chapter02Content />}
+        />
+        <Route
+          path="chapter-content/chapter03"
+          element={<Chapter03Content />}
         />
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TeacherDashboard />} />

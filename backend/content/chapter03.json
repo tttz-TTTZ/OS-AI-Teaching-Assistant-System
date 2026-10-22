@@ -1,0 +1,4562 @@
+{
+  "package_id": "chapter03-ppt-v1.1",
+  "title": "第三章：存储管理",
+  "notice": "依据6份教师PPTX的V1.1报告，118物理页。仅显式导入草稿；教师修改审核后发布，不自动覆盖现有内容。",
+  "sources": [
+    {
+      "id": "S3-01",
+      "filename": "3.1.存储管理基础 .pptx",
+      "slides": 27,
+      "hidden": [],
+      "sha256": "bb8e8b845ba55b893fa4a887c812745423f889562fa3e889fc1dc1c497dd46fa"
+    },
+    {
+      "id": "S3-02",
+      "filename": "3.2 连续分区存储管理 .pptx",
+      "slides": 24,
+      "hidden": [],
+      "sha256": "700110fc46e522781d572cc4fa829953b5537289dd89bd3d649bbf4c7db13c37"
+    },
+    {
+      "id": "S3-03",
+      "filename": "3.3 页式存储管理 .pptx",
+      "slides": 21,
+      "hidden": [],
+      "sha256": "d31c13639c905fcb9cffc6b1a5f510a1cad8e5a17337c4c6aeef09ea85927011"
+    },
+    {
+      "id": "S3-04",
+      "filename": "3.3-4 页面调度 .pptx",
+      "slides": 17,
+      "hidden": [],
+      "sha256": "4075ff0b63f11a445c7128f354e4207447dddc00e056b9e01965535c50c4d971"
+    },
+    {
+      "id": "S3-05",
+      "filename": "3.3-5 反置页表与多级页表 .pptx",
+      "slides": 14,
+      "hidden": [],
+      "sha256": "b21053d402e46c720f2a2b1acebcb85c53cccc182f99494de8973311070595a2"
+    },
+    {
+      "id": "S3-06",
+      "filename": "3.4 段式存储管理 .pptx",
+      "slides": 15,
+      "hidden": [],
+      "sha256": "2694966bb0bd9ca49605e1f92b066045153a90b1b8d82cefa32e4af66c17eec1"
+    }
+  ],
+  "sections": [
+    {
+      "code": "3.1",
+      "title": "存储管理基础"
+    },
+    {
+      "code": "3.2",
+      "title": "连续分区存储管理"
+    },
+    {
+      "code": "3.3.1",
+      "title": "页式存储管理基础"
+    },
+    {
+      "code": "3.3.2",
+      "title": "地址转换与TLB"
+    },
+    {
+      "code": "3.3.3",
+      "title": "页式虚拟存储管理"
+    },
+    {
+      "code": "3.3.4",
+      "title": "页面调度"
+    },
+    {
+      "code": "3.3.5",
+      "title": "反置页表"
+    },
+    {
+      "code": "3.3.6",
+      "title": "多级页表"
+    },
+    {
+      "code": "3.4",
+      "title": "段式存储管理"
+    }
+  ],
+  "records": [
+    {
+      "id": "CH03-K001",
+      "name": "地址重定位与边界检查",
+      "section": "3.1.1—3.1.2；3.2.1—3.2.2",
+      "categories": "B/D",
+      "learning_goal": "区分逻辑/物理地址、静态/动态重定位，并判断访问是否越界。",
+      "recommendation_reason": "转换时机、基址加法和边界检查常被混为一个步骤。",
+      "prerequisites": "地址、进程、连续存储区。",
+      "core_explanation": "静态重定位在装入阶段处理需要重定位的地址引用；动态重定位在运行中通过转换机构完成。基址—长度教学模型先验证偏移，再将合法偏移加上当前基址；移动物理区域不应改变程序使用的逻辑偏移。",
+      "rules_and_limits": "T：使用从0开始的半开范围0≤d<L，物理地址B+d；L是长度，不是最大下标。地址范围检查与权限检查分开。本模型不代表所有体系结构只用一个基址寄存器。",
+      "misconception_and_correction": "误解：知道B+d就能访问任意地址。纠正：还要通过范围、映射和权限检查；不是把所有数值常量都按地址重定位。",
+      "example": "S题干复算/T推导：S3-02第22页100K→120K，基址20K，故250K→270K；原页未提供官方答案。",
+      "presentation": "静态/动态对比表回答何时转换；F001展示检查路径；小步调节偏移展示边界。",
+      "sources": [
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            9,
+            26
+          ],
+          "quote_page": 9,
+          "short_quote": "静态重定位：在程序装入内存时进行地址转换",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            18,
+            22
+          ],
+          "quote_page": 18,
+          "short_quote": "逻辑地址",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持机制；半开范围与具体演示为T；段长记法仍待确认。",
+      "related_ids": [
+        "CH03-K002",
+        "CH03-K006",
+        "CH03-K019"
+      ],
+      "formal_recommendation": "核心；U001主内容。",
+      "issue_ids": [
+        "CH03-V003",
+        "CH03-V021"
+      ]
+    },
+    {
+      "id": "CH03-K002",
+      "name": "映射、共享与权限检查",
+      "section": "3.1.2；联系3.3.1、3.4.1",
+      "categories": "B/D/E",
+      "learning_goal": "分别判断地址合法、映射存在、当前操作获准。",
+      "recommendation_reason": "能找到物理位置并不代表允许读写，私有与共享也不是权限的充分条件。",
+      "prerequisites": "K001、进程地址空间。",
+      "core_explanation": "不同进程可有映射指向同一物理对象，并具有不同访问权限。合法访问需要范围、映射状态与操作权限共同满足；共享不是为每个进程复制一份内容。",
+      "rules_and_limits": "T：私有内存也可能只读或不可执行；共享内存不必可写。不能将课件简化的“私有区可读可写”扩大成所有系统规律。",
+      "misconception_and_correction": "误解：共享页意味着完全共享地址空间。纠正：共享可限于指定映射，其他区域仍独立。",
+      "example": "T自拟：A与B映射同一只读代码页，执行可被允许，写入走保护异常，不应通过缺页调入“解决”。",
+      "presentation": "G001与权限对比表；共享关系可点击，不必另做完整动画。",
+      "sources": [
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            11,
+            12
+          ],
+          "quote_page": 12,
+          "short_quote": "公共区中的共享信息：根据授权",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            6
+          ],
+          "quote_page": 6,
+          "short_quote": "不满足保护条件则产生保护中断",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持共享保护；通用权限解释为T；泛化表述需规范。",
+      "related_ids": [
+        "CH03-K001",
+        "CH03-K009",
+        "CH03-K010",
+        "CH03-K019",
+        "CH03-K021"
+      ],
+      "formal_recommendation": "合并进入U001/U005/U012，不新增重复独立卡。",
+      "issue_ids": [
+        "CH03-V021"
+      ]
+    },
+    {
+      "id": "CH03-K003",
+      "name": "内零头与外零头",
+      "section": "3.2.1—3.2.2",
+      "categories": "B",
+      "learning_goal": "区分两种碎片位置，并计算固定分区的内零头。",
+      "recommendation_reason": "未分配空闲区与已分配单元内部剩余空间容易混算。",
+      "prerequisites": "固定分区、可变分区、容量。",
+      "core_explanation": "内零头在已分配单元内部；外零头是已分配区之间分散的空闲。连续分配受最大连续空闲区限制，不能只看总空闲量。",
+      "rules_and_limits": "T：仅统计本题已分配分区的内部剩余，未使用整块分区不算该项内零头。简单模型无对齐/元数据/最小切分开销；引入这些因素必须扩充说明。",
+      "misconception_and_correction": "误解：可变分区不浪费空间。纠正：精确切分可减少一种浪费，但仍可能产生外零头。",
+      "example": "S3-02第23页图表长度8/16/32/32K，请求15/30/10K按分区号查找，选择16/32/32K，T复算内零头1+2+22=25K。不可换用第6页另一张表。",
+      "presentation": "双色内存条、计量口径表与手算；静态图已足够。",
+      "sources": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            5,
+            6,
+            8,
+            19,
+            23
+          ],
+          "quote_page": 19,
+          "short_quote": "固定分区方式会产生内存内零头",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持概念与题干；25K是T推导，图片表已人工核对，原题未设答案。",
+      "related_ids": [
+        "CH03-K004",
+        "CH03-K006",
+        "CH03-K008"
+      ],
+      "formal_recommendation": "核心；U002。",
+      "issue_ids": [
+        "CH03-V026"
+      ]
+    },
+    {
+      "id": "CH03-K004",
+      "name": "四种连续分区适配策略",
+      "section": "3.2.2",
+      "categories": "B/C",
+      "learning_goal": "在同一空闲表执行FF/NF/BF/WF，解释本次选择。",
+      "recommendation_reason": "扫描顺序、起点、尺寸比较和平局会改变结果。",
+      "prerequisites": "空闲区、区间与链表。",
+      "core_explanation": "FF选择地址顺序第一个足够大区域；NF从上次扫描位置继续；BF选择足够大的最小区域；WF选择最大可用区域。策略规定选择，不等于自动具备完整内存管理器。",
+      "rules_and_limits": "T：足够大为长度≥请求；从所选区低地址端切分；BF/WF同长度按起址；NF需完整游标协议。优缺点依负载与数据结构，不能保证BF全局最优。",
+      "misconception_and_correction": "误解：最佳适应等于整个请求序列的最佳。纠正：这里只最小化本次选中区域大小。",
+      "example": "S3-02第24页请求28K：FF起址20K、BF160K、WF100K。T另设NF初始从70K项开始则选100K；NF不是原题答案。",
+      "presentation": "并列内存条、逐项扫描、剩余区表；AN001需新引擎。",
+      "sources": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            13,
+            14,
+            15,
+            16,
+            24
+          ],
+          "quote_page": 14,
+          "short_quote": "分配第一个满足长度要求的空闲区",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持四策略；切分、平局和NF协议为T。",
+      "related_ids": [
+        "CH03-K003",
+        "CH03-K005",
+        "CH03-K006"
+      ],
+      "formal_recommendation": "核心；U003。",
+      "issue_ids": [
+        "CH03-V011",
+        "CH03-V023",
+        "CH03-V028"
+      ]
+    },
+    {
+      "id": "CH03-K005",
+      "name": "回收与相邻空闲区合并",
+      "section": "3.2.2",
+      "categories": "B/D",
+      "learning_goal": "处理无邻接、仅前、仅后、前后均邻接四种回收情况。",
+      "recommendation_reason": "表中相邻不必是物理相邻，合并还改变表项与游标。",
+      "prerequisites": "区间、已分配表与空闲表。",
+      "core_explanation": "释放已分配区后检查物理端点是否相接，将相邻空闲区合并。前后都相邻时三块成为一块，不能留下虚假的碎片。",
+      "rules_and_limits": "T：用分配ID释放，拒绝未知ID、双重释放、重叠；改变空闲表时同步修复NF游标。失败不改变状态，区间数量与容量守恒分别检查。",
+      "misconception_and_correction": "误解：直接插入一条空闲记录就完成回收。纠正：还要验证并合并相邻区。",
+      "example": "T自拟：空闲[0,10)、[20,30)，释放已分配[10,20)，结果[0,30)。",
+      "presentation": "四类邻接图、F003、AN001逐步更新表项。",
+      "sources": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            17
+          ],
+          "quote_page": 17,
+          "short_quote": "X终止前",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S图示支持四类变化；区间规范和错误处理为T。",
+      "related_ids": [
+        "CH03-K004",
+        "CH03-K006"
+      ],
+      "formal_recommendation": "核心；合入U003，不另重复建分配概览。",
+      "issue_ids": [
+        "CH03-V011",
+        "CH03-V028"
+      ]
+    },
+    {
+      "id": "CH03-K006",
+      "name": "紧凑、连续空间与重定位",
+      "section": "3.2.2",
+      "categories": "B/D",
+      "learning_goal": "区分总空闲和最大连续空闲，解释移动后基址/表格如何同步。",
+      "recommendation_reason": "空间变化与地址转换、不可移动条件相关。",
+      "prerequisites": "K001/K003/K005。",
+      "core_explanation": "紧凑通过移动可移动区域提高空闲区连续性，不增加总空闲量。逻辑偏移应不变，物理基址及分配元数据改变。",
+      "rules_and_limits": "T：不是总空闲足够就能立即紧凑；需考虑锁定/不可移动区域、共享引用、搬迁开销和一致更新。资源不足或受阻时等待/失败，不无限循环。",
+      "misconception_and_correction": "误解：紧凑能凭空增大可用容量。纠正：它主要改变分布。",
+      "example": "T自拟：可用[0,100)，P1[0,20)、P2[40,70)，空闲20+30；请求40直接失败。将P2移至[20,50)，得到50连续空闲，分配[50,90)后剩10。",
+      "presentation": "前后布局、基址变化表、F002；先分步图而非自由拖拽。",
+      "sources": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            20,
+            21
+          ],
+          "quote_page": 20,
+          "short_quote": "需要动态重定位支撑",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持紧凑与动态重定位；不可移动约束与案例为T。",
+      "related_ids": [
+        "CH03-K001",
+        "CH03-K003",
+        "CH03-K004",
+        "CH03-K005",
+        "CH03-K020"
+      ],
+      "formal_recommendation": "核心；U003的进阶步骤。",
+      "issue_ids": [
+        "CH03-V020",
+        "CH03-V023",
+        "CH03-V028"
+      ]
+    },
+    {
+      "id": "CH03-K007",
+      "name": "局部性、虚拟内存与覆盖/对换",
+      "section": "3.1.3；联系3.1.1、3.4.2",
+      "categories": "B/E",
+      "learning_goal": "解释部分驻留的依据，并区分OS自动管理与用户安排覆盖。",
+      "recommendation_reason": "多个机制都使用辅存但粒度和控制者不同。",
+      "prerequisites": "进程、主存/辅存、程序访问。",
+      "core_explanation": "时间和空间局部性使部分驻留具有实际价值。虚拟内存分离程序使用的地址空间与当前物理驻留；覆盖由程序设计者安排，而按需调页/调段由系统管理。",
+      "rules_and_limits": "T：不把全部页面必须预存交换区、只装第一页或主存与辅存同速当作一般定义。后备来源与映射合法性必须另有元数据。",
+      "misconception_and_correction": "误解：虚拟内存只是把磁盘换个名字当内存。纠正：它是映射、驻留和异常处理等机制的协作。",
+      "example": "T自拟：罕用错误处理代码可暂不驻留，真正访问时再由系统按合法映射处理。",
+      "presentation": "覆盖/对换/请求分页对比表、G003前置说明。定义保留短摘要，重点只讲差异。",
+      "sources": [
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            3,
+            13,
+            15,
+            16,
+            17,
+            18
+          ],
+          "quote_page": 16,
+          "short_quote": "随用随调入",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            8
+          ],
+          "quote_page": 8,
+          "short_quote": "段的调进调出是由OS自动实现的",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持基本思想；一般化解释为T；原文简化与指代见V。",
+      "related_ids": [
+        "CH03-K012",
+        "CH03-K013",
+        "CH03-K020"
+      ],
+      "formal_recommendation": "U004短单元，普通定义不包装成多个难点。",
+      "issue_ids": [
+        "CH03-V005",
+        "CH03-V019",
+        "CH03-V021"
+      ]
+    },
+    {
+      "id": "CH03-K008",
+      "name": "分页地址拆分与页表映射",
+      "section": "3.3.1",
+      "categories": "B/D",
+      "learning_goal": "计算页号、页内偏移与物理地址，并检测无效映射。",
+      "recommendation_reason": "不是十进制数字拼接；需要整数商、余数与合法查表。",
+      "prerequisites": "整数除法、页与页框。",
+      "core_explanation": "页面大小P时，页号是VA整除P，偏移是VA模P；页表映射到页框f，PA=f×P+偏移。分页保持页内偏移不变，页号并不等于页框号。",
+      "rules_and_limits": "T：页号、页框号、地址和范围为整数；非法页号、未定义映射、保护错误分别处理。页号0合法。位示图极性需明示，不从0/1字样推断。 T：按位拆分演示限定P为2的幂；非2幂若允许，仅用商/余数算术，不伪造固定偏移位段。",
+      "misconception_and_correction": "误解：页号相同则物理位置也相同。纠正：映射依地址空间和页表。",
+      "example": "S3-03第5—6页：P4096，0→8/1→4/2→1/3→9；8196→4100，15000→39576。图片解答可核对。",
+      "presentation": "地址位段、表项与页框同步高亮；F004/AN002。",
+      "sources": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "quote_page": 3,
+          "short_quote": "页号和单元号",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持机制及图片答案；输入边界为T；第4页重叠数字不作测试。",
+      "related_ids": [
+        "CH03-K009",
+        "CH03-K010",
+        "CH03-K011",
+        "CH03-K012",
+        "CH03-K018"
+      ],
+      "formal_recommendation": "核心；U005。",
+      "issue_ids": [
+        "CH03-V002",
+        "CH03-V026"
+      ]
+    },
+    {
+      "id": "CH03-K009",
+      "name": "页共享的映射与寻址条件",
+      "section": "3.3.1",
+      "categories": "B/E",
+      "learning_goal": "解释不同虚拟页映射同一物理页，并判断代码共享需要哪些假设。",
+      "recommendation_reason": "课件的“代码必须相同页号”不是可直接泛化的规则。",
+      "prerequisites": "K002/K008、地址相关代码概念。",
+      "core_explanation": "多个页表项可以指向同一页框。代码能否映射到不同虚拟地址，取决于寻址和重定位方式，不能仅靠“代码共享”判断。",
+      "rules_and_limits": "T：区分数据共享、特定地址相关代码与位置无关等情形；权限单独维护，不将课件限制变成跨体系结构定律。",
+      "misconception_and_correction": "误解：共享物理页会使整个地址空间都共享。纠正：可以只共享指定页，权限和其他映射仍独立。",
+      "example": "T自拟：A的页2与B的页5映射框7，可表示同一数据页；是否可执行同一代码需另列条件。",
+      "presentation": "两个页表到一个页框的关系图；作为U005小节，无需重复共享动画。",
+      "sources": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            8
+          ],
+          "quote_page": 8,
+          "short_quote": "不同进程可以使用不同页号共享数据页",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持数据共享；代码条件为T/V，争议句不出直接判分题。",
+      "related_ids": [
+        "CH03-K002",
+        "CH03-K008",
+        "CH03-K010",
+        "CH03-K019"
+      ],
+      "formal_recommendation": "限定条件后纳入U005。",
+      "issue_ids": [
+        "CH03-V004"
+      ]
+    },
+    {
+      "id": "CH03-K010",
+      "name": "TLB、页表与地址空间切换",
+      "section": "3.3.2",
+      "categories": "B/D",
+      "learning_goal": "区分TLB未命中与缺页，防止跨进程同VPN误命中。",
+      "recommendation_reason": "缓存映射和缓存数据、页面驻留是不同层次。",
+      "prerequisites": "K008、进程切换。",
+      "core_explanation": "TLB缓存转换信息，未命中时查页表；页表显示已驻留时无需辅存调入。进程切换后不能把旧进程同页号映射用于新进程。",
+      "rules_and_limits": "T：教学实现选择上下文标识或切换清理等协议，不能省略上下文；真正硬件行为依架构。页表修改后的相关TLB失效也应明确。",
+      "misconception_and_correction": "误解：TLB没有就一定要读磁盘。纠正：可能只是需要查驻留页表。",
+      "example": "T自拟：A页1→框4，B页1→框9；切到B后不能沿用A页1映射。",
+      "presentation": "TLB/页表/缺页分流F004、上下文关系G003、AN002。",
+      "sources": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            10,
+            11,
+            13,
+            14,
+            15
+          ],
+          "quote_page": 13,
+          "short_quote": "若该页不在快表中，则再查主存页表形成绝对地址",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持快表与上下文；标识/失效协议为T。",
+      "related_ids": [
+        "CH03-K008",
+        "CH03-K011",
+        "CH03-K012",
+        "CH03-K018",
+        "CH03-K021"
+      ],
+      "formal_recommendation": "核心；U006。",
+      "issue_ids": [
+        "CH03-V024"
+      ]
+    },
+    {
+      "id": "CH03-K011",
+      "name": "TLB有效访问时间与模型假设",
+      "section": "3.3.2",
+      "categories": "B",
+      "learning_goal": "按路径建立加权公式，明确其是否包含最终数据访问。",
+      "recommendation_reason": "漏计访存及误把缺页I/O包含在简单公式中会导致答案错误。",
+      "prerequisites": "概率、K010。",
+      "core_explanation": "课件的串行TLB、单级驻留页表、无缺页模型：EAT=h(tT+tM)+(1−h)(tT+2tM)。命中省去页表访存，不省最终数据访问。",
+      "rules_and_limits": "T：公式包含数据访问；不直接覆盖并行查找、多级页表、Cache或缺页I/O。时间统一ns。下降35%是延迟减少，不等同吞吐率增加35%。",
+      "misconception_and_correction": "误解：命中路径只计TLB时间。纠正：还需访问数据。",
+      "example": "S3-03第12页：h=.9、tM200ns、tT40ns→260ns；同模型h0→440ns、h1→240ns为T边界推导。",
+      "presentation": "两路径计时条与计算表足够，不必独立动画。",
+      "sources": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            10,
+            11,
+            12
+          ],
+          "quote_page": 12,
+          "short_quote": "260毫微秒",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S给公式与260；边界和口径解释T。",
+      "related_ids": [
+        "CH03-K010",
+        "CH03-K018"
+      ],
+      "formal_recommendation": "核心；U006计算部分。",
+      "issue_ids": [
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K012",
+      "name": "缺页、脏页写回与原指令重试",
+      "section": "3.3.3",
+      "categories": "B/D",
+      "learning_goal": "完整解释合法缺页从检测到重试，并区分保护错误。",
+      "recommendation_reason": "跨CPU、OS、页框、I/O和进程状态；路径多。",
+      "prerequisites": "K007/K008/K010、异常处理。",
+      "core_explanation": "合法页未驻留触发缺页；OS获取空框或选择牺牲页。脏页需完成写回后再安全复用，随后调入、更新表和TLB、恢复并重试。不是所有缺页都发生替换。",
+      "rules_and_limits": "T：非法/无权限地址不靠调页解决；缺页、写回、读入、扫描分开；同一逻辑引用的重试不重复计数。资源不可用和I/O失败需明确等待/失败，不能丢失脏数据。",
+      "misconception_and_correction": "误解：缺页后跳过原指令或再把重试算新引用。纠正：处理完成重试，统计口径保持同一次引用。",
+      "example": "T自拟：页2不驻留、无空框，外部选择器指定脏页1；写回1→读入2→更新→重试。指定牺牲页只是场景，不暗示某算法必选1。",
+      "presentation": "F005泳道与AN003；CPU/OS/I/O及等待原因同步呈现。",
+      "sources": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "quote_page": 21,
+          "short_quote": "重执被中断指令",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持主流程；错误与计数协议T；首次第一页定义V。",
+      "related_ids": [
+        "CH03-K007",
+        "CH03-K008",
+        "CH03-K010",
+        "CH03-K014",
+        "CH03-K015"
+      ],
+      "formal_recommendation": "核心；U007。",
+      "issue_ids": [
+        "CH03-V005",
+        "CH03-V021",
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K013",
+      "name": "数组布局、访问顺序与缺页率",
+      "section": "3.3.4",
+      "categories": "B/D",
+      "learning_goal": "从循环顺序推出页面引用，并核对缺页统计。",
+      "recommendation_reason": "相同赋值数量不代表相同存储行为；依赖布局假设。",
+      "prerequisites": "二维数组、行优先布局、分页。",
+      "core_explanation": "按行存放且一行恰占一页时，行遍历重复使用当前页；列遍历在单框模型中不断跨页。页序列必须从地址计算得到，不能直接按动画方向加缺页数。",
+      "rules_and_limits": "T前提：一元素一字、页128字、数组按页对齐、仅一个数据页框、第一页预驻留、不计代码等额外访问。原文未逐项列出，属于使课件结论成立的显式教学假设。",
+      "misconception_and_correction": "误解：128与16383适用于任何C实现。纠正：页大小单位、元素宽度、对齐和额外访问改变结果。",
+      "example": "S给结论/T条件化复算：128×128时行访问127缺页、列访问16383；同假设4×4缩小模型为3与15；初始为空则各加1。",
+      "presentation": "数组、页号、唯一数据框及计数同步；AN004。",
+      "sources": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            3,
+            4,
+            5
+          ],
+          "quote_page": 5,
+          "short_quote": "数组元素按行存放",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持代码意图与结果；精确前提与缩小案例T，图中文字重叠V。",
+      "related_ids": [
+        "CH03-K007",
+        "CH03-K012",
+        "CH03-K014"
+      ],
+      "formal_recommendation": "核心；U008。",
+      "issue_ids": [
+        "CH03-V018",
+        "CH03-V025",
+        "CH03-V026",
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K014",
+      "name": "OPT/FIFO/LRU与Belady异常",
+      "section": "3.3.4",
+      "categories": "B/C",
+      "learning_goal": "按不同历史/未来依据选页，统计缺页并解释增加页框反而更多缺页的反例。",
+      "recommendation_reason": "三个策略规则相近但命中时的状态更新不同。",
+      "prerequisites": "页引用串、驻留、K012。",
+      "core_explanation": "OPT使用未来引用，FIFO按装入顺序，LRU按最近访问。FIFO命中不重排，LRU命中更新最近记录。OPT是离线比较基准，不能称为现实系统预知未来。",
+      "rules_and_limits": "T：默认空框，初始驻留扩展需相应历史；采用固定物理槽位。比较使用同串同初始条件；缺页F/A不重复计重试。FIFO可能Belady，不能笼统声称页框更多总更好。",
+      "misconception_and_correction": "误解：FIFO命中后将该页移到队尾。纠正：那会改变FIFO装入顺序语义。",
+      "example": "S3-04第7/9/12页20次引用3框→OPT9/FIFO15/LRU12；第10页FIFO3框9、4框10。另T小串1,2,1,3,1,2配2框→4/5/4。",
+      "presentation": "G004、逐步表与AN005；共同引用列，不把不同算法物理槽位排列强行统一成访问队列。",
+      "sources": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "quote_page": 8,
+          "short_quote": "最先调入主存的那一页",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持规则与例题；平局/初始状态T。",
+      "related_ids": [
+        "CH03-K012",
+        "CH03-K013",
+        "CH03-K015",
+        "CH03-K016"
+      ],
+      "formal_recommendation": "核心；U009。",
+      "issue_ids": [
+        "CH03-V007",
+        "CH03-V025",
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K015",
+      "name": "CLOCK引用位与指针扫描",
+      "section": "3.3.4",
+      "categories": "B/C/D",
+      "learning_goal": "区分程序访问置位、扫描清位、替换和指针前进。",
+      "recommendation_reason": "一次缺页可能扫描多次，视觉跳转会漏掉核心机制。",
+      "prerequisites": "循环结构、引用位、K014。",
+      "core_explanation": "访问/装入置引用位1；替换时从指针扫描，遇1清0跳过，遇0选择替换，再前进。基础单线程模型扫描期间不穿插新访问，因而全1也能找到候选。",
+      "rules_and_limits": "T：默认空槽从指针装入并前进；满框命中不移动指针。扫描不是新引用，基础模型不含锁页；若加入锁页必须另定义无候选处理。",
+      "misconception_and_correction": "误解：CLOCK完全等价LRU，或每扫描一次就新增缺页。纠正：它只保留有限使用信息，缺页按引用统计。",
+      "example": "S3-04第17页可核对局部：指针从槽2页45开始，清45/191，替换槽4的556为727，指针到槽5。未展开的环部分不补猜。",
+      "presentation": "F009与AN006，逐次扫描、位变化和回退。",
+      "sources": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            15,
+            16,
+            17
+          ],
+          "quote_page": 16,
+          "short_quote": "引用标志位清0，并跳过",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持扫描及图片局部；空槽/初始协议T。",
+      "related_ids": [
+        "CH03-K012",
+        "CH03-K014",
+        "CH03-K016"
+      ],
+      "formal_recommendation": "核心；U010。",
+      "issue_ids": [
+        "CH03-V012",
+        "CH03-V025",
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K016",
+      "name": "引用位近似LRU与窗口LFU",
+      "section": "3.3.4",
+      "categories": "B/C/E",
+      "learning_goal": "区分完整最近历史、引用位采样与窗口访问频率。",
+      "recommendation_reason": "同名变体与未定义规则会使实验无唯一答案。",
+      "prerequisites": "K014/K015。",
+      "core_explanation": "课件近似LRU定时清引用位，访问置1，从0位中随机选；课件LFU定时清计数，每次访问加1，淘汰当前窗口计数最小者。两者都不应偷换为终身累计/精确LRU。",
+      "rules_and_limits": "T/V：需时钟事件顺序、时间间隔、平局、新页初始化、随机协议、全为1的处理。不能声称LFU对所有负载都优于LRU或更接近OPT。",
+      "misconception_and_correction": "误解：只要名称是LFU就能唯一复现。纠正：窗口、平局与更新时机必须一致。",
+      "example": "T自拟LFU：2框引用1,2,1,3，先淘汰2；TICK清零后引用2，若同频按槽位则淘汰槽0的1，总5引用4缺页。这不是原课件题目。",
+      "presentation": "对比表与受限候选集案例；未定规则的完整运行按钮不提供。",
+      "sources": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            13,
+            14
+          ],
+          "quote_page": 14,
+          "short_quote": "时间间隔中断发生后，所有计数器清0",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持部分规则；可执行协议是T，尚需确认，E保留。",
+      "related_ids": [
+        "CH03-K014",
+        "CH03-K015"
+      ],
+      "formal_recommendation": "U010可选进阶，不单独包装两个已完成实验。",
+      "issue_ids": [
+        "CH03-V009",
+        "CH03-V010",
+        "CH03-V025"
+      ]
+    },
+    {
+      "id": "CH03-K017",
+      "name": "反置页表、哈希链与完整键比较",
+      "section": "3.3.5",
+      "categories": "B/D/E",
+      "learning_goal": "解释按物理页框组织的数据如何支持虚拟地址查询。",
+      "recommendation_reason": "组织方向与查找方向易混；哈希值不是完整身份。",
+      "prerequisites": "页表、进程标识、哈希冲突。",
+      "core_explanation": "反置页表按页框组织表项，记录进程标识/虚页号及状态。查询先定位桶，再沿链比较完整键；匹配项的索引给出页框号。没有匹配还需判断映射是否合法，不能为任意地址直接调页。",
+      "rules_and_limits": "T：共享别名与缺失后备元数据超出基本模型；MMU执行转换/维护信息不代表OS置换政策由它独立决定。课件“每框建一页表”应辨析为表项。",
+      "misconception_and_correction": "误解：IPT只能做物理→逻辑转换。纠正：反向组织可通过检索服务虚拟→物理转换。",
+      "example": "T自拟：同桶框1=(A,2)、框3=(B,2)，查询(B,2,8)须跳过框1；P4096得到框3地址12296。",
+      "presentation": "G005、哈希链点击路径；无需完整动画。",
+      "sources": [
+        {
+          "source_id": "S3-05",
+          "filename": "3.3-5 反置页表与多级页表 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "quote_page": 5,
+          "short_quote": "MMU遍历哈希链找到所需进程的虚页号",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持组织/链查；正确性解释T；原文角色与措辞V。",
+      "related_ids": [
+        "CH03-K008",
+        "CH03-K010",
+        "CH03-K018"
+      ],
+      "formal_recommendation": "U011可选进阶；不与多级页表误合为同一种结构。",
+      "issue_ids": [
+        "CH03-V013",
+        "CH03-V014"
+      ]
+    },
+    {
+      "id": "CH03-K018",
+      "name": "多级页表的空间与访存权衡",
+      "section": "3.3.6",
+      "categories": "B/D",
+      "learning_goal": "算页表大小、拆层级位段，说明稀疏节省与多级访存代价。",
+      "recommendation_reason": "位数、项数、字节与查找层数容易混淆。",
+      "prerequisites": "二进制、K008/K010。",
+      "core_explanation": "平面页表可能很大，多级结构按目录分层组织，对稀疏映射可只建立所需下级表；代价是TLB未命中时更多查表步骤。不是层数更多就一定更省/更快。",
+      "rules_and_limits": "T：32位4KiB页4B项→2^20项、4MiB。二级“三次访存”包含数据、且表驻留无TLB命中。9/11/12是题给划分，不擅自改成10/10/12；若每项4B，2048项的下级表是8KiB，不能硬说一张必占一个4KiB页。",
+      "misconception_and_correction": "误解：“页面长度12位”就是页面12bit。纠正：这里可确定页内偏移12位，字节编址时页4KiB。",
+      "example": "S3-05第13—14页：顶级9位、二级11位、偏移12位，虚页2^20。T玩具模型16位按4/4/8划分，VA0x2345、目录2到叶表、叶3到框5，PA1349。",
+      "presentation": "位段、容量表、F006与可点击路径；64位仅显式假设下算术外推。",
+      "sources": [
+        {
+          "source_id": "S3-05",
+          "filename": "3.3-5 反置页表与多级页表 .pptx",
+          "physical_pages": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "quote_page": 9,
+          "short_quote": "逻辑地址结构有三部分组成",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持层级与题目；玩具模型、单位与边界T；架构细节V。",
+      "related_ids": [
+        "CH03-K008",
+        "CH03-K010",
+        "CH03-K011",
+        "CH03-K017",
+        "CH03-K021"
+      ],
+      "formal_recommendation": "核心；U011主内容。",
+      "issue_ids": [
+        "CH03-V015",
+        "CH03-V016",
+        "CH03-V017",
+        "CH03-V026",
+        "CH03-V027"
+      ]
+    },
+    {
+      "id": "CH03-K019",
+      "name": "段式地址转换与段共享",
+      "section": "3.4.1",
+      "categories": "B/D/E",
+      "learning_goal": "查段基址/长度，判断偏移与权限，解释共享映射。",
+      "recommendation_reason": "段是可变长度逻辑单位，不是把固定页换个名称。",
+      "prerequisites": "K001/K002、程序段。",
+      "core_explanation": "按段号查表得到基址、长度和状态，范围及权限检查通过后形成地址。共享段可由不同段表项指向同一物理区域，但各映射权限仍需说明。",
+      "rules_and_limits": "T：从0开始、长度L字节模型用d<L；段号也需合法。段地址寄存器数量和可见性依具体架构，不由示意图推广到所有分段系统。",
+      "misconception_and_correction": "误解：段长L时偏移L也合法。纠正：若L为字节数，最大偏移L−1。",
+      "example": "T自拟：基址10000，长度100；偏移99→10099，偏移100→越界。",
+      "presentation": "段/页对比、F007基础路径、G006；共享沿用K002规则不重复。",
+      "sources": [
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            10
+          ],
+          "quote_page": 6,
+          "short_quote": "不满足保护条件则产生保护中断",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持段表与共享；规范边界T，≤/<冲突V。",
+      "related_ids": [
+        "CH03-K001",
+        "CH03-K002",
+        "CH03-K009",
+        "CH03-K020",
+        "CH03-K021"
+      ],
+      "formal_recommendation": "核心；U012基础。",
+      "issue_ids": [
+        "CH03-V003",
+        "CH03-V019"
+      ]
+    },
+    {
+      "id": "CH03-K020",
+      "name": "缺段与受限段扩充",
+      "section": "3.4.2",
+      "categories": "B/D/E",
+      "learning_goal": "区分不驻留、越界、权限与允许扩充的情况。",
+      "recommendation_reason": "调入不是所有异常的解法；增长需要空间和策略。",
+      "prerequisites": "K006/K019、异常。",
+      "core_explanation": "合法段不驻留时调入；偏移超过现长度时仅在允许增长并满足策略/资源约束时扩充，更新段表和分配信息后重试。不能把所有越界都当自动增长。",
+      "rules_and_limits": "T/V：最大长度、增长粒度、移动/锁定/共享引用、I/O失败和空间不足处理都需定义；向上增长的玩具模型不冒充实际栈实现。",
+      "misconception_and_correction": "误解：可扩充位为1就无限增长。纠正：还受上限、权限和连续空间约束。",
+      "example": "T自拟：长100访问偏移120，最小新长度121，需增加21；不是20。若上限≤120或无法获得空间则失败。",
+      "presentation": "F007分支图先行；AN007分阶段，新增长模型未确认前不做可运行扩充。",
+      "sources": [
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "quote_page": 10,
+          "short_quote": "与S段末端相邻的空闲区长度满足要求",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持机制，详细协议T/V。",
+      "related_ids": [
+        "CH03-K006",
+        "CH03-K007",
+        "CH03-K012",
+        "CH03-K019"
+      ],
+      "formal_recommendation": "U012进阶；完整增长/搬迁暂缓。",
+      "issue_ids": [
+        "CH03-V019",
+        "CH03-V020"
+      ]
+    },
+    {
+      "id": "CH03-K021",
+      "name": "段页式两层映射与异常分流",
+      "section": "3.4.3",
+      "categories": "B/D",
+      "learning_goal": "沿段号、页号和偏移定位物理页框，区分缺段/缺页/越界。",
+      "recommendation_reason": "段表项定位页表，不直接等于最终页框。",
+      "prerequisites": "K008/K010/K018/K019。",
+      "core_explanation": "段表定位某段页表，页表将段内页映射到页框。段内可以非连续物理存放。映射检查包含段存在、页范围、驻留与权限。",
+      "rules_and_limits": "T：TLB键需区分地址空间、段和页；若模型只有页表长度，就只承诺页边界保护；要检查末页实际段字节范围须另给segment_bytes并比较pP+d<L。",
+      "misconception_and_correction": "误解：段页式仍要求整段物理连续。纠正：段内按页映射到不连续页框。",
+      "example": "T自拟：P4096，段1含3整页，页2→框7，偏移6→28678；页3越界。末页部分有效时另测试字节限长，不偷换为页表长。",
+      "presentation": "G006、F008和逐级高亮；完整缺段/缺页状态机后置。",
+      "sources": [
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "quote_page": 12,
+          "short_quote": "每一段不必占据连续的存储空间",
+          "evidence_type": "S-text"
+        }
+      ],
+      "evidence_status": "S支持结构；精确键与末页范围T；快表表述V。",
+      "related_ids": [
+        "CH03-K008",
+        "CH03-K010",
+        "CH03-K012",
+        "CH03-K018",
+        "CH03-K019",
+        "CH03-K020"
+      ],
+      "formal_recommendation": "核心；U012综合。",
+      "issue_ids": [
+        "CH03-V024",
+        "CH03-V026"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "code": "CH03-U001",
+      "title": "地址转换与访问许可",
+      "section": "3.1",
+      "record_ids": [
+        "CH03-K001",
+        "CH03-K002"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "知道物理地址，为什么仍可能没有访问权限？",
+      "objectives": "- 区分逻辑/物理地址、静态/动态重定位，并判断访问是否越界。\n- 分别判断地址合法、映射存在、当前操作获准。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "知道物理地址，为什么仍可能没有访问权限？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 地址重定位与边界检查\n\n静态重定位在装入阶段处理需要重定位的地址引用；动态重定位在运行中通过转换机构完成。基址—长度教学模型先验证偏移，再将合法偏移加上当前基址；移动物理区域不应改变程序使用的逻辑偏移。\n\n### 映射、共享与权限检查\n\n不同进程可有映射指向同一物理对象，并具有不同访问权限。合法访问需要范围、映射状态与操作权限共同满足；共享不是为每个进程复制一份内容。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|检查|回答的问题|\n|---|---|\n|范围|偏移是否位于0≤d<L？|\n|映射|该地址是否有合法映射？|\n|权限|当前读、写或执行是否获准？|\n\n### 地址重定位与边界检查\n\n使用从0开始的半开范围0≤d<L，物理地址B+d；L是长度，不是最大下标。地址范围检查与权限检查分开。本模型不代表所有体系结构只用一个基址寄存器。\n\n### 映射、共享与权限检查\n\n私有内存也可能只读或不可执行；共享内存不必可写。不能将课件简化的“私有区可读可写”扩大成所有系统规律。"
+        },
+        {
+          "id": "ch03-g001",
+          "kind": "diagram",
+          "title": "地址、映射与权限",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G001",
+            "title": "地址、映射与权限",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G001-N01",
+                "label": "逻辑地址",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G001-N02",
+                "label": "物理地址",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G001-N03",
+                "label": "基址与偏移",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G001-N04",
+                "label": "合法范围",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G001-N05",
+                "label": "偏移",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G001-N06",
+                "label": "权限",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G001-N07",
+                "label": "访问类型",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G001-N08",
+                "label": "多个虚拟映射",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G001-N09",
+                "label": "同一物理区域",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G001-N10",
+                "label": "合法地址",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G001-N11",
+                "label": "访问获准",
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G001-N01",
+                "target": "CH03-G001-N02",
+                "label": "经转换得到；合法映射与范围",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G001-N03",
+                "target": "CH03-G001-N02",
+                "label": "参与形成；基址—长度模型",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G001-N04",
+                "target": "CH03-G001-N05",
+                "label": "约束；0起长度模型使用d<L",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G001-N06",
+                "target": "CH03-G001-N07",
+                "label": "约束；具体读写执行集合需定义",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G001-N08",
+                "target": "CH03-G001-N09",
+                "label": "可以指向；共享条件满足",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G001-N10",
+                "target": "CH03-G001-N11",
+                "label": "不等同于；仍需检查权限",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。经转换得到：S；参与形成：S；约束：S；约束：S；可以指向：S；不等同于：T"
+          }
+        },
+        {
+          "id": "ch03-f001",
+          "kind": "diagram",
+          "title": "基址转换与保护",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：合法类型请求输入。结束：物理地址或明确错误。\n\n边界与等待：纯计算无I/O等待；溢出/范围错误不访问内存。",
+          "diagram": {
+            "code": "CH03-F001",
+            "title": "基址转换与保护",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F001-N01",
+                "label": "验证输入",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F001-N02",
+                "label": "检查偏移范围",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F001-N03",
+                "label": "检查权限",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F001-N04",
+                "label": "计算B+d",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F001-N05",
+                "label": "输出地址",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F001-N06",
+                "label": "范围错误",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F001-N07",
+                "label": "保护错误",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F001-N08",
+                "label": "输入错误",
+                "x": 350,
+                "y": 350
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F001-N01",
+                "target": "CH03-F001-N02",
+                "label": "合法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N01",
+                "target": "CH03-F001-N08",
+                "label": "非法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N02",
+                "target": "CH03-F001-N03",
+                "label": "0≤d<L",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N02",
+                "target": "CH03-F001-N06",
+                "label": "否则",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N03",
+                "target": "CH03-F001-N04",
+                "label": "允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N03",
+                "target": "CH03-F001-N07",
+                "label": "拒绝",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F001-N04",
+                "target": "CH03-F001-N05",
+                "label": "成功",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：合法类型请求输入；结束：物理地址或明确错误；纯计算无I/O等待；溢出/范围错误不访问内存。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "重定位示例（题干复算）：逻辑100K对应物理120K，基址为20K，逻辑250K对应270K。\n\n教学示例：A、B共享只读代码页；允许执行并不等于允许写入，写入应走保护错误。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 地址重定位与边界检查\n\n误解：知道B+d就能访问任意地址。纠正：还要通过范围、映射和权限检查；不是把所有数值常量都按地址重定位。\n\n### 映射、共享与权限检查\n\n误解：共享页意味着完全共享地址空间。纠正：共享可限于指定映射，其他区域仍独立。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 区分逻辑/物理地址、静态/动态重定位，并判断访问是否越界。\n- 分别判断地址合法、映射存在、当前操作获准。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 逻辑/物理地址术语\n\n逻辑地址描述程序使用的位置，物理地址定位主存位置；转换取决于当前映射和存储模式。\n\n### 存储管理职责\n\n存储管理协调地址转换、空间分配与回收、共享、保护和扩充；找到物理位置后仍要判断访问许可。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            9,
+            26
+          ],
+          "quote_page": 9,
+          "short_quote": "静态重定位：在程序装入内存时进行地址转换",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            18,
+            22
+          ],
+          "quote_page": 18,
+          "short_quote": "逻辑地址",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            11,
+            12
+          ],
+          "quote_page": 12,
+          "short_quote": "公共区中的共享信息：根据授权",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            6
+          ],
+          "quote_page": 6,
+          "short_quote": "不满足保护条件则产生保护中断",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U003",
+        "CH03-U005",
+        "CH03-U006",
+        "CH03-U012"
+      ],
+      "sort_order": 10
+    },
+    {
+      "code": "CH03-U002",
+      "title": "内零头与外零头",
+      "section": "3.2",
+      "record_ids": [
+        "CH03-K003"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "总空闲够用，为什么仍放不下一个连续请求？",
+      "objectives": "- 区分两种碎片位置，并计算固定分区的内零头。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "总空闲够用，为什么仍放不下一个连续请求？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 内零头与外零头\n\n内零头在已分配单元内部；外零头是已分配区之间分散的空闲。连续分配受最大连续空闲区限制，不能只看总空闲量。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|现象|内零头|外零头|\n|---|---|---|\n|位置|已分配单元内部|已分配区之间的空闲|\n|统计|分配容量减实际请求|空闲总量与最大连续区分别记录|\n|紧凑|不能直接消除内部浪费|在可移动条件下改善连续性|\n\n### 内零头与外零头\n\n仅统计本题已分配分区的内部剩余，未使用整块分区不算该项内零头。简单模型无对齐/元数据/最小切分开销；引入这些因素必须扩充说明。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "固定分区8、16、32、32K，依分区号为请求15、30、10K选择16、32、32K。已分配分区的内零头为1+2+22=25K；未使用的8K分区不计入这一项。此值为题干推导。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 内零头与外零头\n\n误解：可变分区不浪费空间。纠正：精确切分可减少一种浪费，但仍可能产生外零头。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 区分两种碎片位置，并计算固定分区的内零头。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 单用户/固定分区背景\n\n单用户连续模式为程序保留连续空间。固定分区预先确定分区数量与容量；可变分区按请求划分并维护空闲区。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            5,
+            6,
+            8,
+            19,
+            23
+          ],
+          "quote_page": 19,
+          "short_quote": "固定分区方式会产生内存内零头",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U003",
+        "CH03-U005"
+      ],
+      "sort_order": 20
+    },
+    {
+      "code": "CH03-U003",
+      "title": "分配、回收与紧凑",
+      "section": "3.2",
+      "record_ids": [
+        "CH03-K004",
+        "CH03-K005",
+        "CH03-K006"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "同一个28K请求，为什么不同策略选中不同位置？",
+      "objectives": "- 在同一空闲表执行FF/NF/BF/WF，解释本次选择。\n- 处理无邻接、仅前、仅后、前后均邻接四种回收情况。\n- 区分总空闲和最大连续空闲，解释移动后基址/表格如何同步。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "同一个28K请求，为什么不同策略选中不同位置？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 四种连续分区适配策略\n\nFF选择地址顺序第一个足够大区域；NF从上次扫描位置继续；BF选择足够大的最小区域；WF选择最大可用区域。策略规定选择，不等于自动具备完整内存管理器。\n\n### 回收与相邻空闲区合并\n\n释放已分配区后检查物理端点是否相接，将相邻空闲区合并。前后都相邻时三块成为一块，不能留下虚假的碎片。\n\n### 紧凑、连续空间与重定位\n\n紧凑通过移动可移动区域提高空闲区连续性，不增加总空闲量。逻辑偏移应不变，物理基址及分配元数据改变。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|策略|本次选择依据|\n|---|---|\n|FF|按地址从头查首个足够大区|\n|NF|从已明确的游标继续环形查找|\n|BF|足够大的最小区|\n|WF|足够大的最大区|\n\n相等也可分配；示例从低地址切分。BF/WF同尺寸取低起址是教学约定，不代表全局最优。\n\n### 四种连续分区适配策略\n\n足够大为长度≥请求；从所选区低地址端切分；BF/WF同长度按起址；NF需完整游标协议。优缺点依负载与数据结构，不能保证BF全局最优。\n\n### 回收与相邻空闲区合并\n\n用分配ID释放，拒绝未知ID、双重释放、重叠；改变空闲表时同步修复NF游标。失败不改变状态，区间数量与容量守恒分别检查。\n\n### 紧凑、连续空间与重定位\n\n不是总空闲足够就能立即紧凑；需考虑锁定/不可移动区域、共享引用、搬迁开销和一致更新。资源不足或受阻时等待/失败，不无限循环。"
+        },
+        {
+          "id": "ch03-g002",
+          "kind": "diagram",
+          "title": "分配、碎片与紧凑",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G002",
+            "title": "分配、碎片与紧凑",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G002-N01",
+                "label": "适配策略",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G002-N02",
+                "label": "空闲区",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G002-N03",
+                "label": "切分",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G002-N04",
+                "label": "剩余空闲区",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G002-N05",
+                "label": "回收",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G002-N06",
+                "label": "已分配区",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G002-N07",
+                "label": "邻接合并",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G002-N08",
+                "label": "空闲区分隔",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G002-N09",
+                "label": "外零头",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G002-N10",
+                "label": "连续分配失败",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G002-N11",
+                "label": "紧凑",
+                "x": 350,
+                "y": 525
+              },
+              {
+                "id": "CH03-G002-N12",
+                "label": "空闲区连续性",
+                "x": 700,
+                "y": 525
+              },
+              {
+                "id": "CH03-G002-N13",
+                "label": "重定位支持",
+                "x": 0,
+                "y": 700
+              },
+              {
+                "id": "CH03-G002-N14",
+                "label": "总空闲容量",
+                "x": 350,
+                "y": 700
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G002-N01",
+                "target": "CH03-G002-N02",
+                "label": "选择；区长≥请求",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N03",
+                "target": "CH03-G002-N04",
+                "label": "产生；未恰好用完",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N05",
+                "target": "CH03-G002-N06",
+                "label": "释放；分配ID真实存在",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N07",
+                "target": "CH03-G002-N08",
+                "label": "减少；物理端点相接",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N09",
+                "target": "CH03-G002-N10",
+                "label": "可能导致；总空闲够但最大区不足",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N11",
+                "target": "CH03-G002-N12",
+                "label": "改变；可移动条件满足",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N11",
+                "target": "CH03-G002-N13",
+                "label": "依赖；当前教学模式",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G002-N11",
+                "target": "CH03-G002-N14",
+                "label": "不增加；无另行释放/分配事件",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。选择：S；产生：S；释放：S；减少：S；可能导致：S；改变：S；依赖：S；不增加：T"
+          }
+        },
+        {
+          "id": "ch03-f002",
+          "kind": "diagram",
+          "title": "连续分配与紧凑分流",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：完整布局或受限选择器输入有效。结束：分配完成或明确未满足。\n\n边界与等待：等待须资源事件后重试；紧凑失败不能无限循环；仅选择器模式不执行搬迁。",
+          "diagram": {
+            "code": "CH03-F002",
+            "title": "连续分配与紧凑分流",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F002-N01",
+                "label": "验证请求",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F002-N02",
+                "label": "按策略查空闲区",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F002-N03",
+                "label": "分配/切分",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F002-N04",
+                "label": "更新表",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F002-N05",
+                "label": "检查总空闲及紧凑条件",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F002-N06",
+                "label": "移动可移动分区",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F002-N07",
+                "label": "等待/失败",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F002-N08",
+                "label": "输入错误",
+                "x": 350,
+                "y": 350
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F002-N01",
+                "target": "CH03-F002-N02",
+                "label": "合法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N01",
+                "target": "CH03-F002-N08",
+                "label": "非法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N02",
+                "target": "CH03-F002-N03",
+                "label": "区长≥请求",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N03",
+                "target": "CH03-F002-N04",
+                "label": "成功",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N02",
+                "target": "CH03-F002-N05",
+                "label": "无适合区",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N05",
+                "target": "CH03-F002-N06",
+                "label": "总量够且允许/可移动且本请求尚未紧凑",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N05",
+                "target": "CH03-F002-N07",
+                "label": "否则",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F002-N06",
+                "target": "CH03-F002-N02",
+                "label": "更新基址/表后重查一次",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：完整布局或受限选择器输入有效；结束：分配完成或明确未满足；等待须资源事件后重试；紧凑失败不能无限循环；仅选择器模式不执行搬迁。"
+          }
+        },
+        {
+          "id": "ch03-f003",
+          "kind": "diagram",
+          "title": "释放与四类邻接合并",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：真实分配ID释放。结束：新布局满足不重叠且相邻空闲已合并。\n\n边界与等待：无I/O等待；双重释放/重叠拒绝且状态不变。",
+          "diagram": {
+            "code": "CH03-F003",
+            "title": "释放与四类邻接合并",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F003-N01",
+                "label": "定位分配ID",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F003-N02",
+                "label": "输入/释放错误",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F003-N03",
+                "label": "检查前后邻接",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F003-N04",
+                "label": "新增空闲项",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F003-N05",
+                "label": "合并前项",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F003-N06",
+                "label": "合并后项",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F003-N07",
+                "label": "合并前后两项",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F003-N08",
+                "label": "更新空闲表与游标",
+                "x": 350,
+                "y": 350
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F003-N01",
+                "target": "CH03-F003-N02",
+                "label": "不存在/已释放",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N01",
+                "target": "CH03-F003-N03",
+                "label": "存在",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N03",
+                "target": "CH03-F003-N04",
+                "label": "无",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N03",
+                "target": "CH03-F003-N05",
+                "label": "仅前",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N03",
+                "target": "CH03-F003-N06",
+                "label": "仅后",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N03",
+                "target": "CH03-F003-N07",
+                "label": "前后",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N04",
+                "target": "CH03-F003-N08",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N05",
+                "target": "CH03-F003-N08",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N06",
+                "target": "CH03-F003-N08",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F003-N07",
+                "target": "CH03-F003-N08",
+                "label": "完成",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：真实分配ID释放；结束：新布局满足不重叠且相邻空闲已合并；无I/O等待；双重释放/重叠拒绝且状态不变。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "空闲区用（起址，长度）表示，单位均为K：(20,40)、(70,25)、(100,50)、(160,30)。请求28K：FF选20，BF选160，WF选100。教学补充：若NF游标从70K项开始，本次选100K；游标维护协议仍需确认。\n\n回收教学示例：已有空闲[0,10)和[20,30)，释放已分配区[10,20)后，前后均相邻，合并为[0,30)。表中相邻并不代表物理端点相接。\n\n教学示例：可用[0,100)，P1占[0,20)，P2占[40,70)，总空闲50但最大连续空闲30，请求40失败。在允许搬迁的模型中，将P2移到[20,50)，形成[50,100)，才可分配40。只有空闲表时不能猜测间隙归属或执行搬迁。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 四种连续分区适配策略\n\n误解：最佳适应等于整个请求序列的最佳。纠正：这里只最小化本次选中区域大小。\n\n### 回收与相邻空闲区合并\n\n误解：直接插入一条空闲记录就完成回收。纠正：还要验证并合并相邻区。\n\n### 紧凑、连续空间与重定位\n\n误解：紧凑能凭空增大可用容量。纠正：它主要改变分布。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 在同一空闲表执行FF/NF/BF/WF，解释本次选择。\n- 处理无邻接、仅前、仅后、前后均邻接四种回收情况。\n- 区分总空闲和最大连续空闲，解释移动后基址/表格如何同步。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            13,
+            14,
+            15,
+            16,
+            24
+          ],
+          "quote_page": 14,
+          "short_quote": "分配第一个满足长度要求的空闲区",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            17
+          ],
+          "quote_page": 17,
+          "short_quote": "X终止前",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-02",
+          "filename": "3.2 连续分区存储管理 .pptx",
+          "physical_pages": [
+            20,
+            21
+          ],
+          "quote_page": 20,
+          "short_quote": "需要动态重定位支撑",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U001",
+        "CH03-U002",
+        "CH03-U012"
+      ],
+      "sort_order": 30
+    },
+    {
+      "code": "CH03-U004",
+      "title": "虚拟内存与覆盖/对换",
+      "section": "3.1",
+      "record_ids": [
+        "CH03-K007"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "虚拟内存、覆盖与对换，分别由谁管理什么？",
+      "objectives": "- 解释部分驻留的依据，并区分OS自动管理与用户安排覆盖。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "虚拟内存、覆盖与对换，分别由谁管理什么？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 局部性、虚拟内存与覆盖/对换\n\n时间和空间局部性使部分驻留具有实际价值。虚拟内存分离程序使用的地址空间与当前物理驻留；覆盖由程序设计者安排，而按需调页/调段由系统管理。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|方式|管理者与粒度|\n|---|---|\n|覆盖|程序设计者安排不同时使用的部分|\n|对换|交换模型中调整进程等对象的驻留|\n|请求分页/段|OS按合法访问管理页/段驻留|\n\n### 局部性、虚拟内存与覆盖/对换\n\n不把全部页面必须预存交换区、只装第一页或主存与辅存同速当作一般定义。后备来源与映射合法性必须另有元数据。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "教学示例：罕用的错误处理代码可暂不驻留；发生合法访问时按映射信息调入。它并不要求所有页面预先存入同一交换区，也不意味着辅存访问与内存一样快。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 局部性、虚拟内存与覆盖/对换\n\n误解：虚拟内存只是把磁盘换个名字当内存。纠正：它是映射、驻留和异常处理等机制的协作。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 解释部分驻留的依据，并区分OS自动管理与用户安排覆盖。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 主存复用与四种模式\n\n连续分区以连续区间分配空间；分页把空间划成固定大小的页与页框；分段按程序逻辑单位组织，段页式结合两者。\n\n### 存储层次与Cache背景\n\n寄存器、Cache、主存和辅存构成不同层次。Cache缓存数据以缩短访问延迟；TLB缓存地址转换，两者职责不同，具体容量和实现依架构。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-01",
+          "filename": "3.1.存储管理基础 .pptx",
+          "physical_pages": [
+            3,
+            13,
+            15,
+            16,
+            17,
+            18
+          ],
+          "quote_page": 16,
+          "short_quote": "随用随调入",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            8
+          ],
+          "quote_page": 8,
+          "short_quote": "段的调进调出是由OS自动实现的",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U007",
+        "CH03-U008",
+        "CH03-U012"
+      ],
+      "sort_order": 40
+    },
+    {
+      "code": "CH03-U005",
+      "title": "分页转换与页共享",
+      "section": "3.3.1",
+      "record_ids": [
+        "CH03-K008",
+        "CH03-K009"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "页号为什么不能直接当成页框号？",
+      "objectives": "- 计算页号、页内偏移与物理地址，并检测无效映射。\n- 解释不同虚拟页映射同一物理页，并判断代码共享需要哪些假设。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "页号为什么不能直接当成页框号？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 分页地址拆分与页表映射\n\n页面大小P时，页号是VA整除P，偏移是VA模P；页表映射到页框f，PA=f×P+偏移。分页保持页内偏移不变，页号并不等于页框号。\n\n### 页共享的映射与寻址条件\n\n多个页表项可以指向同一页框。代码能否映射到不同虚拟地址，取决于寻址和重定位方式，不能仅靠“代码共享”判断。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "### 分页地址拆分与页表映射\n\n页号、页框号、地址和范围为整数；非法页号、未定义映射、保护错误分别处理。页号0合法。位示图极性需明示，不从0/1字样推断。 教学条件：按位拆分演示限定P为2的幂；非2幂若允许，仅用商/余数算术，不伪造固定偏移位段。\n\n### 页共享的映射与寻址条件\n\n区分数据共享、特定地址相关代码与位置无关等情形；权限单独维护，不将课件限制变成跨体系结构定律。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "页大小4096B，页表0→框8、1→框4、2→框1、3→框9。8196=2×4096+4，物理地址=1×4096+4=4100；15000的页号3、偏移2712，物理地址39576。\n\n教学示例：A页2与B页5可映射同一个数据框7。代码能否这样共享还取决于寻址与重定位，不能推出代码必须总用相同虚页号。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 分页地址拆分与页表映射\n\n误解：页号相同则物理位置也相同。纠正：映射依地址空间和页表。\n\n### 页共享的映射与寻址条件\n\n误解：共享物理页会使整个地址空间都共享。纠正：可以只共享指定页，权限和其他映射仍独立。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 计算页号、页内偏移与物理地址，并检测无效映射。\n- 解释不同虚拟页映射同一物理页，并判断代码共享需要哪些假设。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 位示图和页表职责\n\n页表记录某地址空间的页到页框映射；位示图记录页框占用。位值0或1分别表示什么，必须由具体模型明确约定。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "quote_page": 3,
+          "short_quote": "页号和单元号",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            8
+          ],
+          "quote_page": 8,
+          "short_quote": "不同进程可以使用不同页号共享数据页",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U001",
+        "CH03-U006",
+        "CH03-U007",
+        "CH03-U011",
+        "CH03-U012"
+      ],
+      "sort_order": 50
+    },
+    {
+      "code": "CH03-U006",
+      "title": "TLB路径与访问时间",
+      "section": "3.3.2",
+      "record_ids": [
+        "CH03-K010",
+        "CH03-K011"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "TLB未命中时，一定需要读磁盘吗？",
+      "objectives": "- 区分TLB未命中与缺页，防止跨进程同VPN误命中。\n- 按路径建立加权公式，明确其是否包含最终数据访问。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "TLB未命中时，一定需要读磁盘吗？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### TLB、页表与地址空间切换\n\nTLB缓存转换信息，未命中时查页表；页表显示已驻留时无需辅存调入。进程切换后不能把旧进程同页号映射用于新进程。\n\n### TLB有效访问时间与模型假设\n\n课件的串行TLB、单级驻留页表、无缺页模型：EAT=h(tT+tM)+(1−h)(tT+2tM)。命中省去页表访存，不省最终数据访问。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|路径|串行单级无缺页模型耗时|\n|---|---|\n|TLB命中|tT+tM，仍含最终数据访问|\n|未命中且驻留|tT+2tM，一次查表一次数据|\n|EAT|h(tT+tM)+(1−h)(tT+2tM)|\n\n有效缓存项可携带权限；命中不强制额外读主存页表。\n\n### TLB、页表与地址空间切换\n\n教学实现选择上下文标识或切换清理等协议，不能省略上下文；真正硬件行为依架构。页表修改后的相关TLB失效也应明确。\n\n### TLB有效访问时间与模型假设\n\n公式包含数据访问；不直接覆盖并行查找、多级页表、Cache或缺页I/O。时间统一ns。下降35%是延迟减少，不等同吞吐率增加35%。"
+        },
+        {
+          "id": "ch03-g003",
+          "kind": "diagram",
+          "title": "TLB、页表与缺页",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G003",
+            "title": "TLB、页表与缺页",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G003-N01",
+                "label": "TLB",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G003-N02",
+                "label": "转换信息",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G003-N03",
+                "label": "页表",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G003-N04",
+                "label": "映射与驻留/保护状态",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G003-N05",
+                "label": "TLB未命中",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G003-N06",
+                "label": "页表查询",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G003-N07",
+                "label": "页面不驻留",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G003-N08",
+                "label": "合法缺页处理",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G003-N09",
+                "label": "脏页淘汰",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G003-N10",
+                "label": "写回",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G003-N11",
+                "label": "调入完成",
+                "x": 350,
+                "y": 525
+              },
+              {
+                "id": "CH03-G003-N12",
+                "label": "页表及相关TLB状态",
+                "x": 700,
+                "y": 525
+              },
+              {
+                "id": "CH03-G003-N13",
+                "label": "恢复执行",
+                "x": 0,
+                "y": 700
+              },
+              {
+                "id": "CH03-G003-N14",
+                "label": "原指令",
+                "x": 350,
+                "y": 700
+              },
+              {
+                "id": "CH03-G003-N15",
+                "label": "缺页",
+                "x": 700,
+                "y": 700
+              },
+              {
+                "id": "CH03-G003-N16",
+                "label": "数据Cache未命中",
+                "x": 0,
+                "y": 875
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G003-N01",
+                "target": "CH03-G003-N02",
+                "label": "缓存；不是数据Cache",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N03",
+                "target": "CH03-G003-N04",
+                "label": "记录；请求分页扩展模型",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N05",
+                "target": "CH03-G003-N06",
+                "label": "触发；具体硬件细节模型化",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N07",
+                "target": "CH03-G003-N08",
+                "label": "可能触发；先有合法映射",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N09",
+                "target": "CH03-G003-N10",
+                "label": "需要；后备目标与I/O有效",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N11",
+                "target": "CH03-G003-N12",
+                "label": "更新；保持一致性",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N13",
+                "target": "CH03-G003-N14",
+                "label": "重试；可重启教学指令",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N05",
+                "target": "CH03-G003-N15",
+                "label": "区别于；同层次事件不混淆",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G003-N15",
+                "target": "CH03-G003-N16",
+                "label": "区别于；成本与层次不同",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。缓存：S；记录：S；触发：S；可能触发：S；需要：S；更新：S；重试：S；区别于：T；区别于：T"
+          }
+        },
+        {
+          "id": "ch03-f004",
+          "kind": "diagram",
+          "title": "TLB与页表路径",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：地址空间/输入有效。结束：物理地址、缺页处理或错误。\n\n边界与等待：本教学模型先排除非法/未授权访问再进入调入；缓存命中权限可由缓存元数据判断，不额外强制查主存页表。具体异常检测先后仍依架构。",
+          "diagram": {
+            "code": "CH03-F004",
+            "title": "TLB与页表路径",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F004-N01",
+                "label": "拆分页号/偏移",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F004-N02",
+                "label": "查本地址空间TLB",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F004-N03",
+                "label": "检查缓存权限",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F004-N04",
+                "label": "查页表",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F004-N05",
+                "label": "检查页表权限",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F004-N06",
+                "label": "检查驻留",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F004-N07",
+                "label": "更新TLB",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F004-N08",
+                "label": "输出地址",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-F004-N09",
+                "label": "进入缺页处理",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-F004-N10",
+                "label": "范围/映射错误",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-F004-N11",
+                "label": "保护错误",
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F004-N01",
+                "target": "CH03-F004-N02",
+                "label": "成功",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N02",
+                "target": "CH03-F004-N03",
+                "label": "命中且有效",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N03",
+                "target": "CH03-F004-N08",
+                "label": "允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N03",
+                "target": "CH03-F004-N11",
+                "label": "拒绝",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N02",
+                "target": "CH03-F004-N04",
+                "label": "未命中",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N04",
+                "target": "CH03-F004-N05",
+                "label": "合法项",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N04",
+                "target": "CH03-F004-N10",
+                "label": "非法/无映射",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N05",
+                "target": "CH03-F004-N06",
+                "label": "允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N05",
+                "target": "CH03-F004-N11",
+                "label": "拒绝",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N06",
+                "target": "CH03-F004-N07",
+                "label": "在内存",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N06",
+                "target": "CH03-F004-N09",
+                "label": "合法且允许但不驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F004-N07",
+                "target": "CH03-F004-N08",
+                "label": "完成",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：地址空间/输入有效；结束：物理地址、F005或错误；T教学规范先排除非法/未授权访问再进入调入；缓存命中权限可由缓存元数据判断，不额外强制查主存页表。具体异常检测先后仍依架构。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "串行TLB、单级驻留页表、无缺页：tM=200ns，tT=40ns，h=0.9，EAT=0.9×240+0.1×440=260ns。h=0为440ns，h=1为240ns。相对无TLB的400ns基线，延迟减少35%，不是吞吐率直接提高35%。\n\n教学示例：A页1→框4、B页1→框9；切到B后不能继续使用A的同页号映射。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### TLB、页表与地址空间切换\n\n误解：TLB没有就一定要读磁盘。纠正：可能只是需要查驻留页表。\n\n### TLB有效访问时间与模型假设\n\n误解：命中路径只计TLB时间。纠正：还需访问数据。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 区分TLB未命中与缺页，防止跨进程同VPN误命中。\n- 按路径建立加权公式，明确其是否包含最终数据访问。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            10,
+            11,
+            13,
+            14,
+            15
+          ],
+          "quote_page": 13,
+          "short_quote": "若该页不在快表中，则再查主存页表形成绝对地址",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            10,
+            11,
+            12
+          ],
+          "quote_page": 12,
+          "short_quote": "260毫微秒",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U005",
+        "CH03-U007",
+        "CH03-U011",
+        "CH03-U012"
+      ],
+      "sort_order": 60
+    },
+    {
+      "code": "CH03-U007",
+      "title": "一次缺页如何完成",
+      "section": "3.3.3",
+      "record_ids": [
+        "CH03-K012"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "一次合法缺页，为什么可能先写回，再读入，最后重试？",
+      "objectives": "- 完整解释合法缺页从检测到重试，并区分保护错误。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "一次合法缺页，为什么可能先写回，再读入，最后重试？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 缺页、脏页写回与原指令重试\n\n合法页未驻留触发缺页；OS获取空框或选择牺牲页。脏页需完成写回后再安全复用，随后调入、更新表和TLB、恢复并重试。不是所有缺页都发生替换。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "### 缺页、脏页写回与原指令重试\n\n非法/无权限地址不靠调页解决；缺页、写回、读入、扫描分开；同一逻辑引用的重试不重复计数。资源不可用和I/O失败需明确等待/失败，不能丢失脏数据。"
+        },
+        {
+          "id": "ch03-f005",
+          "kind": "diagram",
+          "title": "缺页与脏页处理",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：合法未驻留页。结束：原指令重试成功或明确失败。\n\n边界与等待：写回/读入各自有等待；保留原引用身份，重试不新增A；失败不能泄漏页框或丢脏数据。",
+          "diagram": {
+            "code": "CH03-F005",
+            "title": "缺页与脏页处理",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F005-N01",
+                "label": "保护现场",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F005-N02",
+                "label": "获取空闲框",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F005-N03",
+                "label": "选择可替换页",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F005-N04",
+                "label": "检查脏位",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F005-N05",
+                "label": "写回",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F005-N06",
+                "label": "调入",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F005-N07",
+                "label": "更新页表/TLB/分配表",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F005-N08",
+                "label": "恢复并重试",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-F005-N09",
+                "label": "等待/资源失败",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-F005-N10",
+                "label": "I/O失败",
+                "x": 0,
+                "y": 525
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F005-N01",
+                "target": "CH03-F005-N02",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N02",
+                "target": "CH03-F005-N06",
+                "label": "有",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N02",
+                "target": "CH03-F005-N03",
+                "label": "无",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N03",
+                "target": "CH03-F005-N04",
+                "label": "有候选",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N03",
+                "target": "CH03-F005-N09",
+                "label": "无候选",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N04",
+                "target": "CH03-F005-N05",
+                "label": "脏",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N04",
+                "target": "CH03-F005-N06",
+                "label": "干净",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N05",
+                "target": "CH03-F005-N06",
+                "label": "成功",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N05",
+                "target": "CH03-F005-N10",
+                "label": "失败",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N06",
+                "target": "CH03-F005-N07",
+                "label": "成功",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N06",
+                "target": "CH03-F005-N10",
+                "label": "失败",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F005-N07",
+                "target": "CH03-F005-N08",
+                "label": "一致后",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：合法未驻留页；结束：原指令重试成功或明确失败；写回/读入各自有等待；保留原引用身份，重试不新增A；失败不能泄漏页框或丢脏数据。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "教学示例：页2合法但不驻留，且没有空闲框；选择器指定脏页1作为候选。先成功写回1，再读入2，更新映射与相关TLB，恢复并重试原指令。写回失败必须保留脏数据；原指令重试不算新的程序引用。这里没有指定自动置换算法。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 缺页、脏页写回与原指令重试\n\n误解：缺页后跳过原指令或再把重试算新引用。纠正：处理完成重试，统计口径保持同一次引用。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 完整解释合法缺页从检测到重试，并区分保护错误。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 页表标志术语\n\n驻留标志说明页是否在主存；修改标志提示替换前是否需要写回；保护信息约束操作；引用信息可用于置换策略。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-03",
+          "filename": "3.3 页式存储管理 .pptx",
+          "physical_pages": [
+            17,
+            18,
+            19,
+            20,
+            21
+          ],
+          "quote_page": 21,
+          "short_quote": "重执被中断指令",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U004",
+        "CH03-U005",
+        "CH03-U006",
+        "CH03-U009",
+        "CH03-U010"
+      ],
+      "sort_order": 70
+    },
+    {
+      "code": "CH03-U008",
+      "title": "数组布局与局部性",
+      "section": "3.3.4",
+      "record_ids": [
+        "CH03-K013"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "做同样多次赋值，为什么换个循环顺序会改变缺页次数？",
+      "objectives": "- 从循环顺序推出页面引用，并核对缺页统计。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "做同样多次赋值，为什么换个循环顺序会改变缺页次数？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 数组布局、访问顺序与缺页率\n\n按行存放且一行恰占一页时，行遍历重复使用当前页；列遍历在单框模型中不断跨页。页序列必须从地址计算得到，不能直接按动画方向加缺页数。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "### 数组布局、访问顺序与缺页率\n\nT前提：一元素一字、页128字、数组按页对齐、仅一个数据页框、第一页预驻留、不计代码等额外访问。原文未逐项列出，属于使课件结论成立的显式教学假设。"
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "在行优先、每元素一字、每页128字、一行一页、页对齐、仅一个数据框、第一页预驻留且不计代码等访问的模型中，128×128数组有16384次引用：行遍历127次缺页，列遍历16383次。初始空框时分别加1。\n\n缩小教学示例：同条件4×4模型，行遍历3次、列遍历15次。这是条件化手算，尚无数组模拟器。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 数组布局、访问顺序与缺页率\n\n误解：128与16383适用于任何C实现。纠正：页大小单位、元素宽度、对齐和额外访问改变结果。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 从循环顺序推出页面引用，并核对缺页统计。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            3,
+            4,
+            5
+          ],
+          "quote_page": 5,
+          "short_quote": "数组元素按行存放",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U004",
+        "CH03-U007",
+        "CH03-U009"
+      ],
+      "sort_order": 80
+    },
+    {
+      "code": "CH03-U009",
+      "title": "三种页面置换与Belady",
+      "section": "3.3.4",
+      "record_ids": [
+        "CH03-K014"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "FIFO命中后要不要重排？多给一个页框一定更好吗？",
+      "objectives": "- 按不同历史/未来依据选页，统计缺页并解释增加页框反而更多缺页的反例。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "FIFO命中后要不要重排？多给一个页框一定更好吗？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### OPT/FIFO/LRU与Belady异常\n\nOPT使用未来引用，FIFO按装入顺序，LRU按最近访问。FIFO命中不重排，LRU命中更新最近记录。OPT是离线比较基准，不能称为现实系统预知未来。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|策略|选择依据|命中时|\n|---|---|---|\n|OPT|未来最远或不再访问|不改变未来序列|\n|FIFO|最早装入|不重排装入顺序|\n|LRU|最久未访问|更新最近访问历史|\n|CLOCK|引用位与手针扫描|置R=1，基础协议不移动手针|\n\n### OPT/FIFO/LRU与Belady异常\n\n默认空框，初始驻留扩展需相应历史；采用固定物理槽位。比较使用同串同初始条件；缺页F/A不重复计重试。FIFO可能Belady，不能笼统声称页框更多总更好。"
+        },
+        {
+          "id": "ch03-g004",
+          "kind": "diagram",
+          "title": "访问历史与页面选择",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G004",
+            "title": "访问历史与页面选择",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G004-N01",
+                "label": "FIFO",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G004-N02",
+                "label": "装入顺序",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G004-N03",
+                "label": "LRU",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G004-N04",
+                "label": "最近访问历史",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G004-N05",
+                "label": "OPT",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G004-N06",
+                "label": "未来引用",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G004-N07",
+                "label": "CLOCK",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G004-N08",
+                "label": "引用位",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G004-N09",
+                "label": "局部性",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G004-N10",
+                "label": "页面引用模式",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G004-N11",
+                "label": "引用串与页框数",
+                "x": 350,
+                "y": 525
+              },
+              {
+                "id": "CH03-G004-N12",
+                "label": "缺页次数",
+                "x": 700,
+                "y": 525
+              },
+              {
+                "id": "CH03-G004-N13",
+                "label": "Belady异常",
+                "x": 0,
+                "y": 700
+              },
+              {
+                "id": "CH03-G004-N14",
+                "label": "离线下界比较基准",
+                "x": 350,
+                "y": 700
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G004-N01",
+                "target": "CH03-G004-N02",
+                "label": "依据；命中不重排",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N03",
+                "target": "CH03-G004-N04",
+                "label": "依据；命中更新",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N05",
+                "target": "CH03-G004-N06",
+                "label": "依据；离线比较",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N07",
+                "target": "CH03-G004-N08",
+                "label": "利用；基础CLOCK协议",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N09",
+                "target": "CH03-G004-N10",
+                "label": "影响；具体程序布局",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N11",
+                "target": "CH03-G004-N12",
+                "label": "影响；还依算法与初态",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N01",
+                "target": "CH03-G004-N13",
+                "label": "可能出现；给出课件反例",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G004-N05",
+                "target": "CH03-G004-N14",
+                "label": "提供；同串同容量同初始条件",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。依据：S；依据：S；依据：S；利用：S；影响：S；影响：S；可能出现：S；提供：T"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "同一引用串7,0,1,2,0,3,0,4,2,3,0,3,2,1,2,0,1,7,0,1，3个初始空框：OPT缺页9次、FIFO15次、LRU12次。\n\nBelady反例另用串1,2,3,4,1,2,5,1,2,3,4,5：FIFO从3框的9次变为4框的10次。两组输入不能混算；这些是手工核对的参考结果，不是平台运行输出；尚未接入页面置换计算引擎。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### OPT/FIFO/LRU与Belady异常\n\n误解：FIFO命中后将该页移到队尾。纠正：那会改变FIFO装入顺序语义。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 按不同历史/未来依据选页，统计缺页并解释增加页框反而更多缺页的反例。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "quote_page": 8,
+          "short_quote": "最先调入主存的那一页",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U007",
+        "CH03-U008",
+        "CH03-U010"
+      ],
+      "sort_order": 90
+    },
+    {
+      "code": "CH03-U010",
+      "title": "CLOCK及近似策略进阶",
+      "section": "3.3.4",
+      "record_ids": [
+        "CH03-K015",
+        "CH03-K016"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "CLOCK的一次缺页，为什么可能需要检查多个槽位？",
+      "objectives": "- 区分程序访问置位、扫描清位、替换和指针前进。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "CLOCK的一次缺页，为什么可能需要检查多个槽位？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### CLOCK引用位与指针扫描\n\n访问/装入置引用位1；替换时从指针扫描，遇1清0跳过，遇0选择替换，再前进。基础单线程模型扫描期间不穿插新访问，因而全1也能找到候选。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "### CLOCK引用位与指针扫描\n\n默认空槽从指针装入并前进；满框命中不移动指针。扫描不是新引用，基础模型不含锁页；若加入锁页必须另定义无候选处理。"
+        },
+        {
+          "id": "ch03-f009",
+          "kind": "diagram",
+          "title": "CLOCK指针扫描",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：满框缺页且基础CLOCK状态合法。结束：选择牺牲页并更新指针。\n\n边界与等待：无外部等待；容量/指针非法拒绝。基础单线程全1时最多m+1次槽检查，不含锁页或并发访问。",
+          "diagram": {
+            "code": "CH03-F009",
+            "title": "CLOCK指针扫描",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F009-N01",
+                "label": "检查当前槽R位",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F009-N02",
+                "label": "清0并前进",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F009-N03",
+                "label": "选择此槽",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F009-N04",
+                "label": "替换并置1",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F009-N05",
+                "label": "指针前进",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F009-N06",
+                "label": "输出状态",
+                "x": 700,
+                "y": 175
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F009-N01",
+                "target": "CH03-F009-N02",
+                "label": "1",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F009-N02",
+                "target": "CH03-F009-N01",
+                "label": "下一槽",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F009-N01",
+                "target": "CH03-F009-N03",
+                "label": "0",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F009-N03",
+                "target": "CH03-F009-N04",
+                "label": "确定",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F009-N04",
+                "target": "CH03-F009-N05",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F009-N05",
+                "target": "CH03-F009-N06",
+                "label": "完成",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：满框缺页且基础CLOCK状态合法；结束：选择牺牲页并更新指针；无外部等待；容量/指针非法拒绝。基础单线程全1时最多m+1次槽检查，不含锁页或并发访问。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "自拟完整小例：3空框、R全0、hand=0，依次访问1,2,3,1,4。缺页4次，最终frames=[4,2,3]、R=[1,0,0]、hand=1。满框后访问4，依次清三个1位，再回到首槽替换。基础串行无锁页模型中，全1最多检查m+1次槽位。\n\n近似LRU与窗口LFU的采样时机、随机规则、同频规则尚未完整确认，不给唯一轨迹或运行入口。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### CLOCK引用位与指针扫描\n\n误解：CLOCK完全等价LRU，或每扫描一次就新增缺页。纠正：它只保留有限使用信息，缺页按引用统计。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 区分程序访问置位、扫描清位、替换和指针前进。"
+        },
+        {
+          "id": "advanced",
+          "kind": "text",
+          "title": "可选进阶：理解边界",
+          "text": "### 引用位近似LRU与窗口LFU\n\n课件近似LRU定时清引用位，访问置1，从0位中随机选；课件LFU定时清计数，每次访问加1，淘汰当前窗口计数最小者。两者都不应偷换为终身累计/精确LRU。\n\n### 引用位近似LRU与窗口LFU\n\n需时钟事件顺序、时间间隔、平局、新页初始化、随机协议、全为1的处理。不能声称LFU对所有负载都优于LRU或更接近OPT。\n\n当前仅静态讲解，完整协议和对应实验仍待完善。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            15,
+            16,
+            17
+          ],
+          "quote_page": 16,
+          "short_quote": "引用标志位清0，并跳过",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-04",
+          "filename": "3.3-4 页面调度 .pptx",
+          "physical_pages": [
+            13,
+            14
+          ],
+          "quote_page": 14,
+          "short_quote": "时间间隔中断发生后，所有计数器清0",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U007",
+        "CH03-U009"
+      ],
+      "sort_order": 100
+    },
+    {
+      "code": "CH03-U011",
+      "title": "页表规模、多级与反置",
+      "section": "3.3.6",
+      "record_ids": [
+        "CH03-K017",
+        "CH03-K018"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "按虚页、按页框、分层组织，分别解决什么问题？",
+      "objectives": "- 算页表大小、拆层级位段，说明稀疏节省与多级访存代价。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "按虚页、按页框、分层组织，分别解决什么问题？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 多级页表的空间与访存权衡\n\n平面页表可能很大，多级结构按目录分层组织，对稀疏映射可只建立所需下级表；代价是TLB未命中时更多查表步骤。不是层数更多就一定更省/更快。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "### 多级页表的空间与访存权衡\n\n32位4KiB页4B项→2^20项、4MiB。二级“三次访存”包含数据、且表驻留无TLB命中。9/11/12是题给划分，不擅自改成10/10/12；若每项4B，2048项的下级表是8KiB，不能硬说一张必占一个4KiB页。"
+        },
+        {
+          "id": "ch03-g005",
+          "kind": "diagram",
+          "title": "页表组织与查找代价",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G005",
+            "title": "页表组织与查找代价",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G005-N01",
+                "label": "普通页表",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G005-N02",
+                "label": "映射",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G005-N03",
+                "label": "反置页表",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G005-N04",
+                "label": "表项",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G005-N05",
+                "label": "哈希链",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G005-N06",
+                "label": "反置页表查询",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G005-N07",
+                "label": "多级页表",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G005-N08",
+                "label": "稀疏映射",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G005-N09",
+                "label": "下级页表数量",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G005-N10",
+                "label": "更多层级",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G005-N11",
+                "label": "未命中时查表步骤",
+                "x": 350,
+                "y": 525
+              },
+              {
+                "id": "CH03-G005-N12",
+                "label": "TLB",
+                "x": 700,
+                "y": 525
+              },
+              {
+                "id": "CH03-G005-N13",
+                "label": "多次查表代价",
+                "x": 0,
+                "y": 700
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G005-N01",
+                "target": "CH03-G005-N02",
+                "label": "按虚页组织；每进程逻辑映射",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N03",
+                "target": "CH03-G005-N04",
+                "label": "按页框组织；每个页框对应一个表项",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N05",
+                "target": "CH03-G005-N06",
+                "label": "支持；比较完整键",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N07",
+                "target": "CH03-G005-N02",
+                "label": "通过分层索引组织；不是反置页表",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N08",
+                "target": "CH03-G005-N09",
+                "label": "可能减少；按需建立的模型",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N10",
+                "target": "CH03-G005-N11",
+                "label": "可能增加；各级驻留，计数不含/含数据明确",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G005-N12",
+                "target": "CH03-G005-N13",
+                "label": "缓解；命中及上下文有效",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。按虚页组织：S；按页框组织：S；支持：S；通过分层索引组织：S；可能减少：T；可能增加：S；缓解：S"
+          }
+        },
+        {
+          "id": "ch03-f006",
+          "kind": "diagram",
+          "title": "多级页表查找",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：位宽/层级与表状态有效。结束：地址或具体缺失/保护状态。\n\n边界与等待：基础查找停止并显示缺失；如无页表页调入模型，不伪造自动恢复。",
+          "diagram": {
+            "code": "CH03-F006",
+            "title": "多级页表查找",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F006-N01",
+                "label": "拆位段",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F006-N02",
+                "label": "查顶级",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F006-N03",
+                "label": "查下级",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F006-N04",
+                "label": "查最终页项",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F006-N05",
+                "label": "组合地址",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F006-N06",
+                "label": "项无效/范围错",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F006-N07",
+                "label": "下级表缺失",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F006-N08",
+                "label": "数据页不驻留",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-F006-N09",
+                "label": "保护错误",
+                "x": 700,
+                "y": 350
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F006-N01",
+                "target": "CH03-F006-N02",
+                "label": "完成",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N02",
+                "target": "CH03-F006-N03",
+                "label": "有效且下级驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N02",
+                "target": "CH03-F006-N06",
+                "label": "无效",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N02",
+                "target": "CH03-F006-N07",
+                "label": "下级未驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N03",
+                "target": "CH03-F006-N04",
+                "label": "有效",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N03",
+                "target": "CH03-F006-N06",
+                "label": "无效",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N04",
+                "target": "CH03-F006-N05",
+                "label": "驻留且允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N04",
+                "target": "CH03-F006-N08",
+                "label": "不驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F006-N04",
+                "target": "CH03-F006-N09",
+                "label": "无权限",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：位宽/层级与表状态有效；结束：地址或具体缺失/保护状态；基础查找停止并显示缺失；如无页表页调入模型，不伪造自动恢复。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "32位字节地址、4KiB页、4B表项：2^20项，共4MiB。题给9/11/12划分时，偏移12位；若额外假设4B项，下级2048项共8KiB，不能说它必占一张4KiB页。\n\n自拟16位4/4/8模型：VA=0x2345，目录索引2、叶索引3、偏移69；叶项映射框5，PA=5×256+69=1349。此例与32位课件题独立。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 多级页表的空间与访存权衡\n\n误解：“页面长度12位”就是页面12bit。纠正：这里可确定页内偏移12位，字节编址时页4KiB。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 算页表大小、拆层级位段，说明稀疏节省与多级访存代价。"
+        },
+        {
+          "id": "advanced",
+          "kind": "text",
+          "title": "可选进阶：理解边界",
+          "text": "### 反置页表、哈希链与完整键比较\n\n反置页表按页框组织表项，记录进程标识/虚页号及状态。查询先定位桶，再沿链比较完整键；匹配项的索引给出页框号。没有匹配还需判断映射是否合法，不能为任意地址直接调页。\n\n### 反置页表、哈希链与完整键比较\n\n共享别名与缺失后备元数据超出基本模型；MMU执行转换/维护信息不代表OS置换政策由它独立决定。课件“每框建一页表”应辨析为表项。\n\n当前仅静态讲解，完整协议和对应实验仍待完善。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-05",
+          "filename": "3.3-5 反置页表与多级页表 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "quote_page": 5,
+          "short_quote": "MMU遍历哈希链找到所需进程的虚页号",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-05",
+          "filename": "3.3-5 反置页表与多级页表 .pptx",
+          "physical_pages": [
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14
+          ],
+          "quote_page": 9,
+          "short_quote": "逻辑地址结构有三部分组成",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U005",
+        "CH03-U006",
+        "CH03-U012"
+      ],
+      "sort_order": 110
+    },
+    {
+      "code": "CH03-U012",
+      "title": "分段与段页式",
+      "section": "3.4",
+      "record_ids": [
+        "CH03-K019",
+        "CH03-K020",
+        "CH03-K021"
+      ],
+      "phase": "第一批·预填草稿",
+      "summary": "段表找到的是数据起址，还是另一张页表？",
+      "objectives": "- 查段基址/长度，判断偏移与权限，解释共享映射。\n- 沿段号、页号和偏移定位物理页框，区分缺段/缺页/越界。",
+      "blocks": [
+        {
+          "id": "intro",
+          "kind": "intro",
+          "title": "先想一个问题",
+          "text": "段表找到的是数据起址，还是另一张页表？"
+        },
+        {
+          "id": "concept",
+          "kind": "concept",
+          "title": "理解关键原理",
+          "text": "### 段式地址转换与段共享\n\n按段号查表得到基址、长度和状态，范围及权限检查通过后形成地址。共享段可由不同段表项指向同一物理区域，但各映射权限仍需说明。\n\n### 段页式两层映射与异常分流\n\n段表定位某段页表，页表将段内页映射到页框。段内可以非连续物理存放。映射检查包含段存在、页范围、驻留与权限。"
+        },
+        {
+          "id": "explanation",
+          "kind": "explanation",
+          "title": "规则、条件与对照",
+          "text": "|模式|地址结构|表项作用|\n|---|---|---|\n|分页|页号、页内偏移|页表定位页框|\n|分段|段号、段内偏移|段表提供基址、长度和状态|\n|段页式|段号、页号、偏移|段表定位页表，再定位页框|\n\n### 段式地址转换与段共享\n\n从0开始、长度L字节模型用d<L；段号也需合法。段地址寄存器数量和可见性依具体架构，不由示意图推广到所有分段系统。\n\n### 段页式两层映射与异常分流\n\nTLB键需区分地址空间、段和页；若模型只有页表长度，就只承诺页边界保护；要检查末页实际段字节范围须另给segment_bytes并比较pP+d<L。"
+        },
+        {
+          "id": "ch03-g006",
+          "kind": "diagram",
+          "title": "分段与分页的结合",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。",
+          "diagram": {
+            "code": "CH03-G006",
+            "title": "分段与分页的结合",
+            "type": "relation",
+            "nodes": [
+              {
+                "id": "CH03-G006-N01",
+                "label": "段",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-G006-N02",
+                "label": "程序逻辑结构",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-G006-N03",
+                "label": "页",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-G006-N04",
+                "label": "固定尺寸单元",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-G006-N05",
+                "label": "段页式",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-G006-N06",
+                "label": "分段与分页",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-G006-N07",
+                "label": "段表",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-G006-N08",
+                "label": "段对应页表",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-G006-N09",
+                "label": "页表",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-G006-N10",
+                "label": "物理页框",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-G006-N11",
+                "label": "同一段",
+                "x": 350,
+                "y": 525
+              },
+              {
+                "id": "CH03-G006-N12",
+                "label": "不连续页框",
+                "x": 700,
+                "y": 525
+              },
+              {
+                "id": "CH03-G006-N13",
+                "label": "段共享",
+                "x": 0,
+                "y": 700
+              },
+              {
+                "id": "CH03-G006-N14",
+                "label": "映射与权限",
+                "x": 350,
+                "y": 700
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-G006-N01",
+                "target": "CH03-G006-N02",
+                "label": "表达；课程分段模型",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N03",
+                "target": "CH03-G006-N04",
+                "label": "划分；页面与页框等尺寸",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N05",
+                "target": "CH03-G006-N06",
+                "label": "结合；不是两套孤立流程",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N07",
+                "target": "CH03-G006-N08",
+                "label": "定位；合法段",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N09",
+                "target": "CH03-G006-N10",
+                "label": "定位；合法驻留页",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N11",
+                "target": "CH03-G006-N12",
+                "label": "可以分布于；段页式",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-G006-N13",
+                "target": "CH03-G006-N14",
+                "label": "需要；不是无条件可写",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。表达：S；划分：S；结合：S；定位：S；定位：S；可以分布于：S；需要：S"
+          }
+        },
+        {
+          "id": "ch03-f007",
+          "kind": "diagram",
+          "title": "段式访问与受限扩充",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：段号/偏移/访问类型输入。结束：地址、等待或错误。\n\n边界与等待：本教学模型顺序不同于原图精确检测先后；增长协议未确认时禁用该分支，仅静态解释。",
+          "diagram": {
+            "code": "CH03-F007",
+            "title": "段式访问与受限扩充",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F007-N01",
+                "label": "查段/验证",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F007-N02",
+                "label": "检查权限",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F007-N03",
+                "label": "检查偏移",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F007-N04",
+                "label": "检查驻留",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F007-N05",
+                "label": "基址加偏移",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F007-N06",
+                "label": "合法段调入",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F007-N07",
+                "label": "检查增长策略与空间",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F007-N08",
+                "label": "扩充并更新",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-F007-N09",
+                "label": "越界/非法段",
+                "x": 700,
+                "y": 350
+              },
+              {
+                "id": "CH03-F007-N10",
+                "label": "保护错误",
+                "x": 0,
+                "y": 525
+              },
+              {
+                "id": "CH03-F007-N11",
+                "label": "等待/失败",
+                "x": 350,
+                "y": 525
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F007-N01",
+                "target": "CH03-F007-N02",
+                "label": "合法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N01",
+                "target": "CH03-F007-N09",
+                "label": "非法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N02",
+                "target": "CH03-F007-N03",
+                "label": "允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N02",
+                "target": "CH03-F007-N10",
+                "label": "拒绝",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N03",
+                "target": "CH03-F007-N04",
+                "label": "0≤d<L",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N03",
+                "target": "CH03-F007-N07",
+                "label": "超长且配置可扩充",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N03",
+                "target": "CH03-F007-N09",
+                "label": "否则",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N07",
+                "target": "CH03-F007-N08",
+                "label": "允许且资源可得",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N07",
+                "target": "CH03-F007-N11",
+                "label": "否则",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N08",
+                "target": "CH03-F007-N03",
+                "label": "重查",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N04",
+                "target": "CH03-F007-N05",
+                "label": "在内存",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N04",
+                "target": "CH03-F007-N06",
+                "label": "不驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N06",
+                "target": "CH03-F007-N01",
+                "label": "成功重试",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F007-N06",
+                "target": "CH03-F007-N11",
+                "label": "失败",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：段号/偏移/访问类型输入；结束：地址、等待或错误；T教学规范顺序不同于原图精确检测先后；增长协议未确认时禁用该分支，仅静态解释。"
+          }
+        },
+        {
+          "id": "ch03-f008",
+          "kind": "diagram",
+          "title": "段页式查找",
+          "text": "选择节点，沿有名称和条件的连线阅读；可用键盘操作节点。这是流程与关系示意，暂不支持输入数据运行实验。\n\n开始：进程/段/页/偏移合法类型。结束：地址或区分的异常。\n\n边界与等待：基础模型只显示缺段/缺页，不在没有相应引擎时自动演示调入。",
+          "diagram": {
+            "code": "CH03-F008",
+            "title": "段页式查找",
+            "type": "flow",
+            "nodes": [
+              {
+                "id": "CH03-F008-N01",
+                "label": "验证段",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "id": "CH03-F008-N02",
+                "label": "定位段页表",
+                "x": 350,
+                "y": 0
+              },
+              {
+                "id": "CH03-F008-N03",
+                "label": "检查页范围/可选段字节范围",
+                "x": 700,
+                "y": 0
+              },
+              {
+                "id": "CH03-F008-N04",
+                "label": "查页项",
+                "x": 0,
+                "y": 175
+              },
+              {
+                "id": "CH03-F008-N05",
+                "label": "组合页框与偏移",
+                "x": 350,
+                "y": 175
+              },
+              {
+                "id": "CH03-F008-N06",
+                "label": "非法段/页范围",
+                "x": 700,
+                "y": 175
+              },
+              {
+                "id": "CH03-F008-N07",
+                "label": "段页表缺失",
+                "x": 0,
+                "y": 350
+              },
+              {
+                "id": "CH03-F008-N08",
+                "label": "缺页",
+                "x": 350,
+                "y": 350
+              },
+              {
+                "id": "CH03-F008-N09",
+                "label": "保护错误",
+                "x": 700,
+                "y": 350
+              }
+            ],
+            "edges": [
+              {
+                "source": "CH03-F008-N01",
+                "target": "CH03-F008-N02",
+                "label": "合法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N01",
+                "target": "CH03-F008-N06",
+                "label": "非法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N02",
+                "target": "CH03-F008-N03",
+                "label": "存在",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N02",
+                "target": "CH03-F008-N07",
+                "label": "缺失",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N03",
+                "target": "CH03-F008-N04",
+                "label": "合法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N03",
+                "target": "CH03-F008-N06",
+                "label": "非法",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N04",
+                "target": "CH03-F008-N05",
+                "label": "驻留且允许",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N04",
+                "target": "CH03-F008-N08",
+                "label": "不驻留",
+                "direction": "directed"
+              },
+              {
+                "source": "CH03-F008-N04",
+                "target": "CH03-F008-N09",
+                "label": "无权限",
+                "direction": "directed"
+              }
+            ],
+            "note": "教学示意，不是原图复刻或可执行动画。开始：进程/段/页/偏移合法类型；结束：地址或区分的异常；基础模型只显示缺段/缺页，不在没有相应引擎时自动演示调入。"
+          }
+        },
+        {
+          "id": "case",
+          "kind": "case",
+          "title": "用例子理解",
+          "text": "零起字节偏移教学模型：base=10000、length=100，d=99得到10099，d=100越界。若允许增长，访问d=120至少需要长度121，增加21；增长上限、资源与搬迁条件未定，当前不提供增长模拟。\n\n段页式教学例：P=4096，段1含3个整页，页2→框7，偏移6，PA=28678；页3越界。若末页只有部分字节有效，必须另给segment_bytes，检查pP+d<L，不能仅看页表长度。"
+        },
+        {
+          "id": "mistake",
+          "kind": "mistake",
+          "title": "检查容易混淆的地方",
+          "text": "### 段式地址转换与段共享\n\n误解：段长L时偏移L也合法。纠正：若L为字节数，最大偏移L−1。\n\n### 段页式两层映射与异常分流\n\n误解：段页式仍要求整段物理连续。纠正：段内按页映射到不连续页框。"
+        },
+        {
+          "id": "summary",
+          "kind": "summary",
+          "title": "用自己的话回顾",
+          "text": "- 查段基址/长度，判断偏移与权限，解释共享映射。\n- 沿段号、页号和偏移定位物理页框，区分缺段/缺页/越界。"
+        },
+        {
+          "id": "background",
+          "kind": "text",
+          "title": "需要时再看：基础速览",
+          "text": "### 程序分段背景\n\n程序可按主程序、子程序和数据等逻辑单位分段。段的长度可不同，段寄存器数量和可见性取决于具体架构。"
+        },
+        {
+          "id": "advanced",
+          "kind": "text",
+          "title": "可选进阶：理解边界",
+          "text": "### 缺段与受限段扩充\n\n合法段不驻留时调入；偏移超过现长度时仅在允许增长并满足策略/资源约束时扩充，更新段表和分配信息后重试。不能把所有越界都当自动增长。\n\n### 缺段与受限段扩充\n\n最大长度、增长粒度、移动/锁定/共享引用、I/O失败和空间不足处理都需定义；向上增长的玩具模型不冒充实际栈实现。\n\n当前仅静态讲解，完整协议和对应实验仍待完善。"
+        },
+        {
+          "id": "support",
+          "kind": "text",
+          "title": "练习与实验安排",
+          "text": "可在本页进入教师正式练习，或带着具体问题进入独立智能问答。个人AI测验不计入教师正式成绩。公共课件需教师在资料管理中实际关联。\n\n本单元没有已接入的存储管理计算引擎或机制动画。FCFS/SJF/RR属于CPU调度，不代替页面FIFO/CLOCK。图示可交互阅读，但不执行真实分配、缺页或置换。"
+        }
+      ],
+      "refs": [
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            10
+          ],
+          "quote_page": 6,
+          "short_quote": "不满足保护条件则产生保护中断",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "quote_page": 10,
+          "short_quote": "与S段末端相邻的空闲区长度满足要求",
+          "evidence_type": "S-text"
+        },
+        {
+          "source_id": "S3-06",
+          "filename": "3.4 段式存储管理 .pptx",
+          "physical_pages": [
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "quote_page": 12,
+          "short_quote": "每一段不必占据连续的存储空间",
+          "evidence_type": "S-text"
+        }
+      ],
+      "lab": false,
+      "related": [
+        "CH03-U001",
+        "CH03-U003",
+        "CH03-U004",
+        "CH03-U005",
+        "CH03-U006",
+        "CH03-U007",
+        "CH03-U011"
+      ],
+      "sort_order": 120
+    }
+  ],
+  "summaries": [
+    {
+      "id": "CH03-N001",
+      "name": "逻辑/物理地址术语",
+      "summary": "简短术语与一维/二维形式，具体模型边界在K001。",
+      "source": "S3-01 p2/p4",
+      "short_quote": "一维逻辑地址",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N002",
+      "name": "主存复用与四种模式",
+      "summary": "连续分区与页框复用、单连续/分页/分段/段页式概览，不各做一个难点。",
+      "source": "S3-01 p5—7",
+      "short_quote": "按照分区复用",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N003",
+      "name": "存储管理职责",
+      "summary": "转换、分配/去配、共享、保护、扩充，作为单元导航。",
+      "source": "S3-01 p8—13",
+      "short_quote": "存储保护",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N004",
+      "name": "存储层次与Cache背景",
+      "summary": "层次图足够；历史容量和L3内外置不做通则。",
+      "source": "S3-01 p20—25",
+      "short_quote": "Cache是介于CPU和主存储器间",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N005",
+      "name": "单用户/固定分区背景",
+      "summary": "用模式对照表介绍；真正难点是碎片与分配决策。",
+      "source": "S3-02 p2—8",
+      "short_quote": "分区数量固定",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N006",
+      "name": "位示图和页表职责",
+      "summary": "位示图管页框占用，页表管某进程映射；极性要明示。",
+      "source": "S3-03 p7",
+      "short_quote": "可用一张位示图来记录主存分配情况",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N007",
+      "name": "页表标志术语",
+      "summary": "驻留、修改、保护、引用等字段说明，合入缺页单元。",
+      "source": "S3-03 p18",
+      "short_quote": "主存驻留标志",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    },
+    {
+      "id": "CH03-N008",
+      "name": "程序分段背景",
+      "summary": "主程序/子程序/数据等逻辑结构，段寄存器细节不泛化。",
+      "source": "S3-06 p2—4",
+      "short_quote": "段号：单元号",
+      "presentation": "短摘要/表格/课件入口，非独立难点动画"
+    }
+  ],
+  "issues": [
+    {
+      "id": "CH03-V001",
+      "title": "课件章号/平台映射和材料齐全性",
+      "source": "6份课件标题与用户未填写项",
+      "problem": "只确认本次118页覆盖，不能证明全章齐全；CH03不是数据库ID。",
+      "required_resolution": "确认目标课程/章及是否有遗漏课件。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V002",
+      "title": "分页数字拆行/重叠",
+      "source": "S3-03 p4",
+      "problem": "289/28、453/45等显示不能保证逐数字原意；不复刻其数值。",
+      "required_resolution": "用p5—6已核对算例；原图精确复刻需清晰说明。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V003",
+      "title": "段长≤与<冲突",
+      "source": "S3-06 p5/p10",
+      "problem": "若L表示字节数、偏移0起，应d<L；原文冲突仍在。",
+      "required_resolution": "确认段长含义，教师采用规范半开范围后再出边界判分题。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V004",
+      "title": "代码共享必须同页号",
+      "source": "S3-03 p8",
+      "problem": "存在寻址/重定位前提，不能作为普遍规律。",
+      "required_resolution": "保留原文；学生材料使用有条件解释。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V005",
+      "title": "请求分页只装第一页的定义",
+      "source": "S3-03 p17",
+      "problem": "不是通用请求分页定义。",
+      "required_resolution": "修改为按需驻留并保留差异记录。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V006",
+      "title": "Cache控制与代际参数",
+      "source": "S3-01 p21—25",
+      "problem": "Cache通常涉及硬件维护，容量/外置L3等有历史和架构条件。",
+      "required_resolution": "只给背景，不把参数和OS直接管理Cache说法作通则。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V007",
+      "title": "页框数单调性",
+      "source": "S3-04 p4/p10",
+      "problem": "FIFO的Belady反例否定无条件单调结论。",
+      "required_resolution": "同串同初态比较，明确策略条件。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V008",
+      "title": "页面变大缺页必少",
+      "source": "S3-04 p4",
+      "problem": "受内存预算、访问模式、页面布局影响，不能普遍保证。",
+      "required_resolution": "作为因素讨论而非固定判断题。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V009",
+      "title": "LFU必比LRU更接近OPT",
+      "source": "S3-04 p14",
+      "problem": "不是所有负载下的保证。",
+      "required_resolution": "保留争议，不能作为唯一正确结论。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V010",
+      "title": "近似LRU/LFU不完整协议",
+      "source": "S3-04 p13—14",
+      "problem": "时间间隔、全1候选、随机协议和同频规则不足。",
+      "required_resolution": "A009建议协议标T；A010不发布完整唯一轨迹实验。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V011",
+      "title": "NF游标完整定义",
+      "source": "S3-02 p15",
+      "problem": "初始位置、切分、恰好用完、回收合并后游标行为未定。",
+      "required_resolution": "使用明示NF_v1建议；未经确认不冒充PPT原规则。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V012",
+      "title": "CLOCK完整初态/环",
+      "source": "S3-04 p15—17",
+      "problem": "p17有省略环位置；仅局部扫描可核对。",
+      "required_resolution": "完整演示用自拟小例；空框/初指针协议标T。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V013",
+      "title": "反置页表“每框一张表”",
+      "source": "S3-05 p3",
+      "problem": "应区分表项与整张表。",
+      "required_resolution": "规范措辞但保留原摘录与待确认状态。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V014",
+      "title": "IPT/MMU/OS职责与缺失映射",
+      "source": "S3-05 p2/p5/p6",
+      "problem": "MMU转换不等于独立决定OS淘汰政策；IPT无匹配还可能是非法映射。",
+      "required_resolution": "附合法映射检查；架构行为不泛化。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V015",
+      "title": "页表页缺失的架构模型",
+      "source": "S3-05 p11",
+      "problem": "按需调入页表页不是所有硬件均相同的实现。",
+      "required_resolution": "限定为课件模型；复杂页表页I/O暂缓。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V016",
+      "title": "64位页表外推参数",
+      "source": "S3-05 p8",
+      "problem": "没有完整给出64位有效VA宽度、PTE宽度等。",
+      "required_resolution": "只能在显式假设下推导，不给现实系统唯一答案。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V017",
+      "title": "页面长度12位的单位",
+      "source": "S3-05 p13—14",
+      "problem": "12位是剩余偏移位数；字节编址时页面4096B。",
+      "required_resolution": "重写题问为偏移位数与页面字节数，原题歧义保留。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V018",
+      "title": "数组代码排版与假设",
+      "source": "S3-04 p5",
+      "problem": "代码/说明重叠；元素一字、数组对齐、代码页不争用等是条件。",
+      "required_resolution": "保留行/列循环意图；不能无条件套16383/127。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V019",
+      "title": "段覆盖指代与段标志编码",
+      "source": "S3-06 p8—9",
+      "problem": "“它”指代可能歧义；00/01/11为图示编码。",
+      "required_resolution": "区分用户覆盖与OS调段；权限位编码不作跨架构标准。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V020",
+      "title": "段增长/搬迁协议",
+      "source": "S3-06 p10",
+      "problem": "最大长度、粒度、锁页/共享、失败和移动条件不全。",
+      "required_resolution": "第一批仅静态；完整增长引擎暂缓。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V021",
+      "title": "逻辑0起、私有RW与全辅存等泛化",
+      "source": "S3-01 p2/p4/p12/p13/p16/p17/p27",
+      "problem": "属于课程简化，不能对全部虚拟内存/体系结构下绝对结论。",
+      "required_resolution": "标模型条件；合法性、权限和后备来源分开。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V022",
+      "title": "备注旧版本和来源标识",
+      "source": "多份备注与画面",
+      "problem": "备注含旧教材页和复制章节，不是第五版页码或新课程结构证据。",
+      "required_resolution": "本报告只按PPT物理页，不推断作者/范围。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V023",
+      "title": "严格大于x与恰好匹配",
+      "source": "S3-02 p21",
+      "problem": "流程图写“大于x”，算法应接纳等于请求的区间。",
+      "required_resolution": "实现≥并测试相等，修订标T并保留差异。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V024",
+      "title": "段页式TLB完整键",
+      "source": "S3-06 p14—15",
+      "problem": "“该段在快表”不能替代完整段页映射命中。",
+      "required_resolution": "明示进程/地址空间、段、页以及失效协议。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V025",
+      "title": "初始驻留历史不足（复核新增）",
+      "source": "所有页置换实验的扩展输入",
+      "problem": "预装页的FIFO装入序、LRU访问史、CLOCK位与指针等不能凭页列表推断。",
+      "required_resolution": "默认空框；高级初态缺必要元数据则拒绝。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V026",
+      "title": "算例参数/单位不能跨页拼接（复核新增）",
+      "source": "S3-02 p5/p6/p23/p24；S3-05 p13—14",
+      "problem": "几张分区表不是同一例；K/KB与字节编址要明示；9/11/12不等10/10/12。",
+      "required_resolution": "各例独立命名，保存参数与来源；题目没给的内容标T假设。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V027",
+      "title": "计数与成本模型（复核新增）",
+      "source": "S3-03 p12；S3-04 p3/p5",
+      "problem": "TLB时间式含数据访存且不含缺页I/O；扫描、重试、预装、TICK不能混入引用总数。",
+      "required_resolution": "分别定义reference/scan/io/tick事件；缺页率分母及初始计数显式保存。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    },
+    {
+      "id": "CH03-V028",
+      "title": "选择器与完整分配器边界（复核新增）",
+      "source": "分区算法工程化设计",
+      "problem": "只有空闲表不够执行释放/紧凑、证明全内存守恒；未知间隙不能虚构为某进程。",
+      "required_resolution": "选择器只输出选区；完整模式须给分配/保留/空闲的完整布局。",
+      "status": "未解决：技术解释/建议不等于教师已确认"
+    }
+  ],
+  "experiments": [],
+  "deferred": [
+    "分区适配/释放/紧凑：未增加引擎",
+    "页面OPT/FIFO/LRU/CLOCK/LFU：未增加引擎",
+    "AN001—AN008机制动画：尚未实现",
+    "近似LRU、段增长和模糊图示：保留待核实"
+  ],
+  "practice": [
+    {
+      "record_id": "CH03-K001",
+      "recommended_type_and_skill": "地址计算与边界判断",
+      "existing_material": "S3-02 p22，题干可用，270K为报告推导",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K002",
+      "recommended_type_and_skill": "共享与权限情境判断",
+      "existing_material": "无独立题，教师编写/审核",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K003",
+      "recommended_type_and_skill": "内零头计算与碎片辨析",
+      "existing_material": "S3-02 p23，图片表独立于p6，25K报告推导",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K004",
+      "recommended_type_and_skill": "按策略选区与解释",
+      "existing_material": "S3-02 p24，NF需另给游标",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K005",
+      "recommended_type_and_skill": "释放后表格/四类邻接",
+      "existing_material": "S3-02 p17为演示，非现成题",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K006",
+      "recommended_type_and_skill": "紧凑与连续空间判断",
+      "existing_material": "S3-02 p20—21为机制图",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K007",
+      "recommended_type_and_skill": "覆盖/对换/虚拟管理对比",
+      "existing_material": "无独立题",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K008",
+      "recommended_type_and_skill": "分页拆分与物理地址计算",
+      "existing_material": "S3-03 p5—6含图片解答",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K009",
+      "recommended_type_and_skill": "有条件的共享代码讨论",
+      "existing_material": "无独立题，争议句不直接判分",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K010",
+      "recommended_type_and_skill": "TLB miss/缺页路径识别",
+      "existing_material": "S3-03 p13—15为依据",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K011",
+      "recommended_type_and_skill": "EAT与前提计算",
+      "existing_material": "S3-03 p12含算例",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K012",
+      "recommended_type_and_skill": "缺页流程排序与脏页分支",
+      "existing_material": "S3-03 p19—21为机制",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K013",
+      "recommended_type_and_skill": "布局与访问顺序比较",
+      "existing_material": "S3-04 p5，须完整前提",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K014",
+      "recommended_type_and_skill": "页框轨迹/缺页数/Belady解释",
+      "existing_material": "S3-04 p7/p9/p10/p12",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K015",
+      "recommended_type_and_skill": "逐次指针/R位跟踪",
+      "existing_material": "S3-04 p17为图示",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K016",
+      "recommended_type_and_skill": "统计窗口/近似规则辨析",
+      "existing_material": "无完整唯一答案题",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K017",
+      "recommended_type_and_skill": "哈希链与完整键辨析",
+      "existing_material": "无独立题",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K018",
+      "recommended_type_and_skill": "容量/位数/访存计算",
+      "existing_material": "S3-05 p8/p13—14",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K019",
+      "recommended_type_and_skill": "段地址/越界/权限",
+      "existing_material": "无独立题，边界先规范",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K020",
+      "recommended_type_and_skill": "缺段/增长分支判断",
+      "existing_material": "S3-06 p10机制图，增长协议未定",
+      "formal_and_personal_separate": true
+    },
+    {
+      "record_id": "CH03-K021",
+      "recommended_type_and_skill": "段表/页表联合查找",
+      "existing_material": "S3-06 p13—15机制图",
+      "formal_and_personal_separate": true
+    }
+  ]
+}

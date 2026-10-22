@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 
 
-@lru_cache(maxsize=2)
+@lru_cache(maxsize=3)
 def reading_copy(chapter="chapter01"):
     return json.loads(
         (
@@ -21,6 +21,18 @@ def student_reading(body):
     data = copy.deepcopy(body)
     for field in ("source_title", "source_note", "printed_pages", "pdf_pages"):
         data[field] = ""
+    if data.get("code", "").startswith("CH03-"):
+        # The canonical text is already student-readable; keep model limits in blocks.
+        notes = reading_copy("chapter03")
+        for block in data["blocks"]:
+            original = notes.get(data["code"] + "/" + block["id"])
+            if (
+                block.get("diagram")
+                and original
+                and block["diagram"]["note"] == original["expected_note"]
+            ):
+                block["diagram"]["note"] = ""
+        return data
     if not data.get("code", "").startswith(("CH01-", "CH02-")):
         return data
     blocks = []

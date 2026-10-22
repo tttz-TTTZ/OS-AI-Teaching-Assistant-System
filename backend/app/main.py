@@ -361,4 +361,6 @@ from . import chapter_apply  # register direct-apply route before including rout
 
 from . import chapter02  # register explicit chapter02 draft routes, no startup writes
 
+from . import chapter03  # explicit teacher draft routes only; no startup apply
+
 app.include_router(chapter_content_router)

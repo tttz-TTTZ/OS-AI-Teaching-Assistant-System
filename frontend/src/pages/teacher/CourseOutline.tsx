@@ -96,6 +96,12 @@ export default function CourseOutline({
         >
           第二章预填与审核
         </Link>
+        <Link
+          className="button secondary"
+          to="/teacher/chapter-content/chapter03"
+        >
+          第三章预填与审核
+        </Link>
         {!library && (
           <Link className="button" to="/teacher/chapters/new">
             ＋ 新建章节
