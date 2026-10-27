@@ -53,23 +53,28 @@ def model_output(payload):
     if task == "pilot_extract":
         blocks = []
         for c in payload["sources"]:
+            # Exercise the actual evidence-ID protocol, not a hand-copied quote.
+            text = "\n".join(e["text"] for e in c["excerpts"])
             facts = [
-                {"title": title, "statement": statement, "quote": statement}
+                {"title": title, "statement": statement}
                 for title, statement in GOLD
-                if statement in c["text"]
+                if statement in text
             ]
-            if not facts and "操作系统负责管理计算机硬件和软件资源" in c["text"]:
-                sentences = [
-                    s + "。" for s in c["text"].split("。") if len(s.strip()) >= 8
-                ][:3]
+            if not facts and "操作系统负责管理计算机硬件和软件资源" in text:
+                sentences = [s + "。" for s in text.split("。") if len(s.strip()) >= 8][
+                    :3
+                ]
                 facts = [
                     {
                         "title": ["资源管理", "进程空间", "线程资源"][i],
                         "statement": s,
-                        "quote": s,
                     }
                     for i, s in enumerate(sentences)
                 ]
+            for fact in facts:
+                fact["evidence_id"] = next(
+                    e["id"] for e in c["excerpts"] if fact["statement"] in e["text"]
+                )
             blocks.append(
                 {
                     "ref": c["ref"],

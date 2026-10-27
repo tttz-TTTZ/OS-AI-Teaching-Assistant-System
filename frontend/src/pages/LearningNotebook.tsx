@@ -362,7 +362,7 @@ export default function LearningNotebook() {
         );
       }
       setGenerationStage(
-        `正在生成${mode === "practice" ? "测验" : modeNames[mode]}，请稍候…`,
+        `正在生成${mode === "practice" ? "测验" : modeNames[mode]}${ev.pilot_plan ? `（${ev.pilot_plan.selected_pages}页，${ev.pilot_plan.batches}批正文）` : ""}，请稍候…`,
       );
       const result = await personalApi.generate(body, ev, requestKey.current);
       if (token !== epoch.current) return;

@@ -1,3 +1,5 @@
+> 导图/闪卡引用修复：[原文编号与耗时诊断](docs/DISTILLATION-EVIDENCE-FIX.md)。提炼时选择后端原文编号，减少重抄引文失败；保留引用校验和成功批次缓存，日志显示各阶段耗时。更新后须重启后端。
+
 > 学习记录：[第一次问答追踪与检索排查](docs/learning/01-question-trace.md)，含实际请求、Python实验、零分过滤结果和能力边界；[下一步检索升级设计](docs/learning/02-retrieval-upgrade-design.md)说明查询预处理、命中分析与评测，后续方案尚未实现。
 
 > 检索学习修复：[零分过滤与终端日志](docs/RETRIEVAL-FILTER-LOGS.md)。普通提问过滤0分片段；后端显示检索入口、过滤前后分数，以及未选资料/开关关闭/通用解释的原因。无需手工加print；更新前保留本地学习修改，见说明。

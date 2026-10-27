@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 from fastapi import HTTPException
 from app import main, personal_learning as ai
-from app.knowledge_pilot import stale_jobs
+from app.knowledge_pilot import stale_jobs, evidence_choices
 from test_personal_learning import clients, BASE
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
@@ -67,6 +67,19 @@ def test_multi_ppt_full_pipeline_cache_cards_and_isolation(clients, monkeypatch)
     assert r.status_code == 200, r.text
     job = r.json()
     state = job["body"]["pilot"]
+    for fact in state["facts"]:
+        for evidence in fact["evidence"]:
+            original = next(
+                c["text"] for c in selected["chunks"] if c["ref"] == evidence["ref"]
+            )
+            assert evidence["quote"] in original
+    assert all(c["level"] == "basic" for c in calls)
+    assert all(
+        "excerpts" in c and "text" not in c
+        for p in calls
+        if p["task"] == "pilot_extract"
+        for c in p["sources"]
+    )
     assert len(state["facts"]) == len(GOLD)
     assert state["metrics"]["processed_chunks"] == len(selected["chunks"])
     assert state["metrics"]["artifact_fact_coverage"] == 1
@@ -145,7 +158,16 @@ def test_failed_batch_resume_and_heartbeat(clients, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "failure", ["quote", "omit_block", "omit_concept", "duplicate_card", "conflict"]
+    "failure",
+    [
+        "quote",
+        "invalid_evidence",
+        "wrong_block_evidence",
+        "omit_block",
+        "omit_concept",
+        "duplicate_card",
+        "conflict",
+    ],
 )
 def test_quality_gates_preserve_checkpoints(clients, monkeypatch, failure):
     t, a, _ = clients
@@ -157,6 +179,12 @@ def test_quality_gates_preserve_checkpoints(clients, monkeypatch, failure):
     def mutation(task, result):
         if failure == "quote" and task == "pilot_extract":
             result["blocks"][0]["facts"][0]["quote"] = "资料里不存在的虚构引用文字"
+        if failure == "invalid_evidence" and task == "pilot_extract":
+            result["blocks"][0]["facts"][0]["evidence_id"] = "not-an-original-excerpt"
+        if failure == "wrong_block_evidence" and task == "pilot_extract":
+            result["blocks"][0]["facts"][0]["evidence_id"] = result["blocks"][1][
+                "facts"
+            ][0]["evidence_id"]
         if failure == "omit_block" and task == "pilot_extract":
             result["blocks"].pop()
         if failure == "omit_concept" and task == "pilot_merge":
@@ -290,3 +318,39 @@ def test_directory_concept_is_not_mistaken_for_navigation_metadata():
     assert not metadata_label("文件目录结构")
     assert metadata_label("资料不足说明")
     assert metadata_label("位于1.2之后")
+
+
+def test_evidence_choices_preserve_original_text_and_scope():
+    text = "API不一定等于系统调用。寄存器x=1与x!=1不能混同。\n" * 35
+    first = evidence_choices(text, "d1-p1-c0")
+    second = evidence_choices(text, "d2-p1-c0")
+    assert len(first) > 1
+    assert all(
+        8 <= len("".join(e["text"].split())) <= 400 and e["text"] in text for e in first
+    )
+    assert not {e["id"] for e in first} & {e["id"] for e in second}
+    assert evidence_choices("仅标题", "d1-p1-c0") == []
+
+
+def test_legacy_exact_quotes_remain_accepted(clients, monkeypatch):
+    t, a, _ = clients
+    config = setup(t, a)
+    preview(a, config)
+
+    async def call(body, source, **kwargs):
+        payload = kwargs["payload"]
+        result = model_output(payload)
+        if payload["task"] == "pilot_extract":
+            originals = {
+                c["ref"]: {e["id"]: e["text"] for e in c["excerpts"]}
+                for c in payload["sources"]
+            }
+            for block in result["blocks"]:
+                for fact in block["facts"]:
+                    fact["quote"] = originals[block["ref"]][fact.pop("evidence_id")]
+        return result
+
+    monkeypatch.setattr(ai, "call_deepseek", call)
+    r = a.post(BASE + "/generate", json=config)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "ready"
