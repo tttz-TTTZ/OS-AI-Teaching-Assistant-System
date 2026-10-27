@@ -3,6 +3,7 @@
 from collections import Counter
 import hashlib
 import json
+import logging
 import math
 import re
 from typing import Literal
@@ -12,6 +13,10 @@ from .digital import database
 from .access import read_document
 from .files import storage
 from .persistence import checked_file
+
+
+# Inherit Uvicorn INFO handlers so the normal Windows startup command shows diagnostics.
+LOG = logging.getLogger("uvicorn.error.learning")
 
 
 class PersonalSource(BaseModel):
@@ -155,9 +160,17 @@ def terms(text):
 
 
 def retrieve(body: Retrieval, user):
+    LOG.info(
+        "[学习检索] 进入 retrieve 文件=%s 模式=%s 概览=%s 资料数=%d",
+        __file__,
+        body.analysis_mode,
+        body.source_overview,
+        len(body.sources),
+    )
     if body.analysis_mode == "section":
         from .knowledge_pilot import prepare
 
+        LOG.info("[学习检索] 转入完整小节提炼，不走快速关键词过滤")
         return prepare(body, user)
     pool, warnings, signatures = [], [], []
     seen = set()
@@ -199,6 +212,7 @@ def retrieve(body: Retrieval, user):
     ]
     best = sorted(range(len(pool)), key=lambda i: (-scores[i], i))[:8]
     if body.source_overview:
+        LOG.info("[学习检索] 资料概览：轮流选取片段，不按正分过滤")
         # Round-robin across documents: one large file cannot consume every excerpt.
         groups = [
             [i for i, c in enumerate(pool) if c["document_id"] == selected.document_id]
@@ -213,10 +227,15 @@ def retrieve(body: Retrieval, user):
             "资料概览：本次从已选页码范围依次选取最多8个文字片段，不代表已阅读全部课件；长资料请缩小页码范围分批学习。"
         )
     elif not any(scores):
+        LOG.info("[学习检索] 所有候选片段均为0分，未返回资料依据")
         raise HTTPException(
             422,
             "所选资料没有检索到主题关键词，请改用课件中的术语、调整页码范围或补充资料；未调用AI盲目生成",
         )
+    else:
+        LOG.info("[学习检索] 过滤前分数：%s", [round(scores[i], 4) for i in best])
+        best = [i for i in best if scores[i] > 0]
+        LOG.info("[学习检索] 过滤后分数：%s", [round(scores[i], 4) for i in best])
     chunks, remaining = [], 24000
     for i in best:
         if remaining < 30:
@@ -227,6 +246,7 @@ def retrieve(body: Retrieval, user):
         remaining -= len(c["text"])
     if sum(len(c["text"]) for c in chunks) < 30:
         raise HTTPException(422, "相关资料文字不足，请补充学习资料")
+    LOG.info("[学习检索] 返回片段数=%d 候选片段数=%d", len(chunks), len(pool))
     fingerprint = hashlib.sha256(
         json.dumps(
             [signatures, body.topic, body.weakness, body.source_overview, chunks],

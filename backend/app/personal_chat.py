@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
@@ -11,6 +12,8 @@ from .ai_questions import provider_settings, call_deepseek
 from .access import read_document, visible_chapter
 from .digital import database
 from .knowledge_pilot import stale_jobs
+
+LOG = logging.getLogger("uvicorn.error.learning")
 
 router = APIRouter(prefix="/api/student/personal")
 
@@ -31,6 +34,13 @@ async def ask(body: Ask, user=Depends(student)):
     if not question:
         raise HTTPException(422, "请输入具体问题")
     sources = body.sources if body.use_sources else []
+    if sources:
+        LOG.info("[学习问答] 已启用资料检索，资料数=%d", len(sources))
+    else:
+        LOG.info(
+            "[学习问答] 跳过检索：%s",
+            "未启用结合资料" if not body.use_sources else "未选择资料",
+        )
     with database() as db:
         if body.chapter_id:
             chapter = visible_chapter(db, body.chapter_id, user)
@@ -106,6 +116,7 @@ async def ask(body: Ask, user=Depends(student)):
         except HTTPException as exc:
             if exc.status_code != 422:
                 raise
+            LOG.info("[学习问答] 检索没有提供可用依据（422），转为通用解释")
             # An empty/irrelevant text search must not forbid a general explanation.
             source["warnings"] = [
                 "所选资料未能提供可用依据：" + str(exc.detail),
