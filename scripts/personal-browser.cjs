@@ -70,6 +70,14 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .filter({ hasText: "资料已保存到本人账号" })
     .waitFor();
   // No typed topic: selecting sources then clicking Explain must still work.
+  if (await s.getByText("已选来源与页码范围", {exact: true}).count()) throw Error("重复来源面板未移除");
+  const sourceCheckbox = s.getByRole("checkbox", {name: "选择来源：笔记本自主学习资料.txt", exact: true});
+  await sourceCheckbox.uncheck();
+  const beforeEmptySources = generationRequests;
+  await s.getByRole("region", {name: "学习工具", exact: true}).getByRole("button", { name: "知识讲解", exact: true }).click();
+  await s.getByRole("alert").filter({hasText: "请先在左侧选择课程和至少一份资料"}).waitFor();
+  if (generationRequests !== beforeEmptySources) throw Error("取消勾选后仍发起生成");
+  await sourceCheckbox.check();
   await s.getByLabel("提问或创作学习内容", { exact: true }).fill("");
   await s.getByRole("region", {name: "学习工具", exact: true}).getByRole("button", { name: "知识讲解", exact: true }).click();
   await s
@@ -107,6 +115,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .waitFor();
   if (generationRequests !== beforeMap + 1) throw Error("导图没有单次点击直接生成");
   if (lastGeneration.level !== "intermediate") throw Error("导图未保留所选等级");
+  if (lastGeneration.sources.some(x => x.start_page !== 1 || x.end_page !== null)) throw Error("未默认使用整份资料");
   if (await s.getByRole("region", {name: "小节提炼确认", exact: true}).count()) throw Error("不应出现二次确认");
   await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
   const mapId = Number(new URL(s.url()).searchParams.get("job"));
@@ -123,6 +132,13 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     if (format === "XMind" && data.subarray(0, 2).toString() !== "PK") throw Error("XMind 并非压缩包");
   }
   if ((await apiCall(b, "get", base + `/api/student/personal/jobs/${mapId}/modules/0/mindmap.xmind`)).status() !== 404) throw Error("XMind 导出越权");
+  // An old saved page range must not silently constrain the next generation
+  // after the page-range editor is removed. The saved record itself is untouched.
+  const savedMap = await (await apiCall(s, "get", base + `/api/student/personal/jobs/${mapId}`)).json();
+  await s.route(`**/api/student/personal/jobs/${mapId}`, r => r.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({...savedMap, config: {...savedMap.config, sources: savedMap.config.sources.map(x => ({...x, start_page: 99, end_page: 99}))}}),
+  }), {times: 1});
   await s.reload();
   await s.getByRole("region", { name: "个人思维导图", exact: true }).getByRole("img").waitFor();
   if (process.env.BROWSER_SCREENSHOT_DIR) await s.screenshot({ path: path.join(process.env.BROWSER_SCREENSHOT_DIR, "mindmap-workspace.png"), fullPage: true });

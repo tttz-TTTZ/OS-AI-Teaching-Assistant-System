@@ -217,7 +217,11 @@ export default function LearningNotebook() {
         setJob(j);
         setChapter(j.chapter_id);
         setSection(j.config.section_id || 0);
-        setSources(j.config.sources);
+        // Historical records keep their original range; new requests use the
+        // whole documents selected in the single source checklist.
+        setSources(j.config.sources.map(({ document_id }) => ({
+          document_id, start_page: 1, end_page: null,
+        })));
         setLevel(j.config.level);
         setUseSources(
           (j.config as PersonalConfig & { use_sources?: boolean })
@@ -670,73 +674,6 @@ export default function LearningNotebook() {
                 </p>
               )}
             </div>
-            {!!sources.length && (
-              <details className="notebook-source-ranges">
-                <summary>已选来源与页码范围</summary>
-                {sources.map((s) => (
-                  <div key={s.document_id}>
-                    <strong>{selectedTitle(s.document_id)}</strong>
-                    <label>
-                      从第几页
-                      <input
-                        aria-label={`来源${s.document_id}起始页`}
-                        type="number"
-                        min={1}
-                        max={600}
-                        value={s.start_page}
-                        disabled={busy}
-                        onChange={(e) => {
-                          setSources((old) =>
-                            old.map((x) =>
-                              x.document_id === s.document_id
-                                ? { ...x, start_page: Number(e.target.value) }
-                                : x,
-                            ),
-                          );
-                          invalidate();
-                        }}
-                      />
-                    </label>
-                    <label>
-                      结束页（留空为整份）
-                      <input
-                        aria-label={`来源${s.document_id}结束页`}
-                        type="number"
-                        min={1}
-                        max={600}
-                        value={s.end_page || ""}
-                        disabled={busy}
-                        onChange={(e) => {
-                          setSources((old) =>
-                            old.map((x) =>
-                              x.document_id === s.document_id
-                                ? {
-                                    ...x,
-                                    end_page: Number(e.target.value) || null,
-                                  }
-                                : x,
-                            ),
-                          );
-                          invalidate();
-                        }}
-                      />
-                    </label>
-                    <button
-                      className="notebook-text-button"
-                      disabled={busy}
-                      onClick={() => {
-                        setSources((old) =>
-                          old.filter((x) => x.document_id !== s.document_id),
-                        );
-                        invalidate();
-                      }}
-                    >
-                      移除来源
-                    </button>
-                  </div>
-                ))}
-              </details>
-            )}
             <details className="notebook-settings">
               <summary>学习设置</summary>
               <label>
@@ -1105,7 +1042,7 @@ export default function LearningNotebook() {
               先勾选左侧资料。无需填写主题即可概览所选资料；填写具体问题时按问题检索。生成后自动保存在本人账号。
             </p>
             <p className="notebook-studio-hint">
-              选好资料和等级后，点击导图或闪卡即可生成。系统会自动分批整理知识，可处理最多120页、12批，超限时会提示调整页码。
+              选好资料和等级后，点击导图或闪卡即可生成。系统会自动分批整理知识，可处理最多120页、12批，超限时请减少勾选资料或拆分课件后上传。
             </p>
             <div className="notebook-tools">
               {studio.map((tool) => (

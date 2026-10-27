@@ -131,7 +131,7 @@ def prepare(body, user):
     if pages > 120:
         raise HTTPException(
             422,
-            "小节试点最多120页，请将每份PPT的页码调整为本小节范围；系统不会静默省略后续页",
+            "完整提炼最多120页，请减少勾选资料或拆分课件后上传；系统不会静默省略后续页",
         )
     if not chunks or sum(len(c["text"]) for c in chunks) < 60:
         raise HTTPException(
@@ -150,7 +150,7 @@ def prepare(body, user):
     if len(batches) > MAX_BATCHES:
         raise HTTPException(
             422,
-            "本次正文超过12个分析批次，请缩小到一个小节；系统不会截取前几页冒充完整分析",
+            "本次正文超过12个分析批次，请减少勾选资料或拆分课件后上传；系统不会截取前几页冒充完整分析",
         )
     fingerprint = hashlib.sha256(
         json.dumps(

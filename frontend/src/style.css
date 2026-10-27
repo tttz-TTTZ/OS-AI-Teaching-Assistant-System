@@ -2025,10 +2025,8 @@ header h1 {
 .notebook-source-row input { width: 16px; accent-color: #24665d; }
 .source-file-icon { font-size: 8px; color: #a66640; border: 1px solid #ddc4ad; border-radius: 5px; padding: 5px 2px; text-align: center; }
 .source-file-icon.file-pdf { color: #d86262; border-color: #edbbbb; }
-.notebook-source-ranges, .notebook-settings { font-size: 11px; color: #637487; border-top: 1px solid #eef0f4; padding-top: 12px; }
-.notebook-source-ranges > div { padding: 12px 0; border-bottom: 1px solid #edf0f3; }
-.notebook-source-ranges label, .notebook-settings label { display: block; margin-top: 8px; }
-.notebook-source-ranges strong { font-weight: 500; overflow-wrap: anywhere; }
+.notebook-settings { font-size: 11px; color: #637487; border-top: 1px solid #eef0f4; padding-top: 12px; }
+.notebook-settings label { display: block; margin-top: 8px; }
 .notebook-settings p, .notebook-empty-small { font-size: 12px; line-height: 1.6; }
 .notebook-conversation { display: flex; flex-direction: column; border-color: transparent; background: #fbfcfd; overflow: hidden; }
 .notebook-conversation > .notebook-pane-title { padding: 18px 22px 10px; }
