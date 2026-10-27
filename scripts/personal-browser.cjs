@@ -138,9 +138,10 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.route(`**/api/student/personal/jobs/${mapId}`, r => r.fulfill({
     status: 200, contentType: "application/json",
     body: JSON.stringify({...savedMap, config: {...savedMap.config, sources: savedMap.config.sources.map(x => ({...x, start_page: 99, end_page: 99}))}}),
-  }), {times: 1});
+  }));
   await s.reload();
   await s.getByRole("region", { name: "个人思维导图", exact: true }).getByRole("img").waitFor();
+  await s.unroute(`**/api/student/personal/jobs/${mapId}`);
   if (process.env.BROWSER_SCREENSHOT_DIR) await s.screenshot({ path: path.join(process.env.BROWSER_SCREENSHOT_DIR, "mindmap-workspace.png"), fullPage: true });
   await studio
     .getByRole("button", { name: "代码讲解", exact: true })
@@ -176,6 +177,20 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     .getByText(/如何理解/)
     .waitFor();
   const flashId = Number(new URL(s.url()).searchParams.get("job"));
+  const savedFlash = await (await apiCall(s, "get", base + `/api/student/personal/jobs/${flashId}`)).json();
+  await s.route(`**/api/student/personal/jobs/${flashId}`, r => r.fulfill({
+    status: 200, contentType: "application/json", body: JSON.stringify({
+      ...savedFlash, status: "failed", error: "测试：长资料块引用无法定位",
+      body: {pilot: {diagnostic: {stage: "pilot_extract", batch: 1, ref: "test-ref", returned_evidence_id: "e999", expected_evidence_ids: ["test-ref-e1"], model_output: {blocks: []}}}},
+    }),
+  }));
+  await s.reload();
+  const diagnosisButton = s.getByRole("button", {name: "下载失败诊断", exact: true});
+  await diagnosisButton.waitFor();
+  const [diagnosisDownload] = await Promise.all([s.waitForEvent("download"), diagnosisButton.click()]);
+  const diagnosis = JSON.parse(fs.readFileSync(await diagnosisDownload.path(), "utf8"));
+  if (diagnosis.diagnostic.returned_evidence_id !== "e999" || diagnosis.job_id !== flashId) throw Error("失败诊断未保留真实返回值");
+  await s.unroute(`**/api/student/personal/jobs/${flashId}`);
   await s.reload();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   // A mismatched/old backend must produce a visible error, not an invisible
@@ -289,7 +304,9 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     if ((await response).status() !== 201) throw Error("试点课件上传失败");
     await s.getByRole("status").filter({hasText: "资料已保存到本人账号"}).waitFor();
   }
+  const restoredPilot = s.waitForResponse(r => /\/api\/student\/personal\/jobs\/\d+$/.test(new URL(r.url()).pathname) && r.request().method() === "GET");
   await studio.getByRole("button", { name: "思维导图", exact: true }).click();
+  await restoredPilot;
   await s.getByRole("region", { name: "小节提炼报告", exact: true }).getByText(/6个概念/).waitFor();
   const pilotId = Number(new URL(s.url()).searchParams.get("job"));
   await s.getByText("查看6条知识依据（AI辅助，待核对）", { exact: true }).click();

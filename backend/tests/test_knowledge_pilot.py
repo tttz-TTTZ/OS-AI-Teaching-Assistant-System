@@ -170,7 +170,7 @@ def test_failed_batch_resume_and_heartbeat(clients, monkeypatch):
     ],
 )
 def test_quality_gates_preserve_checkpoints(clients, monkeypatch, failure):
-    t, a, _ = clients
+    t, a, b = clients
     config = setup(t, a)
     if failure == "duplicate_card":
         config["modes"] = ["flashcards"]
@@ -201,6 +201,12 @@ def test_quality_gates_preserve_checkpoints(clients, monkeypatch, failure):
     failed = a.get(BASE + f'/jobs/{jobs[0]["id"]}').json()
     assert failed["status"] == "failed"
     assert "modules" not in failed["body"]
+    if failure in ("quote", "invalid_evidence", "wrong_block_evidence"):
+        diagnostic = failed["body"]["pilot"]["diagnostic"]
+        assert diagnostic["batch"] == 1
+        assert diagnostic["model_output"]["blocks"]
+        assert diagnostic["expected_evidence_ids"]
+        assert b.get(BASE + f'/jobs/{failed["id"]}').status_code == 404
 
 
 def test_confirmation_limits_and_versions(clients, monkeypatch):
@@ -354,3 +360,59 @@ def test_legacy_exact_quotes_remain_accepted(clients, monkeypatch):
     r = a.post(BASE + "/generate", json=config)
     assert r.status_code == 200, r.text
     assert r.json()["status"] == "ready"
+
+
+def test_local_evidence_id_response_completes_without_retry(clients, monkeypatch):
+    t, a, _ = clients
+    config = setup(t, a)
+    selected = preview(a, config)
+    calls = []
+
+    def mutation(task, result):
+        if task == "pilot_extract":
+            for block in result["blocks"]:
+                for fact in block["facts"]:
+                    fact["evidence_id"] = fact["evidence_id"].rsplit("-", 1)[-1]
+
+    mock_model(monkeypatch, calls, mutation=mutation)
+    r = a.post(BASE + "/generate", json=config)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "ready"
+    assert len(calls) == selected["pilot_plan"]["batches"] + 2
+
+
+def test_short_page_does_not_require_model_to_choose_an_id():
+    from app.knowledge_pilot import Claim, resolve_evidence
+
+    text = "批处理接口使用作业控制语言来描述作业的运行要求。"
+    ref = "d22-p20-b19-0"
+    chunks = [{"ref": ref, "text": text}]
+    fact = Claim(title="作业控制", statement=text, evidence_id="e999")
+    quote, method = resolve_evidence(fact, ref, chunks, evidence_choices(text, ref))
+    assert quote == text and method == "whole_block"
+    fact.evidence_id = "d999-p1-c0-e1"
+    with pytest.raises(HTTPException):
+        resolve_evidence(fact, ref, chunks, evidence_choices(text, ref))
+    fact.quote = "任何原文里都不存在的伪造引文"
+    with pytest.raises(HTTPException):
+        resolve_evidence(fact, ref, chunks, evidence_choices(text, ref))
+
+
+def test_verified_quote_recovers_bad_optional_id():
+    from app.knowledge_pilot import Claim, resolve_evidence
+
+    text = "程序接口通过约定的方式让应用请求操作系统服务。" * 30
+    ref = "d1-p1-c0"
+    fact = Claim(
+        title="程序接口", statement=text[:24], quote=text[:24], evidence_id="mistyped"
+    )
+    quote, method = resolve_evidence(
+        fact, ref, [{"ref": ref, "text": text}], evidence_choices(text, ref)
+    )
+    assert quote == text[:24] and method == "verified_quote"
+    fact.quote = ""
+    fact.evidence_id = "e999"
+    with pytest.raises(HTTPException):
+        resolve_evidence(
+            fact, ref, [{"ref": ref, "text": text}], evidence_choices(text, ref)
+        )

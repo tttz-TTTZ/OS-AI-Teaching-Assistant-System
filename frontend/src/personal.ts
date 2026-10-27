@@ -87,6 +87,17 @@ export interface PersonalQuestion {
   source_quote: string;
 }
 export interface PilotAnalysis {
+  diagnostic?: {
+    stage: string;
+    batch: number;
+    ref?: string;
+    document_id?: number;
+    page?: number;
+    returned_evidence_id?: string;
+    expected_evidence_ids?: string[];
+    reason: string;
+    model_output: unknown;
+  };
   plan: NonNullable<Evidence["pilot_plan"]>;
   stage: string;
   calls_used: number;

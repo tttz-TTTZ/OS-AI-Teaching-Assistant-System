@@ -785,6 +785,30 @@ export default function LearningNotebook() {
                         : "已中断"}
                 </p>
                 {job.error && <p role="alert">{job.error}</p>}
+                {job.status === "failed" && job.body.pilot?.diagnostic && (
+                  <button
+                    className="secondary"
+                    onClick={() => {
+                      const report = {
+                        job_id: job.id,
+                        model: job.model,
+                        diagnostic: job.body.pilot?.diagnostic,
+                      };
+                      const url = URL.createObjectURL(
+                        new Blob([JSON.stringify(report, null, 2)], {
+                          type: "application/json",
+                        }),
+                      );
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = `学习生成失败诊断-${job.id}.json`;
+                      link.click();
+                      setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }}
+                  >
+                    下载失败诊断
+                  </button>
+                )}
                 {job.status === "running" && (
                   <button
                     onClick={() =>
