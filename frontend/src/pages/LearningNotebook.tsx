@@ -96,7 +96,9 @@ export default function LearningNotebook() {
   const epoch = useRef(0),
     requestKey = useRef(""),
     fileInput = useRef<HTMLInputElement>(null),
-    answerRef = useRef<HTMLDivElement>(null);
+    answerRef = useRef<HTMLDivElement>(null),
+    feedbackRef = useRef<HTMLDivElement>(null),
+    planRef = useRef<HTMLElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
   const immediateAnswer = useRef<PersonalJob | null>(null);
   const [generationStage, setGenerationStage] = useState("");
@@ -110,6 +112,14 @@ export default function LearningNotebook() {
     undefined,
   );
   useEffect(() => () => clearInterval(pilotPoll.current), []);
+  useEffect(() => {
+    // Tool feedback is above the conversation inside a separate scroll container.
+    // Keep it visible even when the student was reading the end of a long answer.
+    if (busy || pendingPilot || error) {
+      feedbackRef.current?.scrollIntoView({ block: "nearest" });
+      if (pendingPilot && !busy) planRef.current?.focus({ preventScroll: true });
+    }
+  }, [busy, pendingPilot, error]);
   useEffect(() => {
     const saved = sessionStorage.getItem(`notebook-source-tab:${user?.id}`);
     if (saved === "personal" || saved === "public") setCategory(saved);
@@ -327,6 +337,7 @@ export default function LearningNotebook() {
     setError("");
     setMessage("");
     setView("learn");
+    if (!confirmed) setPendingPilot(undefined);
     if (retry) requestKey.current = "";
     try {
       setGenerationStage("正在检查 AI 服务…");
@@ -342,6 +353,8 @@ export default function LearningNotebook() {
       if (token !== epoch.current) return;
       setEvidence(ev);
       if (body.analysis_mode === "section") {
+        if (!ev.pilot_plan)
+          throw new Error("未收到知识提炼计划，请更新并重启后端后重试。");
         if (
           !confirmed ||
           ev.fingerprint !== pendingPilot?.evidence.fingerprint
@@ -785,53 +798,64 @@ export default function LearningNotebook() {
             </button>
           </div>
           <div className="notebook-answer" ref={answerRef} aria-live="polite">
-            {busy && (
-              <p role="status" className="notebook-success">
-                {generationStage}
-              </p>
-            )}
-            {pendingPilot?.evidence.pilot_plan && (
-              <section className="pilot-plan" aria-label="小节提炼确认">
-                <h3>确认完整提炼范围</h3>
-                <p>
-                  小节：{pendingPilot.evidence.pilot_plan.scope}。
-                  {pendingPilot.evidence.pilot_plan.selected_pages}页，
-                  {pendingPilot.evidence.pilot_plan.text_chunks}个正文块，分
-                  {pendingPilot.evidence.pilot_plan.batches}批；可复用
-                  {pendingPilot.evidence.pilot_plan.cached_batches}批。
+            <div ref={feedbackRef}>
+              {busy && (
+                <p role="status" className="notebook-success">
+                  {generationStage}
                 </p>
-                <p>
-                  预计最多{pendingPilot.evidence.pilot_plan.estimated_calls}
-                  次模型调用，可能计费。目录标记
-                  {pendingPilot.evidence.pilot_plan.excluded.length}块，无文字页
-                  {pendingPilot.evidence.pilot_plan.unreadable_pages.length}
-                  页；不代表已识别图片或已校对知识。
-                </p>
-                <button
-                  disabled={busy}
-                  onClick={() => create(pendingPilot.mode, false, true)}
+              )}
+              {pendingPilot?.evidence.pilot_plan && (
+                <section
+                  ref={planRef}
+                  tabIndex={-1}
+                  className="pilot-plan"
+                  aria-label="小节提炼确认"
                 >
-                  确认开始小节提炼
-                </button>
-                <button
-                  className="secondary"
-                  onClick={() => setPendingPilot(undefined)}
-                >
-                  返回调整范围
-                </button>
-              </section>
-            )}
+                  <h3>确认完整提炼范围</h3>
+                  <p>
+                    即将生成{modeNames[pendingPilot.mode]}。请确认下方范围，
+                    再点击“确认开始小节提炼”。
+                  </p>
+                  <p>
+                    小节：{pendingPilot.evidence.pilot_plan.scope}。
+                    {pendingPilot.evidence.pilot_plan.selected_pages}页，
+                    {pendingPilot.evidence.pilot_plan.text_chunks}个正文块，分
+                    {pendingPilot.evidence.pilot_plan.batches}批；可复用
+                    {pendingPilot.evidence.pilot_plan.cached_batches}批。
+                  </p>
+                  <p>
+                    预计最多{pendingPilot.evidence.pilot_plan.estimated_calls}
+                    次模型调用，可能计费。目录标记
+                    {pendingPilot.evidence.pilot_plan.excluded.length}块，无文字页
+                    {pendingPilot.evidence.pilot_plan.unreadable_pages.length}
+                    页；不代表已识别图片或已校对知识。
+                  </p>
+                  <button
+                    disabled={busy}
+                    onClick={() => create(pendingPilot.mode, false, true)}
+                  >
+                    确认开始小节提炼
+                  </button>
+                  <button
+                    className="secondary"
+                    onClick={() => setPendingPilot(undefined)}
+                  >
+                    返回调整范围
+                  </button>
+                </section>
+              )}
 
-            {error && (
-              <p role="alert" className="notice">
-                {error}
-              </p>
-            )}
-            {message && (
-              <p role="status" className="notebook-success">
-                {message}
-              </p>
-            )}
+              {error && (
+                <p role="alert" className="notice">
+                  {error}
+                </p>
+              )}
+              {message && (
+                <p role="status" className="notebook-success">
+                  {message}
+                </p>
+              )}
+            </div>
             {loading ? (
               <p>正在恢复学习内容…</p>
             ) : view === "notes" && job ? (
@@ -1164,6 +1188,20 @@ export default function LearningNotebook() {
                 </button>
               ))}
             </div>
+            {pendingPilot && !busy && (
+              <p role="status" className="notebook-success">
+                {modeNames[pendingPilot.mode]}：等待确认提炼范围。
+                <button
+                  className="secondary"
+                  onClick={() => {
+                    planRef.current?.scrollIntoView({ block: "nearest" });
+                    planRef.current?.focus({ preventScroll: true });
+                  }}
+                >
+                  查看提炼计划
+                </button>
+              </p>
+            )}
             <p className="notebook-cost">
               AI调用可能计费，每日最多{status?.daily_limit || 20}
               个任务；导图和闪卡按确认计划可能包含多次调用，不自动重试。

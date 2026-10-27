@@ -2,6 +2,11 @@ const path = require("node:path");
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
+  let generationRequests = 0;
+  const countGeneration = request => {
+    if (new URL(request.url()).pathname === "/api/student/personal/generate") generationRequests++;
+  };
+  s.on("request", countGeneration);
   await s.route("**/api/student/personal/status", (r) =>
     r.fulfill({
       status: 200,
@@ -75,9 +80,37 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   )
     throw Error("笔记本跨学生泄露");
   const studio = s.getByRole("region", { name: "学习工具", exact: true });
+  async function scrollConversationToEnd() {
+    await s.locator(".notebook-answer").evaluate(el => {
+      const spacer = document.createElement("div");
+      spacer.style.height = "1800px";
+      spacer.dataset.testScroll = "true";
+      el.append(spacer);
+      el.scrollTop = el.scrollHeight;
+      if (el.scrollTop < 500) throw Error("未构造长对话滚动场景");
+    });
+  }
+  async function checkVisiblePlan() {
+    await s.getByRole("region", { name: "小节提炼确认", exact: true }).waitFor();
+    // Do not click/scroll the plan before checking: Playwright click auto-scrolls
+    // and would hide the real bug experienced by students.
+    await s.waitForFunction(() => {
+      const plan = document.querySelector(".pilot-plan");
+      const pane = document.querySelector(".notebook-answer");
+      if (!plan || !pane) return false;
+      const r = plan.getBoundingClientRect(), p = pane.getBoundingClientRect();
+      return r.top >= p.top - 1 && r.bottom <= Math.min(p.bottom, innerHeight) + 1
+        && document.activeElement === plan;
+    });
+    await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
+  }
+  await scrollConversationToEnd();
+  const beforeMap = generationRequests;
   await studio
     .getByRole("button", { name: "思维导图", exact: true })
     .click();
+  await checkVisiblePlan();
+  if (generationRequests !== beforeMap) throw Error("导图未确认即调用生成");
   await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s
     .getByLabel("个人思维导图")
@@ -112,9 +145,13 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   // It must show the error and offer an explicit retry, never pretend to be success.
   const savedLearning = await (await apiCall(s, "get", base + `/api/student/personal/jobs/${learning}`)).json();
   await s.route("**/api/student/personal/generate", r => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...savedLearning, status: "failed", error: "测试：DeepSeek正文不是有效JSON" }) }), { times: 1 });
+  await scrollConversationToEnd();
+  const beforeFlashcards = generationRequests;
   await studio
     .getByRole("button", { name: "知识闪卡", exact: true })
     .click();
+  await checkVisiblePlan();
+  if (generationRequests !== beforeFlashcards) throw Error("闪卡未确认即调用生成");
   await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s.getByRole("alert").filter({ hasText: "测试：DeepSeek正文不是有效JSON" }).waitFor();
   await s.getByRole("button", { name: "确认历史任务后重新生成（可能计费）", exact: true }).click();
@@ -133,6 +170,21 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   const flashId = Number(new URL(s.url()).searchParams.get("job"));
   await s.reload();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  // A mismatched/old backend must produce a visible error, not an invisible
+  // pending state with no confirmation button.
+  await s.route("**/api/student/personal/sources/preview", r => r.fulfill({
+    status: 200, contentType: "application/json",
+    body: JSON.stringify({chunks: [], fingerprint: "missing-plan", warnings: [], characters: 0, indexed_chunks: 0, method: "test"}),
+  }), {times: 1});
+  await scrollConversationToEnd();
+  await studio.getByRole("button", { name: "思维导图", exact: true }).click();
+  const planError = s.getByRole("alert").filter({hasText: "未收到知识提炼计划"});
+  await planError.waitFor();
+  if (!await planError.evaluate(el => {
+    const r = el.getBoundingClientRect(), p = el.closest(".notebook-answer").getBoundingClientRect();
+    return r.top >= p.top && r.bottom <= p.bottom;
+  })) throw Error("提炼计划错误提示不可见");
+  await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
   if (await studio.getByRole("button", { name: "算法动画", exact: true }).count()) throw Error("智能问答动画入口未移除");
   await studio.getByRole("button", { name: "复习总结", exact: true }).click();
   await s.getByRole("heading", { name: "summary个人学习", exact: true }).waitFor();
@@ -251,6 +303,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.unroute("**/api/student/personal/ask");
   await s.unroute("**/api/student/personal/status");
   await s.unroute("**/api/student/personal/generate");
+  s.off("request", countGeneration);
   await t.goto(base + "/teacher/dashboard");
   await t
     .getByRole("heading", { name: "今天准备哪一部分课程？", exact: true })
