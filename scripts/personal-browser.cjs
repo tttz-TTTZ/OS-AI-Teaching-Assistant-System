@@ -3,8 +3,12 @@ const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
 async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   let generationRequests = 0;
+  let lastGeneration;
   const countGeneration = request => {
-    if (new URL(request.url()).pathname === "/api/student/personal/generate") generationRequests++;
+    if (new URL(request.url()).pathname === "/api/student/personal/generate") {
+      generationRequests++;
+      lastGeneration = request.postDataJSON();
+    }
   };
   s.on("request", countGeneration);
   await s.route("**/api/student/personal/status", (r) =>
@@ -90,32 +94,21 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       if (el.scrollTop < 500) throw Error("未构造长对话滚动场景");
     });
   }
-  async function checkVisiblePlan() {
-    await s.getByRole("region", { name: "小节提炼确认", exact: true }).waitFor();
-    // Do not click/scroll the plan before checking: Playwright click auto-scrolls
-    // and would hide the real bug experienced by students.
-    await s.waitForFunction(() => {
-      const plan = document.querySelector(".pilot-plan");
-      const pane = document.querySelector(".notebook-answer");
-      if (!plan || !pane) return false;
-      const r = plan.getBoundingClientRect(), p = pane.getBoundingClientRect();
-      return r.top >= p.top - 1 && r.bottom <= Math.min(p.bottom, innerHeight) + 1
-        && document.activeElement === plan;
-    });
-    await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
-  }
+  await s.getByText("学习设置", {exact: true}).click();
+  await s.getByLabel("笔记本讲解深度", {exact: true}).selectOption("intermediate");
   await scrollConversationToEnd();
   const beforeMap = generationRequests;
   await studio
     .getByRole("button", { name: "思维导图", exact: true })
     .click();
-  await checkVisiblePlan();
-  if (generationRequests !== beforeMap) throw Error("导图未确认即调用生成");
-  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s
     .getByLabel("个人思维导图")
     .getByText("资源管理", { exact: true })
     .waitFor();
+  if (generationRequests !== beforeMap + 1) throw Error("导图没有单次点击直接生成");
+  if (lastGeneration.level !== "intermediate") throw Error("导图未保留所选等级");
+  if (await s.getByRole("region", {name: "小节提炼确认", exact: true}).count()) throw Error("不应出现二次确认");
+  await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
   const mapId = Number(new URL(s.url()).searchParams.get("job"));
   const mapRegion = s.getByRole("region", { name: "个人思维导图", exact: true });
   await mapRegion.getByRole("img").waitFor();
@@ -150,13 +143,12 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await studio
     .getByRole("button", { name: "知识闪卡", exact: true })
     .click();
-  await checkVisiblePlan();
-  if (generationRequests !== beforeFlashcards) throw Error("闪卡未确认即调用生成");
-  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s.getByRole("alert").filter({ hasText: "测试：DeepSeek正文不是有效JSON" }).waitFor();
+  if (generationRequests !== beforeFlashcards + 1) throw Error("闪卡没有单次点击直接生成");
+  await s.locator("[data-test-scroll]").evaluateAll(els => els.forEach(el => el.remove()));
   await s.getByRole("button", { name: "确认历史任务后重新生成（可能计费）", exact: true }).click();
-  await s.getByRole("button", {name: "确认开始小节提炼", exact: true}).click();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
+  if (generationRequests !== beforeFlashcards + 2) throw Error("闪卡重试未直接生成或重复调用");
   await s.getByRole("button", { name: "显示答案", exact: true }).click();
   await s
     .getByRole("button", { name: "闪卡答案", exact: true })
@@ -177,9 +169,11 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     body: JSON.stringify({chunks: [], fingerprint: "missing-plan", warnings: [], characters: 0, indexed_chunks: 0, method: "test"}),
   }), {times: 1});
   await scrollConversationToEnd();
+  const beforeMissingPlan = generationRequests;
   await studio.getByRole("button", { name: "思维导图", exact: true }).click();
   const planError = s.getByRole("alert").filter({hasText: "未收到知识提炼计划"});
   await planError.waitFor();
+  if (generationRequests !== beforeMissingPlan) throw Error("缺少提炼计划仍调用生成");
   if (!await planError.evaluate(el => {
     const r = el.getBoundingClientRect(), p = el.closest(".notebook-answer").getBoundingClientRect();
     return r.top >= p.top && r.bottom <= p.bottom;
@@ -265,7 +259,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.setViewportSize({ width: 1366, height: 768 });
   await s.getByRole("button", { name: "收起来源", exact: true }).click();
   await s.getByRole("button", { name: "展开来源", exact: true }).click();
-  // End-to-end pilot: two actual PPTX uploads, explicit billing/range confirmation,
+  // End-to-end pilot: four actual PPTX uploads, automatic range validation,
   // map -> cached flashcards -> persisted evidence and downloadable report.
   const sections = await (await apiCall(s, "get", base + `/api/sections?chapter_id=${cid}`)).json();
   const selectedSection = sections.find(x => x.chapter_id === cid);
@@ -280,16 +274,12 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     await s.getByRole("status").filter({hasText: "资料已保存到本人账号"}).waitFor();
   }
   await studio.getByRole("button", { name: "思维导图", exact: true }).click();
-  await s.getByRole("region", { name: "小节提炼确认", exact: true }).waitFor();
-  await s.getByRole("button", { name: "确认开始小节提炼", exact: true }).click();
   await s.getByRole("region", { name: "小节提炼报告", exact: true }).getByText(/6个概念/).waitFor();
   const pilotId = Number(new URL(s.url()).searchParams.get("job"));
   await s.getByText("查看6条知识依据（AI辅助，待核对）", { exact: true }).click();
   await s.getByRole("link", {name: /试点多课件0.pptx · 第7页/}).first().waitFor();
   if (process.env.BROWSER_SCREENSHOT_DIR) await s.screenshot({path: path.join(process.env.BROWSER_SCREENSHOT_DIR, "section-pilot.png"), fullPage: true});
   await studio.getByRole("button", { name: "知识闪卡", exact: true }).click();
-  await s.getByRole("region", { name: "小节提炼确认", exact: true }).getByText(/预计最多1次/).waitFor();
-  await s.getByRole("button", { name: "确认开始小节提炼", exact: true }).click();
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();
   await s.getByRole("button", { name: "显示答案", exact: true }).click();
   await s.getByRole("button", { name: "闪卡答案", exact: true }).waitFor();

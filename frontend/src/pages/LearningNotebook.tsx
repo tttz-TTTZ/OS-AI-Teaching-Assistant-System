@@ -97,17 +97,11 @@ export default function LearningNotebook() {
     requestKey = useRef(""),
     fileInput = useRef<HTMLInputElement>(null),
     answerRef = useRef<HTMLDivElement>(null),
-    feedbackRef = useRef<HTMLDivElement>(null),
-    planRef = useRef<HTMLElement>(null);
+    feedbackRef = useRef<HTMLDivElement>(null);
   const lastMode = useRef<Mode | "practice">("explain");
   const immediateAnswer = useRef<PersonalJob | null>(null);
   const [generationStage, setGenerationStage] = useState("");
   const [useSources, setUseSources] = useState(true);
-  const [pendingPilot, setPendingPilot] = useState<{
-    mode: Mode;
-    body: PersonalConfig;
-    evidence: Evidence;
-  }>();
   const pilotPoll = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined,
   );
@@ -115,11 +109,10 @@ export default function LearningNotebook() {
   useEffect(() => {
     // Tool feedback is above the conversation inside a separate scroll container.
     // Keep it visible even when the student was reading the end of a long answer.
-    if (busy || pendingPilot || error) {
+    if (busy || error) {
       feedbackRef.current?.scrollIntoView({ block: "nearest" });
-      if (pendingPilot && !busy) planRef.current?.focus({ preventScroll: true });
     }
-  }, [busy, pendingPilot, error]);
+  }, [busy, error]);
   useEffect(() => {
     const saved = sessionStorage.getItem(`notebook-source-tab:${user?.id}`);
     if (saved === "personal" || saved === "public") setCategory(saved);
@@ -211,7 +204,6 @@ export default function LearningNotebook() {
     setError("");
     setEvidence(undefined);
     setShowEvidence(false);
-    setPendingPilot(undefined);
     setJob(undefined);
     setParents([]);
     setLoading(!!jobId);
@@ -260,7 +252,6 @@ export default function LearningNotebook() {
     };
   }, [jobId]);
   function invalidate() {
-    setPendingPilot(undefined);
     requestKey.current = "";
     setEvidence(undefined);
     setError("");
@@ -308,7 +299,6 @@ export default function LearningNotebook() {
   async function create(
     mode: Mode | "practice" = "explain",
     retry = false,
-    confirmed = false,
   ) {
     if (busy || uploading || loading) return;
     if (noteDirty && !window.confirm("笔记尚未保存，确定先生成新内容吗？"))
@@ -318,14 +308,6 @@ export default function LearningNotebook() {
       return;
     }
     const body = config(mode);
-    if (
-      confirmed &&
-      JSON.stringify(body) !== JSON.stringify(pendingPilot?.body)
-    ) {
-      setError("范围或设置已改变，请重新点击工具预览。");
-      setPendingPilot(undefined);
-      return;
-    }
     if (lastMode.current !== mode) requestKey.current = "";
     lastMode.current = mode;
     if (!body.topic) {
@@ -337,7 +319,6 @@ export default function LearningNotebook() {
     setError("");
     setMessage("");
     setView("learn");
-    if (!confirmed) setPendingPilot(undefined);
     if (retry) requestKey.current = "";
     try {
       setGenerationStage("正在检查 AI 服务…");
@@ -355,16 +336,9 @@ export default function LearningNotebook() {
       if (body.analysis_mode === "section") {
         if (!ev.pilot_plan)
           throw new Error("未收到知识提炼计划，请更新并重启后端后重试。");
-        if (
-          !confirmed ||
-          ev.fingerprint !== pendingPilot?.evidence.fingerprint
-        ) {
-          setPendingPilot({ mode: mode as Mode, body, evidence: ev });
-          setMessage("已准备分析计划，确认后才调用模型；请检查小节页码范围。");
-          return;
-        }
+        // Clicking the tool starts the whole pipeline. Preview remains an
+        // automatic validation step, not a second user confirmation.
         body.analysis_confirmed = true;
-        setPendingPilot(undefined);
       }
       requestKey.current ||= crypto.randomUUID();
       if (body.analysis_mode === "section") {
@@ -429,7 +403,6 @@ export default function LearningNotebook() {
     setError("");
     setMessage("");
     setView("learn");
-    setPendingPilot(undefined);
     requestKey.current = "";
     setGenerationStage("正在回答你的问题…");
     try {
@@ -804,46 +777,6 @@ export default function LearningNotebook() {
                   {generationStage}
                 </p>
               )}
-              {pendingPilot?.evidence.pilot_plan && (
-                <section
-                  ref={planRef}
-                  tabIndex={-1}
-                  className="pilot-plan"
-                  aria-label="小节提炼确认"
-                >
-                  <h3>确认完整提炼范围</h3>
-                  <p>
-                    即将生成{modeNames[pendingPilot.mode]}。请确认下方范围，
-                    再点击“确认开始小节提炼”。
-                  </p>
-                  <p>
-                    小节：{pendingPilot.evidence.pilot_plan.scope}。
-                    {pendingPilot.evidence.pilot_plan.selected_pages}页，
-                    {pendingPilot.evidence.pilot_plan.text_chunks}个正文块，分
-                    {pendingPilot.evidence.pilot_plan.batches}批；可复用
-                    {pendingPilot.evidence.pilot_plan.cached_batches}批。
-                  </p>
-                  <p>
-                    预计最多{pendingPilot.evidence.pilot_plan.estimated_calls}
-                    次模型调用，可能计费。目录标记
-                    {pendingPilot.evidence.pilot_plan.excluded.length}块，无文字页
-                    {pendingPilot.evidence.pilot_plan.unreadable_pages.length}
-                    页；不代表已识别图片或已校对知识。
-                  </p>
-                  <button
-                    disabled={busy}
-                    onClick={() => create(pendingPilot.mode, false, true)}
-                  >
-                    确认开始小节提炼
-                  </button>
-                  <button
-                    className="secondary"
-                    onClick={() => setPendingPilot(undefined)}
-                  >
-                    返回调整范围
-                  </button>
-                </section>
-              )}
 
               {error && (
                 <p role="alert" className="notice">
@@ -1172,7 +1105,7 @@ export default function LearningNotebook() {
               先勾选左侧资料。无需填写主题即可概览所选资料；填写具体问题时按问题检索。生成后自动保存在本人账号。
             </p>
             <p className="notebook-studio-hint">
-              导图和闪卡默认先提炼知识，生成前确认范围与调用次数；可选具体小节，也可整理本章多个相关课件。最多120页、12批，超限先调整页码。
+              选好资料和等级后，点击导图或闪卡即可生成。系统会自动分批整理知识，可处理最多120页、12批，超限时会提示调整页码。
             </p>
             <div className="notebook-tools">
               {studio.map((tool) => (
@@ -1188,23 +1121,9 @@ export default function LearningNotebook() {
                 </button>
               ))}
             </div>
-            {pendingPilot && !busy && (
-              <p role="status" className="notebook-success">
-                {modeNames[pendingPilot.mode]}：等待确认提炼范围。
-                <button
-                  className="secondary"
-                  onClick={() => {
-                    planRef.current?.scrollIntoView({ block: "nearest" });
-                    planRef.current?.focus({ preventScroll: true });
-                  }}
-                >
-                  查看提炼计划
-                </button>
-              </p>
-            )}
             <p className="notebook-cost">
               AI调用可能计费，每日最多{status?.daily_limit || 20}
-              个任务；导图和闪卡按确认计划可能包含多次调用，不自动重试。
+              个任务；导图和闪卡可能包含多次模型调用，不自动重试。
             </p>
             <div className="notebook-pane-title notebook-results-title">
               <h3>我的学习成果</h3>
