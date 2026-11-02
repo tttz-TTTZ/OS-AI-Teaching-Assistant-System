@@ -26,6 +26,36 @@ def stub(monkeypatch, calls):
     monkeypatch.setattr(chat, "call_deepseek", model)
 
 
+@pytest.mark.parametrize("setting", [None, "0"])
+def test_unlimited_chat_and_learning_after_twenty_jobs(clients, monkeypatch, setting):
+    from test_personal_learning import fake_model
+
+    _, a, _ = clients
+    if setting is None:
+        monkeypatch.delenv("PERSONAL_AI_DAILY_LIMIT", raising=False)
+    else:
+        monkeypatch.setenv("PERSONAL_AI_DAILY_LIMIT", setting)
+    assert a.get(BASE + "/status").json()["daily_limit"] == 0
+    calls = []
+    stub(monkeypatch, calls)
+    for index in range(21):
+        response = a.post(BASE + "/ask", json={
+            "question": "操作系统如何管理资源？",
+            "request_key": f"unlimited-chat-request-{index:04d}",
+        })
+        assert response.status_code == 200, response.text
+    assert len(calls) == 21
+    body, _ = prepared(a)
+    fake_model(monkeypatch, [])
+    response = a.post(BASE + "/generate", json=body)
+    assert response.status_code == 200, response.text
+    monkeypatch.setenv("PERSONAL_AI_DAILY_LIMIT", "1")
+    assert a.post(BASE + "/ask", json={
+        "question": "操作系统如何管理资源？",
+        "request_key": "unlimited-chat-positive-limit",
+    }).status_code == 429
+
+
 def test_direct_question_without_sources_followup_refresh_and_privacy(
     clients, monkeypatch
 ):

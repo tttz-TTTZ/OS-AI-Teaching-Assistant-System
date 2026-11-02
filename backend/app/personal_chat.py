@@ -159,12 +159,13 @@ async def ask(body: Ask, user=Depends(student)):
             (user["id"],),
         ).fetchone():
             raise HTTPException(409, "已有任务运行，请先查看任务记录")
-        if (
+        limit = daily_limit()
+        if limit > 0 and (
             db.execute(
                 "SELECT COUNT(*) FROM personal_ai_jobs WHERE user_id=? AND created_at>=date('now')",
                 (user["id"],),
             ).fetchone()[0]
-            >= daily_limit()
+            >= limit
         ):
             raise HTTPException(429, "已达到今日个人AI调用任务上限")
         ident = db.execute(

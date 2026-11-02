@@ -621,8 +621,8 @@ export default function PersonalLearning({
                 </>
               )}
               <p>
-                按主题从所选课件检索最多24000字发送至DeepSeek；最多5份、每份600页以内。密钥仅保存在后端。生成可能计费，个人每日上限
-                {status?.daily_limit || 20}次，不自动重试。
+                按主题从所选课件检索最多24000字发送至DeepSeek；最多5份、每份600页以内。密钥仅保存在后端。生成可能计费，
+                {status ? (status.daily_limit > 0 ? `个人每日上限${status.daily_limit}次` : "个人每日任务数量不限") : "正在读取任务额度"}，不自动重试。
                 {!status?.configured &&
                   "当前未配置DeepSeek，仍可检索资料依据。"}
               </p>

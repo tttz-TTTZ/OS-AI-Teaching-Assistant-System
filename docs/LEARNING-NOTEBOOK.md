@@ -76,7 +76,7 @@ npm --prefix frontend run dev -- --strictPort
 
 前端浏览器Ctrl+F5。--strictPort用于避免旧前端仍占5173时，新进程自动换端口导致继续访问旧页。若启动报端口冲突，先确认哪个旧终端仍在运行，不强制停止无关进程。
 
-backend\.env复用DEEPSEEK_API_KEY、DEEPSEEK_BASE_URL=https://api.deepseek.com、DEEPSEEK_MODEL=deepseek-chat；PERSONAL_AI_DAILY_LIMIT默认20。修改后重启后端；不要上传.env或发密钥到聊天。原智能问答仍使用LLM_*配置。非敏感检查：
+backend\.env复用DEEPSEEK_API_KEY、DEEPSEEK_BASE_URL=https://api.deepseek.com、DEEPSEEK_MODEL=deepseek-chat；PERSONAL_AI_DAILY_LIMIT默认0（不限个人每日任务数量）。修改后重启后端；不要上传.env或发密钥到聊天。原智能问答仍使用LLM_*配置。非敏感检查：
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/api/health | Select-Object platform_revision, personal_ai_configured, chat_ai_configured

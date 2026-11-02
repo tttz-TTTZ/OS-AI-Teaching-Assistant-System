@@ -195,9 +195,9 @@ def status(user=Depends(student)):
 
 def daily_limit():
     try:
-        return max(1, min(1000, int(os.getenv("PERSONAL_AI_DAILY_LIMIT", "20"))))
+        return max(0, int(os.getenv("PERSONAL_AI_DAILY_LIMIT", "0")))
     except ValueError:
-        return 20
+        return 0
 
 
 @router.post("/sources/preview")
@@ -409,7 +409,8 @@ async def generate(body: Generation, user=Depends(student)):
             "SELECT COUNT(*) FROM personal_ai_jobs WHERE user_id=? AND created_at>=date('now')",
             (user["id"],),
         ).fetchone()[0]
-        if used >= daily_limit():
+        limit = daily_limit()
+        if limit > 0 and used >= limit:
             raise HTTPException(429, "已达到今日个人AI生成上限，请明日再试")
         ident = db.execute(
             "INSERT INTO personal_ai_jobs(user_id,chapter_id,kind,parent_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,?,?,?,?,?,?,?,?,'running')",

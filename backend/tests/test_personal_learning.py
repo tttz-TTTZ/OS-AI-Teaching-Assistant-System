@@ -298,6 +298,11 @@ def test_fingerprint_quota_and_missing_key(clients, monkeypatch):
         ).status_code
         == 429
     )
+    monkeypatch.setenv("PERSONAL_AI_DAILY_LIMIT", "0")
+    assert a.get(BASE + "/status").json()["daily_limit"] == 0
+    assert a.post(
+        BASE + "/generate", json={**body, "request_key": "personal-unlimited-0001"}
+    ).status_code == 200
     monkeypatch.setenv("DEEPSEEK_API_KEY", "")
     assert not a.get(BASE + "/status").json()["configured"]
     assert (

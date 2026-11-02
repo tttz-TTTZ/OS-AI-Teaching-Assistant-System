@@ -70,7 +70,7 @@ V8追加三表：document_ai_indexes（授权检索缓存）、personal_ai_jobs�
 
 学生API只允许student；教师403，其他学生访问本人记录/成绩/原件404。生成前校验章节、小节发布与同课程资料；资料撤回后不能再次索引用于新生成。之前已授权生成的本人结果和引用快照继续保留，不因此销毁个人记录，原文件下载仍执行当前授权。
 
-生成按学生限制同一时间一个任务，请求标识防重复调用；默认每日20次（含已发起但失败的任务，UTC自然日），可通过后端PERSONAL_AI_DAILY_LIMIT调整。模型超时90秒，不自动付费重试；超5分钟运行记录在读取时标中断。学生须明确点击再次生成。任务存储不等于云端已部署或永不丢失，需保留成套备份。
+生成按学生限制同一时间一个任务，请求标识防重复调用；默认不限制个人每日任务数量（PERSONAL_AI_DAILY_LIMIT=0；正整数限制含已发起但失败的任务，按UTC自然日统计），可通过后端PERSONAL_AI_DAILY_LIMIT调整。模型超时90秒，不自动付费重试；超5分钟运行记录在读取时标中断。学生须明确点击再次生成。任务存储不等于云端已部署或永不丢失，需保留成套备份。
 
 ## Windows更新和启动
 
@@ -94,7 +94,7 @@ git pull --ff-only
 .\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
 ```
 
-没有新增依赖，但要重启旧后端才能注册新接口、迁移V8并取消旧备课接口。backend\.env继续使用已有DEEPSEEK_API_KEY、DEEPSEEK_BASE_URL=https://api.deepseek.com、DEEPSEEK_MODEL=deepseek-chat；可选PERSONAL_AI_DAILY_LIMIT=20。密钥仅本机后端填写，不发聊天、不提交Git。学生与教师AI调用共享该服务账户，费用由该账户承担。
+没有新增依赖，但要重启旧后端才能注册新接口、迁移V8并取消旧备课接口。backend\.env继续使用已有DEEPSEEK_API_KEY、DEEPSEEK_BASE_URL=https://api.deepseek.com、DEEPSEEK_MODEL=deepseek-chat；可选PERSONAL_AI_DAILY_LIMIT=0。密钥仅本机后端填写，不发聊天、不提交Git。学生与教师AI调用共享该服务账户，费用由该账户承担。
 
 后端窗口先Ctrl+C，再：
 
