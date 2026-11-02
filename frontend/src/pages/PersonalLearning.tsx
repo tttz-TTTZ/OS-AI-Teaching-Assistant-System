@@ -291,7 +291,7 @@ export default function PersonalLearning({
             : "我的自主学习"}
         </h1>
         <p>
-          教师提供课程目录和公共资料，你选择学习内容与方式。AI内容仅属于本人，不作为教师正式教材或正式成绩。
+          教师提供公共资料，你选择学习内容与方式。AI内容仅属于本人，不作为教师正式教材或正式成绩。
         </p>
       </header>
       <div className="authoring-toolbar">
@@ -310,7 +310,6 @@ export default function PersonalLearning({
         >
           我的 AI 练习
         </Link>
-        <Link to="/student/knowledge">课程知识点</Link>
         {jobId > 0 && (
           <button disabled={busy} onClick={newLearning}>
             新建个人学习 / 自测
@@ -925,7 +924,6 @@ export default function PersonalLearning({
                     >
                       针对薄弱点再生成自测
                     </button>
-                    <Link to="/student/experiments">进入算法实验</Link>
                   </div>
                   <p>
                     下一步可重新选择学习方式；新结果另存一份，保留本次记录。

@@ -60,7 +60,7 @@ from .access import (
 
 app = FastAPI(
     title="操作系统课程智能助教 · 开发底座",
-    version="0.2.0",
+    version="0.3.0",
     lifespan=lifespan,
     dependencies=[Depends(require_user)],
 )

@@ -123,11 +123,6 @@ export default function Practice() {
         {point ? (
           <>
             <p>当前为知识点专项练习，不混入其他知识点的题目。</p>
-            <Link
-              to={`/student/knowledge?chapter=${chapter}&point=${point}&block=${params.get("block") || ""}`}
-            >
-              返回原知识点 →
-            </Link>
           </>
         ) : (
           <ChapterSelect
@@ -312,11 +307,6 @@ export default function Practice() {
                   <p>{r.explanation}</p>
                 </div>
               ))}
-            {h.point_id && (
-              <Link to={`/student/knowledge?point=${h.point_id}`}>
-                返回相关知识点
-              </Link>
-            )}
           </details>
         ))}
       </section>
