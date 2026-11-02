@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import httpx
 import pytest
 from fastapi import HTTPException
-from app import ai_questions as ai
+from app import ai_provider as ai
 
 
 def invoke(monkeypatch, response, base="https://api.deepseek.com"):

@@ -35,7 +35,7 @@ export function Publish({
         checked={value}
         onChange={(e) => onChange(e.target.checked)}
       />
-      发布给学生（章节或课程为草稿时仍不可见）
+      发布给学生
     </label>
   );
 }

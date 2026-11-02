@@ -2,7 +2,7 @@ import json
 import httpx
 import pytest
 from test_personal_learning import clients, BASE, TEXT, prepared
-from app import personal_chat as chat, ai_questions
+from app import personal_chat as chat, ai_provider
 
 
 def stub(monkeypatch, calls):
@@ -169,7 +169,7 @@ def test_chat_through_http_provider_is_answer_contract_not_modules(
         )
 
     monkeypatch.setattr(
-        ai_questions.httpx,
+        ai_provider.httpx,
         "AsyncClient",
         lambda **kw: original(transport=httpx.MockTransport(handle), **kw),
     )

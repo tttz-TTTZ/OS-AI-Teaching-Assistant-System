@@ -41,14 +41,6 @@ def run():
                     "/api/auth/login", json={"username": name, "password": password}
                 )
                 client.headers["X-CSRF-Token"] = login.json()["csrf_token"]
-            section = teacher.post(
-                "/api/teacher/sections",
-                json={
-                    "chapter_id": 1,
-                    "title": "基本服务和用户接口（合成验收样例）",
-                    "published": True,
-                },
-            ).json()["id"]
             documents = [
                 student.post(
                     "/api/materials/upload", files={"file": (f"合成课件{i}.pptx", data)}
@@ -56,8 +48,6 @@ def run():
                 for i, data in enumerate(decks())
             ]
             config = {
-                "chapter_id": 1,
-                "section_id": section,
                 "topic": "基本服务和用户接口",
                 "sources": [{"document_id": d} for d in documents],
                 "modes": ["map"],

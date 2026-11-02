@@ -8,7 +8,7 @@ import { fileUrl } from "../api";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
 import { api, courseApi, Material, documentApi } from "../api";
-import { Page, Notice, useChapters } from "../components";
+import { Page, Notice } from "../components";
 export default function Materials() {
   const [params] = useSearchParams();
   const documentId = Number(params.get("document"));
@@ -29,9 +29,7 @@ export default function Materials() {
   const [category, setCategory] = useState("all");
   const [offset, setOffset] = useState(0);
   const [file, setFile] = useState<File>();
-  const [chapter, setChapter] = useState("");
   const [view, setView] = useState<Material>();
-  const { chapters, error: chapterError } = useChapters();
   async function refresh() {
     setLoading(true);
     try {
@@ -66,10 +64,9 @@ export default function Materials() {
     setBusy(true);
     const form = e.currentTarget;
     try {
-      await courseApi.upload(file, chapter, setUploadProgress);
+      await courseApi.upload(file, setUploadProgress);
       setFile(undefined);
       form.reset();
-      setChapter("");
       await refresh();
     } catch (e) {
       setError((e as Error).message);
@@ -119,24 +116,10 @@ export default function Materials() {
               onChange={(e) => setFile(e.target.files?.[0])}
             />
           </label>
-          <label>
-            关联章节
-            <select
-              value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
-            >
-              <option value="">未分章</option>
-              {chapters.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-          </label>
           <button disabled={busy}>{busy ? "处理中…" : "上传资料"}</button>
         </form>
       </section>
-      <Notice error={error || chapterError} />
+      <Notice error={error} />
       <section className="panel spaced">
         <div className="filters">
           <input
@@ -189,7 +172,7 @@ export default function Materials() {
                 <thead>
                   <tr>
                     <th>资料</th>
-                    <th>类别 / 章节</th>
+                    <th>资料类别</th>
                     <th>类型 / 大小</th>
                     <th>操作</th>
                   </tr>
@@ -204,7 +187,7 @@ export default function Materials() {
                         <td>{m.title}</td>
                         <td>
                           {m.category === "public" ? "公共" : "个人"} /{" "}
-                          {m.chapter || "未分章"}
+                          {m.category === "public" ? "公共资料" : "个人资料"}
                         </td>
                         <td>
                           {m.file_type?.toUpperCase() || "文本"}{" "}

@@ -11,11 +11,12 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field, ConfigDict, ValidationError, model_validator
 from starlette.concurrency import run_in_threadpool
 from .auth import require_user
-from .access import visible_chapter, read_document
-from .digital import database, Config
+from .access import read_document
+from .main import database
+from .simulation_config import Config
 from .simulations import simulate
-from .study import Question
-from .ai_questions import provider_settings, call_deepseek
+from .self_test import Question
+from .ai_provider import provider_settings, call_deepseek
 from .personal_sources import Retrieval, retrieve
 
 router = APIRouter(prefix="/api/student/personal")
@@ -110,8 +111,6 @@ class Module(BaseModel):
 
 
 class Generation(Retrieval):
-    chapter_id: int
-    section_id: int | None = None
     analysis_confirmed: bool = False
     kind: Literal["learning", "practice"] = "learning"
     modes: list[Mode] = Field(
@@ -144,7 +143,6 @@ def result(row):
         k: row[k]
         for k in (
             "id",
-            "chapter_id",
             "kind",
             "parent_id",
             "status",
@@ -214,7 +212,7 @@ def jobs(user=Depends(student)):
         return [
             dict(r)
             for r in db.execute(
-                "SELECT id,chapter_id,kind,status,error,created_at,bookmarked,config_json FROM personal_ai_jobs WHERE user_id=? ORDER BY id DESC LIMIT 100",
+                "SELECT id,kind,status,error,created_at,bookmarked,config_json FROM personal_ai_jobs WHERE user_id=? ORDER BY id DESC LIMIT 100",
                 (user["id"],),
             )
         ]
@@ -344,18 +342,8 @@ async def generate(body: Generation, user=Depends(student)):
     parent = None
     previous_attempt = None
     with database() as db:
-        chapter = visible_chapter(db, body.chapter_id, user)
-        if body.section_id:
-            section = db.execute(
-                "SELECT * FROM sections WHERE id=? AND chapter_id=? AND published=1",
-                (body.section_id, body.chapter_id),
-            ).fetchone()
-            if not section:
-                raise HTTPException(404, "小节不存在或未发布")
         for selected in body.sources:
-            document = read_document(db, selected.document_id, user)
-            if document["course_id"] != chapter["course_id"]:
-                raise HTTPException(422, "请选本课程资料")
+            read_document(db, selected.document_id, user)
         if body.parent_id:
             parent = own(db, body.parent_id, user)
             if parent["status"] != "ready":
@@ -413,10 +401,9 @@ async def generate(body: Generation, user=Depends(student)):
         if limit > 0 and used >= limit:
             raise HTTPException(429, "已达到今日个人AI生成上限，请明日再试")
         ident = db.execute(
-            "INSERT INTO personal_ai_jobs(user_id,chapter_id,kind,parent_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,?,?,?,?,?,?,?,?,'running')",
+            "INSERT INTO personal_ai_jobs(user_id,kind,parent_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,?,?,?,?,?,?,?,'running')",
             (
                 user["id"],
-                body.chapter_id,
                 body.kind,
                 body.parent_id,
                 body.request_key,
@@ -439,7 +426,6 @@ async def generate(body: Generation, user=Depends(student)):
                 system_prompt=system,
                 payload={
                     "task": body.kind,
-                    "chapter": chapter["title"],
                     "topic": body.topic,
                     "source_overview": body.source_overview,
                     "weakness": body.weakness,
@@ -490,7 +476,6 @@ async def generate(body: Generation, user=Depends(student)):
             for q in raw:
                 citation(q.get("source_ref"), q.get("source_quote"), source)
                 question = Question(
-                    chapter_id=body.chapter_id,
                     kind=q.get("kind"),
                     prompt=q.get("prompt", ""),
                     options=q.get("options", []),
@@ -502,9 +487,7 @@ async def generate(body: Generation, user=Depends(student)):
                     raise HTTPException(502, "AI返回了未选择的题型")
                 qs.append(
                     {
-                        **question.model_dump(
-                            exclude={"expected_version", "knowledge_ids", "published"}
-                        ),
+                        **question.model_dump(),
                         "source_ref": q["source_ref"],
                         "source_quote": q["source_quote"],
                     }

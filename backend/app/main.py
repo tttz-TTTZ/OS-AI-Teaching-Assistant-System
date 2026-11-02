@@ -37,15 +37,6 @@ async def lifespan(app):
     migrate(DB_PATH)
     with database() as db:
         db.execute("PRAGMA journal_mode=WAL")
-    from .chapter_apply import auto_apply_chapter
-
-    auto_apply_chapter()
-    from .chapter02 import retire_published_legacy
-
-    retire_published_legacy()
-    from .chapter04_correction import auto_correct
-
-    auto_correct()
     yield
 
 
@@ -54,7 +45,6 @@ from .access import (
     read_document,
     writable_document,
     document_visible,
-    visible_chapter,
     list_documents,
 )
 
@@ -73,7 +63,6 @@ app.add_middleware(UploadLimitMiddleware)
 class MaterialInput(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     content: str = Field(default="", max_length=50000)
-    chapter: str = Field(default="", max_length=100)
 
 
 class ChatInput(BaseModel):
@@ -106,7 +95,7 @@ def health():
         "ai_configured": chat_configured,
         "chat_ai_configured": chat_configured,
         "personal_ai_configured": personal_configured,
-        "platform_revision": "student-autonomous-v8",
+        "platform_revision": "material-learning-v10",
     }
 
 
@@ -117,40 +106,24 @@ def materials(
     category: str | None = None,
     user: dict = Depends(require_user),
     q: str = "",
-    chapter_id: int | None = None,
     trash: bool = False,
 ):
     if not 1 <= limit <= 100 or offset < 0:
         raise HTTPException(422, "limit 应为 1–100，offset 不小于 0")
     if category not in (None, "public", "personal"):
         raise HTTPException(422, "资料类别无效")
-    return list_documents(user, limit, offset, category, q, chapter_id, trash)
-
-
-def resolve_legacy_chapter(db, title: str, user: dict):
-    if not title:
-        return None
-    row = db.execute(
-        "SELECT id FROM chapters WHERE title=? ORDER BY id LIMIT 1", (title,)
-    ).fetchone()
-    if not row:
-        raise HTTPException(422, "章节名称不存在，请使用现有课程章节")
-    return visible_chapter(db, row[0], user)
+    return list_documents(user, limit, offset, category, q, trash)
 
 
 @app.post("/api/materials", status_code=201)
 def create_material(body: MaterialInput, user: dict = Depends(require_user)):
     with database() as db:
-        chapter = resolve_legacy_chapter(db, body.chapter, user)
         cursor = db.execute(
-            "INSERT INTO documents(title,content,chapter,owner_id,chapter_id,course_id) VALUES (?,?,?,?,?,?)",
+            "INSERT INTO documents(title,content,owner_id) VALUES (?,?,?)",
             (
                 body.title,
                 body.content,
-                body.chapter,
                 user["id"],
-                chapter["id"] if chapter else None,
-                chapter["course_id"] if chapter else 1,
             ),
         )
         return get_material(db, cursor.lastrowid)
@@ -169,16 +142,11 @@ def update_material(
     with database() as db:
         material = get_material(db, material_id, user)
         writable_document(material, user)
-        chapter = resolve_legacy_chapter(db, body.chapter, user)
-        if chapter and chapter["course_id"] != material["course_id"]:
-            raise HTTPException(422, "不支持通过兼容接口跨课程移动资料")
         db.execute(
-            "UPDATE documents SET title=?,content=?,chapter=?,chapter_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            "UPDATE documents SET title=?,content=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
             (
                 body.title,
                 body.content,
-                body.chapter,
-                chapter["id"] if chapter else None,
                 material_id,
             ),
         )
@@ -272,10 +240,8 @@ def conversations(user: dict = Depends(require_user)):
 
 
 # 上传路由在带 ID 的资料路由之后注册，POST 路径不冲突。
-from .learning import router as learning_router
 from .files import router as files_router
 
-app.include_router(learning_router)
 app.include_router(files_router)
 
 from .auth import router as auth_router
@@ -319,37 +285,13 @@ from .accounts import router as accounts_router
 
 app.include_router(accounts_router)
 
-from .textbook import router as textbook_router
 
-app.include_router(textbook_router)
 
-from .digital import router as digital_router
 
-app.include_router(digital_router)
 
-from .digital_assets import router as digital_assets_router
 
-app.include_router(digital_assets_router)
 
-from .simulations import router as simulations_router
 
-app.include_router(simulations_router)
-
-from .study import router as study_router
-
-app.include_router(study_router)
-
-from .experiments import router as experiments_router
-
-app.include_router(experiments_router)
-
-from .ai_questions import router as ai_questions_router
-
-app.include_router(ai_questions_router)
-
-from .ai_lessons import router as ai_lessons_router
-
-app.include_router(ai_lessons_router)
 
 from .personal_learning import router as personal_learning_router
 
@@ -358,14 +300,3 @@ app.include_router(personal_learning_router)
 from .personal_chat import router as personal_chat_router
 
 app.include_router(personal_chat_router)
-
-from .chapter_content import router as chapter_content_router
-from . import chapter_apply  # register direct-apply route before including router
-
-from . import chapter02  # register explicit chapter02 draft routes, no startup writes
-
-from . import chapter03  # explicit teacher draft routes only; no startup apply
-
-from . import chapter04_correction  # targeted location/number correction
-
-app.include_router(chapter_content_router)

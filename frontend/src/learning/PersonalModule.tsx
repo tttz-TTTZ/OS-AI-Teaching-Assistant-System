@@ -8,7 +8,7 @@ import {
 import Markdown from "../Markdown";
 import MindMap from "./MindMap";
 import PilotEvidence, { PilotSummary } from "./PilotEvidence";
-import { SimConfig, Trace } from "../digital";
+import { SimConfig, Trace } from "../simulation";
 import { ConfigFields } from "./Interaction";
 export default function PersonalModule({
   module,

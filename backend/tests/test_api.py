@@ -106,7 +106,7 @@ def test_health_distinguishes_chat_and_personal_ai(
     assert data["chat_ai_configured"] is chat_expected
     assert data["personal_ai_configured"] is personal_expected
     assert data["ai_configured"] is chat_expected
-    assert data["platform_revision"] == "student-autonomous-v8"
+    assert data["platform_revision"] == "material-learning-v10"
     for secret in (chat_key.strip(), deepseek_key.strip()):
         if secret:
             assert secret not in response.text

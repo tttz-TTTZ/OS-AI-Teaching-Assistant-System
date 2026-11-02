@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 from .personal_learning import student, own, result, citation, daily_limit
 from .personal_sources import PersonalSource, Retrieval, retrieve
-from .ai_questions import provider_settings, call_deepseek
-from .access import read_document, visible_chapter
-from .digital import database
+from .ai_provider import provider_settings, call_deepseek
+from .access import read_document
+from .main import database
 from .knowledge_pilot import stale_jobs
 
 LOG = logging.getLogger("uvicorn.error.learning")
@@ -20,7 +20,6 @@ router = APIRouter(prefix="/api/student/personal")
 
 class Ask(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
-    chapter_id: int | None = None
     parent_id: int | None = None
     sources: list[PersonalSource] = Field(default_factory=list, max_length=5)
     use_sources: bool = True
@@ -42,25 +41,8 @@ async def ask(body: Ask, user=Depends(student)):
             "未启用结合资料" if not body.use_sources else "未选择资料",
         )
     with database() as db:
-        if body.chapter_id:
-            chapter = visible_chapter(db, body.chapter_id, user)
-        else:
-            candidates = db.execute(
-                "SELECT id FROM chapters ORDER BY sort_order,id"
-            ).fetchall()
-            chapter = None
-            for candidate in candidates:
-                try:
-                    chapter = visible_chapter(db, candidate["id"], user)
-                    break
-                except HTTPException:
-                    pass
-            if not chapter:
-                raise HTTPException(422, "暂无已发布课程，请联系教师")
-        for s in sources:
-            doc = read_document(db, s.document_id, user)
-            if doc["course_id"] != chapter["course_id"]:
-                raise HTTPException(422, "请选本课程资料")
+        for selected in sources:
+            read_document(db, selected.document_id, user)
         parent = own(db, body.parent_id, user) if body.parent_id else None
     messages, learning_context = [], ""
     if parent and parent["status"] == "ready":
@@ -123,8 +105,6 @@ async def ask(body: Ask, user=Depends(student)):
                 "以下只能提供通用解释，不代表课件原文。",
             ]
     config = {
-        "chapter_id": chapter["id"],
-        "section_id": None,
         "sources": [s.model_dump() for s in body.sources],
         "topic": question,
         "weakness": "",
@@ -169,10 +149,9 @@ async def ask(body: Ask, user=Depends(student)):
         ):
             raise HTTPException(429, "已达到今日个人AI调用任务上限")
         ident = db.execute(
-            "INSERT INTO personal_ai_jobs(user_id,chapter_id,kind,parent_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,?,'learning',?,?,?,?,?,?,'running')",
+            "INSERT INTO personal_ai_jobs(user_id,kind,parent_id,request_key,request_hash,config_json,sources_json,model,status) VALUES(?,'learning',?,?,?,?,?,?,'running')",
             (
                 user["id"],
-                chapter["id"],
                 config["parent_id"],
                 body.request_key,
                 digest,

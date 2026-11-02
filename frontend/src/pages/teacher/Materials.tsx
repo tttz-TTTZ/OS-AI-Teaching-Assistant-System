@@ -4,8 +4,6 @@ import {
   api,
   documentApi,
   Material,
-  Chapter,
-  Knowledge,
   fileUrl,
 } from "../../api";
 import { Page, Notice } from "../../components";
@@ -18,14 +16,12 @@ import {
 import PresentationPreview from "../../learning/PresentationPreview";
 export default function Materials() {
   const [q, setQ] = useState("");
-  const [filterChapter, setFilterChapter] = useState("");
   const [mode, setMode] = useState("active");
   const [offset, setOffset] = useState(0);
   const items = useRemote(
     () =>
       documentApi.list(true, {
         q,
-        chapter_id: filterChapter ? Number(filterChapter) : undefined,
         trash: mode === "trash",
         published:
           mode === "draft" ? false : mode === "published" ? true : undefined,
@@ -33,14 +29,9 @@ export default function Materials() {
       }),
     [] as Material[],
   );
-  const chapters = useRemote(teacherApi.chapters, [] as Chapter[]);
-  const knowledge = useRemote(teacherApi.knowledge, [] as Knowledge[]);
   const [file, setFile] = useState<File>();
-  const [uploadChapter, setUploadChapter] = useState("");
   const [selected, setSelected] = useState<Material>();
   const [title, setTitle] = useState("");
-  const [editChapter, setEditChapter] = useState<number | null>(null);
-  const [links, setLinks] = useState<number[]>([]);
   const [published, setPublished] = useState(false);
   const [summary, setSummary] = useState("");
   const [source, setSource] = useState("");
@@ -55,7 +46,7 @@ export default function Materials() {
   useEffect(() => {
     void items.refresh();
     setSelected(undefined);
-  }, [q, filterChapter, mode, offset]);
+  }, [q, mode, offset]);
   async function finish(message: string) {
     const refreshed = await items.refresh();
     setSuccess(message + (refreshed ? "" : "；列表刷新失败，请点击刷新"));
@@ -63,8 +54,6 @@ export default function Materials() {
   function edit(m: Material) {
     setSelected(m);
     setTitle(m.title);
-    setEditChapter(m.chapter_id);
-    setLinks(m.knowledge_ids || []);
     setPublished(!!m.published);
     setSummary(m.summary || "");
     setSource(m.source_title || "");
@@ -91,14 +80,12 @@ export default function Materials() {
     try {
       const m = await teacherApi.uploadPublic(
         file,
-        uploadChapter ? Number(uploadChapter) : null,
         setUploadProgress,
       );
       form.reset();
       setFile(undefined);
-      setUploadChapter("");
-      edit({ ...m, knowledge_ids: [] });
-      await finish("上传已保存为草稿；设置关联并发布后学生可见");
+      edit(m);
+      await finish("上传已保存为草稿；发布后学生可见");
     } catch (e) {
       items.setError((e as Error).message);
     } finally {
@@ -114,8 +101,6 @@ export default function Materials() {
     try {
       await teacherApi.saveDocument(selected.id, {
         title,
-        chapter_id: editChapter,
-        knowledge_ids: links,
         published,
         summary,
         source_title: source,
@@ -165,7 +150,7 @@ export default function Materials() {
         replacement,
         setUploadProgress,
       );
-      edit({ ...m, knowledge_ids: links });
+      edit(m);
       await finish("新版本已保存，旧文件留存；已取消发布，请检查后重新发布");
     } catch (e) {
       items.setError((e as Error).message);
@@ -180,7 +165,7 @@ export default function Materials() {
         {publicFileHint}
         。上传/替换默认为草稿，检查后发布；删除进入可恢复的回收站。
       </p>
-      <Notice error={items.error || chapters.error || knowledge.error} />
+      <Notice error={items.error} />
       {busy && uploadProgress !== undefined && (
         <div role="status" className="upload-progress">
           <progress max="100" value={uploadProgress} />
@@ -209,21 +194,6 @@ export default function Materials() {
               onChange={(e) => setFile(e.target.files?.[0])}
             />
           </label>
-          <label>
-            所属章节
-            <select
-              aria-label="上传所属章节"
-              value={uploadChapter}
-              onChange={(e) => setUploadChapter(e.target.value)}
-            >
-              <option value="">不关联章节</option>
-              {chapters.data.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-          </label>
           <button disabled={busy}>上传公共资料</button>
         </form>
       </section>
@@ -251,21 +221,6 @@ export default function Materials() {
               }}
             />
             <select
-              aria-label="公共资料章节筛选"
-              value={filterChapter}
-              onChange={(e) => {
-                setFilterChapter(e.target.value);
-                setOffset(0);
-              }}
-            >
-              <option value="">全部章节</option>
-              {chapters.data.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select>
-            <select
               aria-label="公共资料状态"
               value={mode}
               onChange={(e) => {
@@ -290,7 +245,7 @@ export default function Materials() {
                 <thead>
                   <tr>
                     <th>资料 / 来源</th>
-                    <th>章节 / 状态</th>
+                    <th>资料状态</th>
                     <th>操作</th>
                   </tr>
                 </thead>
@@ -308,7 +263,7 @@ export default function Materials() {
                         </small>
                       </td>
                       <td>
-                        {m.chapter || "未分章"}
+                        公共资料
                         <br />
                         {m.deleted_at ? (
                           "回收站"
@@ -380,7 +335,7 @@ export default function Materials() {
           </div>
         </section>
         <section className="panel">
-          <h2>章节、知识点与发布</h2>
+          <h2>资料设置与发布</h2>
           {selected ? (
             <>
               <form onSubmit={save}>
@@ -418,51 +373,6 @@ export default function Materials() {
                     onChange={(e) => setSourceUrl(e.target.value)}
                   />
                 </label>
-                <label>
-                  所属章节
-                  <select
-                    aria-label="编辑所属章节"
-                    value={editChapter ?? ""}
-                    onChange={(e) =>
-                      setEditChapter(
-                        e.target.value ? Number(e.target.value) : null,
-                      )
-                    }
-                  >
-                    <option value="">不关联章节</option>
-                    {chapters.data.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <fieldset>
-                  <legend>关联知识点（可多选）</legend>
-                  {knowledge.data
-                    .filter(
-                      (k) =>
-                        !editChapter ||
-                        k.chapter_id === editChapter ||
-                        links.includes(k.id),
-                    )
-                    .map((k) => (
-                      <label className="check" key={k.id}>
-                        <input
-                          type="checkbox"
-                          checked={links.includes(k.id)}
-                          onChange={(e) =>
-                            setLinks(
-                              e.target.checked
-                                ? [...links, k.id]
-                                : links.filter((id) => id !== k.id),
-                            )
-                          }
-                        />
-                        {k.title}
-                      </label>
-                    ))}
-                </fieldset>
                 <Publish value={published} onChange={setPublished} />
                 <button disabled={busy}>保存资料设置</button>
               </form>
@@ -505,7 +415,7 @@ export default function Materials() {
               )}
             </>
           ) : (
-            <p>选择左侧资料进行设置；无需重新上传即可调整章节。</p>
+            <p>选择左侧资料，修改标题、来源或发布状态，无需重新上传。</p>
           )}
         </section>
       </div>

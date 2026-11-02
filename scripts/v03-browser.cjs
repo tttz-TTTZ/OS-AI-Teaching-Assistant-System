@@ -16,7 +16,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       const page = await context.newPage();
       page.on("pageerror", (error) => errors.push(error.message));
       page.on("response", (response) => {
-        if (response.url().includes("/api/") && response.status() >= 500) errors.push(`${response.status()} ${response.url()}`);
+        if (response.url().includes("/api/") && response.status() >= 400 && !(response.url().endsWith("/api/auth/me") && response.status() === 401)) errors.push(`${response.status()} ${response.url()}`);
       });
       const teacher = account.role === "teacher";
       await page.goto(base + "/login");
@@ -25,14 +25,15 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       await page.getByLabel("密码", { exact: true }).fill(account.password);
       await page.getByRole("button", { name: "登录", exact: true }).click();
       await page.waitForURL(`**/${account.role}/dashboard`);
-      const removed = teacher ? ["课程目录", "知识点内容", "算法实验管理"] : ["知识点学习", "算法实验"];
+      const removed = teacher ? ["课程目录", "知识点内容", "算法实验管理", "练习题管理"] : ["知识点学习", "算法实验", "章节练习"];
+      assert.equal(await page.locator("select[aria-label*=课程]").count(), 0);
       for (const name of removed) {
         assert.equal(await page.getByRole("link", { name, exact: true }).count(), 0);
         checks++;
       }
       const retained = teacher
-        ? [["materials", "公共资料"], ["questions", "练习题管理"], ["accounts", "账号管理"]]
-        : [["materials", "课程资料"], ["ai-chat", "智能问答"], ["practice", "章节练习"]];
+        ? [["materials", "公共资料"], ["accounts", "账号管理"]]
+        : [["materials", "课程资料"], ["ai-chat", "智能问答"]];
       for (const [, name] of retained) {
         assert.equal(await page.locator("aside").getByRole("link", { name, exact: true }).count(), 1);
       }
@@ -44,7 +45,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         checks++;
       }
       for (const route of teacher
-        ? ["chapters", "chapters/1/edit", "sections/new", "knowledge", "knowledge/1/content", "experiments", "experiments/1/edit", "chapter-content/chapter02", "ai-lessons"]
+        ? ["chapters", "chapters/1/edit", "sections/new", "knowledge", "knowledge/1/content", "experiments", "experiments/1/edit", "chapter-content/chapter02", "ai-lessons", "questions", "ai-questions", "learning-feedback"]
         : ["knowledge", "course-reading", "experiments", "experiments/1", "experiment-runs/1"]) {
         await page.goto(`${base}/${account.role}/${route}`);
         await page.waitForURL(`**/${account.role}/dashboard`);

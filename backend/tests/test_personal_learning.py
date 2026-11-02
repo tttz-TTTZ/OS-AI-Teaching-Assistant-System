@@ -43,7 +43,6 @@ def prepared(a, kind="learning", data=TEXT):
     )
     assert d.status_code == 201, d.text
     config = {
-        "chapter_id": 1,
         "topic": "进程与线程",
         "weakness": "分不清资源共享",
         "sources": [{"document_id": d.json()["id"]}],
@@ -184,13 +183,13 @@ def test_private_practice_grading_followup_and_formal_separation(clients, monkey
     body, p = prepared(a, "practice")
     calls = []
     fake_model(monkeypatch, calls)
-    formal = t.get("/api/teacher/study/questions").json()
+    assert t.get("/api/teacher/study/questions").status_code == 404
     job = a.post(BASE + "/generate", json=body).json()
     ident = job["id"]
     assert all(
         "correct" not in q and "explanation" not in q for q in job["body"]["questions"]
     )
-    assert t.get("/api/teacher/study/questions").json() == formal
+    assert t.get("/api/teacher/study/questions").status_code == 404
     assert b.get(BASE + f"/jobs/{ident}/attempts").status_code == 404
     submission = {
         "request_key": "personal-submit-000001",
@@ -206,7 +205,7 @@ def test_private_practice_grading_followup_and_formal_separation(clients, monkey
     altered = copy.deepcopy(submission)
     altered["answers"]["0"] = 0
     assert a.post(BASE + f"/jobs/{ident}/submit", json=altered).status_code == 409
-    assert a.get("/api/study/attempts").json() == []
+    assert a.get("/api/study/attempts").status_code == 404
     follow = {
         **body,
         "kind": "learning",
@@ -311,23 +310,6 @@ def test_fingerprint_quota_and_missing_key(clients, monkeypatch):
         ).status_code
         == 503
     )
-
-
-def test_v8_backup_repeat_and_old_data_preservation(clients):
-    t, _, _ = clients
-    old = t.get("/api/teacher/chapters").json()
-    with sqlite3.connect(main.DB_PATH) as db:
-        for table in (
-            "personal_ai_attempts",
-            "personal_ai_jobs",
-            "document_ai_indexes",
-        ):
-            db.execute("DROP TABLE " + table)
-        db.execute("DELETE FROM schema_versions WHERE version=8")
-    migrate(main.DB_PATH)
-    migrate(main.DB_PATH)
-    assert len(list((main.DB_PATH.parent / "backups").glob("before-v8-*"))) == 1
-    assert t.get("/api/teacher/chapters").json() == old
 
 
 def test_no_matching_evidence_does_not_generate_blindly(clients):
@@ -436,7 +418,7 @@ def test_map_rejects_disconnected_or_cyclic_nodes(bad_parent):
 )
 def test_student_features_through_real_http_adapter(clients, monkeypatch, mode, style):
     import httpx
-    from app import ai_questions
+    from app import ai_provider
 
     t, a, b = clients
     config, _ = prepared(a, kind="practice" if mode == "practice" else "learning")
@@ -480,7 +462,7 @@ def test_student_features_through_real_http_adapter(clients, monkeypatch, mode, 
         )
 
     monkeypatch.setattr(
-        ai_questions.httpx,
+        ai_provider.httpx,
         "AsyncClient",
         lambda **kw: original(transport=httpx.MockTransport(handler), **kw),
     )

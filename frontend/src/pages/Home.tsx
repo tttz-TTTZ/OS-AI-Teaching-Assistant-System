@@ -1,18 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Health, courseApi, api, Material, courses, Course } from "../api";
+import { Health, courseApi, api, Material } from "../api";
 import { Page, Notice } from "../components";
 export default function Home() {
   const [health, setHealth] = useState<Health>();
   const [materials, setMaterials] = useState<Material[]>([]);
-  const [course, setCourse] = useState<Course>();
   const [failure, setFailure] = useState("");
   useEffect(() => {
-    Promise.all([courseApi.health(), api.materials(0, "public"), courses()])
-      .then(([h, m, c]) => {
+    Promise.all([courseApi.health(), api.materials(0, "public")])
+      .then(([h, m]) => {
         setHealth(h);
         setMaterials(m.slice(0, 5));
-        setCourse(c[0]);
       })
       .catch((e) => setFailure(e.message));
   }, []);
@@ -35,11 +33,8 @@ export default function Home() {
       </section>
       <section className="coursebrief">
         <div>
-          <span className="badge">
-            {course?.is_demo ? "DEMO COURSE" : "COURSE"}
-          </span>
-          <h2>{course?.title || "课程概览"}</h2>
-          <p>{course?.description || "正在加载课程…"}</p>
+          <h2>操作系统课程资料</h2>
+          <p>选择公共课件，或上传个人资料开始学习。</p>
         </div>
         <Link className="button" to="/student/materials">查看课程资料 →</Link>
       </section>
@@ -67,7 +62,7 @@ export default function Home() {
                   {m.title}
                 </Link>
                 <small>
-                  {m.chapter || "课程资料"} ·{" "}
+                  课程资料 ·{" "}
                   {m.file_type?.toUpperCase() || "文本"}
                 </small>
               </p>
@@ -75,9 +70,9 @@ export default function Home() {
             {!materials.length && <p>暂无已发布公共资料</p>}
           </section>
           <div className="grid spaced">
-            <Link className="panel card" to="/student/practice">
-              <h2>章节练习</h2>
-              <p>人工选择题，提交后查看答案与解析。</p>
+            <Link className="panel card" to="/student/ai-practice">
+              <h2>个人 AI 自测</h2>
+              <p>根据所选资料与薄弱点生成自测题。</p>
               <span>巩固知识 →</span>
             </Link>
           </div>

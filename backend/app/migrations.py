@@ -1,192 +1,144 @@
-"""非破坏性版本迁移；备份成功后才改现有数据库。"""
+"""Schema 10: material-based learning, without course directories or a formal question bank.
 
-import shutil
+Existing supported installations are backed up and rebuilt atomically. Unknown tables
+are a blocker rather than something to silently erase. No legacy content is seeded.
+"""
+import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-
-def _migrate_v2(path: Path) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    existed = path.exists() and path.stat().st_size > 0
-    db = sqlite3.connect(path)
-    db.row_factory = sqlite3.Row
-    try:
-        has_versions = db.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_versions'"
-        ).fetchone()
-        if (
-            has_versions
-            and db.execute("SELECT 1 FROM schema_versions WHERE version=2").fetchone()
-        ):
-            return
-        if existed:
-            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
-            folder = path.parent / "backups" / stamp
-            folder.mkdir(parents=True)
-            with sqlite3.connect(folder / path.name) as backup:
-                db.backup(backup)
-            if (path.parent / "uploads").exists():
-                shutil.copytree(path.parent / "uploads", folder / "uploads")
-        # 沿用 V0.1 初始化，为空环境及更旧的资料表补齐结构。
-        db.executescript(
-            """
-        CREATE TABLE IF NOT EXISTS materials(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,content TEXT NOT NULL,chapter TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-        CREATE TABLE IF NOT EXISTS conversations(id INTEGER PRIMARY KEY AUTOINCREMENT,material_id INTEGER,question TEXT NOT NULL,answer TEXT NOT NULL,model TEXT NOT NULL,mode TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
-        """
-        )
-        columns = {row["name"] for row in db.execute("PRAGMA table_info(materials)")}
-        for name, definition in {
-            "category": "TEXT NOT NULL DEFAULT 'personal'",
-            "original_name": "TEXT",
-            "stored_name": "TEXT",
-            "file_size": "INTEGER",
-            "file_type": "TEXT",
-        }.items():
-            if name not in columns:
-                db.execute(f"ALTER TABLE materials ADD COLUMN {name} {definition}")
-        from .course import initialize
-
-        initialize(db)
-        db.commit()
-        db.execute("BEGIN IMMEDIATE")
-        db.execute("ALTER TABLE materials RENAME TO documents")
-        db.execute("ALTER TABLE knowledge RENAME TO knowledge_points")
-        statements = [
-            "CREATE TABLE users(id INTEGER PRIMARY KEY,username TEXT NOT NULL UNIQUE,password_hash TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('teacher','student')),active INTEGER NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-            "CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),csrf_token TEXT NOT NULL,expires_at INTEGER NOT NULL)",
-            "CREATE INDEX sessions_expiry ON sessions(expires_at)",
-            "CREATE TABLE courses(id INTEGER PRIMARY KEY,title TEXT NOT NULL,description TEXT NOT NULL DEFAULT '',published INTEGER NOT NULL DEFAULT 0,is_demo INTEGER NOT NULL DEFAULT 1)",
-            "INSERT INTO courses VALUES(1,'操作系统（演示课程）','人工示例内容，请以实际教材为准。',1,1)",
-            "ALTER TABLE chapters ADD COLUMN course_id INTEGER REFERENCES courses(id) DEFAULT 1",
-            "ALTER TABLE chapters ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE chapters ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
-            "UPDATE chapters SET sort_order=id",
-            "ALTER TABLE knowledge_points ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
-            "ALTER TABLE documents ADD COLUMN course_id INTEGER REFERENCES courses(id) DEFAULT 1",
-            "ALTER TABLE documents ADD COLUMN chapter_id INTEGER REFERENCES chapters(id)",
-            "ALTER TABLE documents ADD COLUMN owner_id INTEGER REFERENCES users(id)",
-            "ALTER TABLE documents ADD COLUMN published INTEGER NOT NULL DEFAULT 0",
-            "UPDATE documents SET published=1 WHERE category='public'",
-            "UPDATE documents SET chapter_id=(SELECT id FROM chapters WHERE chapters.title=documents.chapter ORDER BY id LIMIT 1)",
-            "ALTER TABLE questions ADD COLUMN published INTEGER NOT NULL DEFAULT 1",
-            "ALTER TABLE conversations ADD COLUMN user_id INTEGER REFERENCES users(id)",
-            "CREATE TABLE document_knowledge_points(document_id INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,knowledge_point_id INTEGER NOT NULL REFERENCES knowledge_points(id) ON DELETE CASCADE,PRIMARY KEY(document_id,knowledge_point_id))",
-            "CREATE INDEX document_owner ON documents(owner_id,category)",
-            "CREATE INDEX knowledge_chapter ON knowledge_points(chapter_id)",
-            "CREATE VIEW materials AS SELECT * FROM documents",
-            "CREATE VIEW knowledge AS SELECT * FROM knowledge_points",
-            "INSERT INTO schema_versions VALUES(2)",
-        ]
-        for statement in statements:
-            db.execute(statement)
-        db.commit()
-    except BaseException:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-
-def _migrate_v3(path: Path) -> None:
-    # 原有V0.2迁移保持不变。后续按版本顺序追加，不能在version=2前提前返回。
-    was_v2 = False
-    if path.exists() and path.stat().st_size:
-        with sqlite3.connect(path) as db:
-            if db.execute(
-                "SELECT 1 FROM sqlite_master WHERE name='schema_versions'"
-            ).fetchone():
-                was_v2 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=2"
-                    ).fetchone()
-                )
-                if db.execute(
-                    "SELECT 1 FROM schema_versions WHERE version=3"
-                ).fetchone():
-                    return
-    if was_v2:
-        from .persistence import backup_data
-
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
-        backup_data(path, path.parent / "backups" / ("before-v3-" + stamp))
-    _migrate_v2(path)
-    with sqlite3.connect(path) as db:
-        db.execute("BEGIN IMMEDIATE")
-        for statement in [
-            "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE documents ADD COLUMN sha256 TEXT",
-            "ALTER TABLE documents ADD COLUMN summary TEXT NOT NULL DEFAULT ''",
-            "ALTER TABLE documents ADD COLUMN source_title TEXT NOT NULL DEFAULT ''",
-            "ALTER TABLE documents ADD COLUMN source_url TEXT NOT NULL DEFAULT ''",
-            "ALTER TABLE documents ADD COLUMN deleted_at TEXT",
-            "ALTER TABLE documents ADD COLUMN published_at TEXT",
-            "ALTER TABLE chapters ADD COLUMN textbook_number INTEGER",
-            "ALTER TABLE chapters ADD COLUMN pdf_start INTEGER",
-            "ALTER TABLE chapters ADD COLUMN pdf_end INTEGER",
-            "ALTER TABLE chapters ADD COLUMN archived_at TEXT",
-            "CREATE TABLE document_versions(id INTEGER PRIMARY KEY,document_id INTEGER NOT NULL REFERENCES documents(id),stored_name TEXT NOT NULL,original_name TEXT NOT NULL,file_size INTEGER NOT NULL,file_type TEXT NOT NULL,sha256 TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-            "CREATE TABLE account_audit(id INTEGER PRIMARY KEY,actor_id INTEGER REFERENCES users(id),target_id INTEGER REFERENCES users(id),action TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)",
-            "CREATE INDEX documents_visibility ON documents(category,deleted_at,published,chapter_id)",
-            "CREATE INDEX conversations_owner ON conversations(user_id,id)",
-            "INSERT INTO schema_versions VALUES(3)",
-        ]:
-            db.execute(statement)
-
+SCHEMA = {'users': 'CREATE TABLE users(id INTEGER PRIMARY KEY,username TEXT NOT NULL UNIQUE,password_hash '
+          "TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('teacher','student')),active INTEGER "
+          'NOT NULL DEFAULT 1,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, is_admin INTEGER '
+          'NOT NULL DEFAULT 0)',
+ 'sessions': 'CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL '
+             'REFERENCES users(id),csrf_token TEXT NOT NULL,expires_at INTEGER NOT NULL)',
+ 'documents': 'CREATE TABLE "documents"(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT '
+              'NULL,content TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT '
+              'CURRENT_TIMESTAMP,updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, category TEXT '
+              "NOT NULL DEFAULT 'personal', original_name TEXT, stored_name TEXT, file_size "
+              'INTEGER, file_type TEXT, '
+              'owner_id INTEGER REFERENCES users(id), published INTEGER NOT NULL DEFAULT 0, sha256 '
+              "TEXT, summary TEXT NOT NULL DEFAULT '', source_title TEXT NOT NULL DEFAULT '', "
+              "source_url TEXT NOT NULL DEFAULT '', deleted_at TEXT, published_at TEXT)",
+ 'document_versions': 'CREATE TABLE document_versions(id INTEGER PRIMARY KEY,document_id INTEGER '
+                      'NOT NULL REFERENCES documents(id),stored_name TEXT NOT NULL,original_name '
+                      'TEXT NOT NULL,file_size INTEGER NOT NULL,file_type TEXT NOT NULL,sha256 '
+                      'TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)',
+ 'conversations': 'CREATE TABLE conversations(id INTEGER PRIMARY KEY AUTOINCREMENT,material_id '
+                  'INTEGER,question TEXT NOT NULL,answer TEXT NOT NULL,model TEXT NOT NULL,mode '
+                  'TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, user_id '
+                  'INTEGER REFERENCES users(id))',
+ 'account_audit': 'CREATE TABLE account_audit(id INTEGER PRIMARY KEY,actor_id INTEGER REFERENCES '
+                  'users(id),target_id INTEGER REFERENCES users(id),action TEXT NOT '
+                  'NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)',
+ 'document_ai_indexes': 'CREATE TABLE document_ai_indexes(document_id INTEGER PRIMARY KEY '
+                        'REFERENCES documents(id),signature TEXT NOT NULL,body_json TEXT NOT NULL)',
+ 'personal_ai_jobs': 'CREATE TABLE personal_ai_jobs(id INTEGER PRIMARY KEY,user_id INTEGER NOT '
+                     'NULL REFERENCES users(id),kind TEXT NOT NULL,parent_id INTEGER REFERENCES '
+                     'personal_ai_jobs(id),request_key TEXT NOT NULL,request_hash TEXT NOT '
+                     'NULL,config_json TEXT NOT NULL,sources_json TEXT NOT NULL,body_json TEXT NOT '
+                     "NULL DEFAULT '{}',model TEXT NOT NULL,status TEXT NOT NULL,error TEXT NOT "
+                     "NULL DEFAULT '',note TEXT NOT NULL DEFAULT '',bookmarked INTEGER NOT NULL "
+                     'DEFAULT 0,version INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL '
+                     'DEFAULT CURRENT_TIMESTAMP,UNIQUE(user_id,request_key))',
+ 'personal_ai_attempts': 'CREATE TABLE personal_ai_attempts(id INTEGER PRIMARY KEY,user_id INTEGER '
+                         'NOT NULL REFERENCES users(id),job_id INTEGER NOT NULL REFERENCES '
+                         'personal_ai_jobs(id),request_key TEXT NOT NULL,payload TEXT NOT '
+                         'NULL,created_at TEXT NOT NULL DEFAULT '
+                         'CURRENT_TIMESTAMP,UNIQUE(user_id,request_key))'}
+REMOVED = ['courses', 'chapters',
+ 'knowledge_points',
+ 'questions',
+ 'document_knowledge_points',
+ 'sections',
+ 'knowledge_revisions',
+ 'content_events',
+ 'knowledge_assets',
+ 'revision_assets',
+ 'knowledge_progress',
+ 'interaction_runs',
+ 'question_knowledge',
+ 'study_attempts',
+ 'learning_feedback',
+ 'experiments',
+ 'experiment_revisions',
+ 'experiment_previews',
+ 'experiment_runs',
+ 'ai_question_jobs',
+ 'ai_question_drafts',
+ 'ai_lesson_jobs',
+ 'chapter_content_imports']
 
 def migrate(path: Path) -> None:
-    had_v3 = False
-    had_v4 = False
-    had_v5 = False
-    had_v6 = False
-    had_v7 = False
-    if path.exists():
-        with sqlite3.connect(path) as db:
-            if db.execute(
-                "SELECT 1 FROM sqlite_master WHERE name='schema_versions'"
-            ).fetchone():
-                had_v3 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=3"
-                    ).fetchone()
-                )
-                had_v4 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=4"
-                    ).fetchone()
-                )
-                had_v5 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=5"
-                    ).fetchone()
-                )
-                had_v6 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=6"
-                    ).fetchone()
-                )
-                had_v7 = bool(
-                    db.execute(
-                        "SELECT 1 FROM schema_versions WHERE version=7"
-                    ).fetchone()
-                )
-    _migrate_v3(path)
-    from .digital_migration import migrate_digital
-
-    migrate_digital(path, backup=had_v3)
-    from .experiment_migration import migrate_experiments
-
-    migrate_experiments(path, backup=had_v4)
-
-    from .ai_question_migration import migrate_ai_questions
-
-    migrate_ai_questions(path, backup=had_v5)
-    from .ai_lesson_migration import migrate_ai_lessons
-
-    migrate_ai_lessons(path, backup=had_v6)
-    from .personal_migration import migrate_personal
-
-    migrate_personal(path, backup=had_v7)
-    from .chapter_content_migration import migrate_chapter_content
-
-    migrate_chapter_content(path, backup=had_v7)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    exists = path.exists() and path.stat().st_size > 0
+    with sqlite3.connect(path) as db:
+        tables = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        if 'schema_versions' in tables and db.execute('SELECT 1 FROM schema_versions WHERE version=10').fetchone():
+            return
+        unknown = tables - set(SCHEMA) - set(REMOVED) - {'schema_versions', 'sqlite_sequence'}
+        if unknown:
+            raise RuntimeError('迁移遇到未知表，请先核对：' + ', '.join(sorted(unknown)))
+        if exists and not {'users', 'documents', 'personal_ai_jobs'} <= tables:
+            raise RuntimeError('此清理仅支持 V8/V9 数据库；请先备份并升级原版本')
+    if exists:
+        from .persistence import backup_data
+        backup_data(path, path.parent / 'backups' / ('before-v10-' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%f')))
+    with sqlite3.connect(path) as db:
+        db.execute('PRAGMA foreign_keys=OFF')
+        db.execute('BEGIN IMMEDIATE')
+        try:
+            if 'schema_versions' in tables and db.execute('SELECT 1 FROM schema_versions WHERE version=10').fetchone():
+                return
+            sequences = dict(db.execute('SELECT name,seq FROM sqlite_sequence')) if 'sqlite_sequence' in tables else {}
+            for name, sql in SCHEMA.items():
+                temporary = '_v10_' + name
+                db.execute(re.sub(r'^CREATE TABLE (?:"[^" ]+"|\w+)', 'CREATE TABLE ' + temporary, sql))
+                if name in tables:
+                    old = {r[1] for r in db.execute(f'PRAGMA table_info("{name}")')}
+                    columns = [r[1] for r in db.execute(f'PRAGMA table_info("{temporary}")') if r[1] in old]
+                    names = ','.join('"' + n + '"' for n in columns)
+                    db.execute(f'INSERT INTO "{temporary}" ({names}) SELECT {names} FROM "{name}"')
+                    if db.execute(f'SELECT COUNT(*) FROM "{temporary}"').fetchone()[0] != db.execute(f'SELECT COUNT(*) FROM "{name}"').fetchone()[0]:
+                        raise RuntimeError('保留数据行数不一致：' + name)
+            for name, in db.execute("SELECT name FROM sqlite_master WHERE type='view'").fetchall():
+                if name not in ('materials', 'knowledge'):
+                    raise RuntimeError('迁移遇到未知视图：' + name)
+                db.execute(f'DROP VIEW "{name}"')
+            for name in [*REMOVED, *SCHEMA]:
+                db.execute(f'DROP TABLE IF EXISTS "{name}"')
+            for name in SCHEMA:
+                db.execute(f'ALTER TABLE "_v10_{name}" RENAME TO "{name}"')
+            for name, seq in sequences.items():
+                if name in SCHEMA:
+                    db.execute('UPDATE sqlite_sequence SET seq=max(seq,?) WHERE name=?', (seq, name))
+            db.execute('CREATE TABLE IF NOT EXISTS schema_versions(version INTEGER PRIMARY KEY)')
+            db.execute('INSERT INTO schema_versions VALUES(10)')
+            # Remove retired directory bindings from stored personal request configs.
+            for ident, config, body in db.execute('SELECT id,config_json,body_json FROM personal_ai_jobs').fetchall():
+                data = json.loads(config)
+                for field in ('chapter_id','section_id','knowledge_ids'):
+                    data.pop(field, None)
+                db.execute('UPDATE personal_ai_jobs SET config_json=? WHERE id=?', (json.dumps(data, ensure_ascii=False), ident))
+                content = json.loads(body)
+                for question in content.get('questions', []):
+                    question.pop('chapter_id', None)
+                    question.pop('knowledge_ids', None)
+                db.execute('UPDATE personal_ai_jobs SET body_json=? WHERE id=?', (json.dumps(content, ensure_ascii=False), ident))
+            db.execute("CREATE UNIQUE INDEX personal_ai_one_running ON personal_ai_jobs(user_id) WHERE status='running'")
+            db.execute('CREATE INDEX document_owner ON documents(owner_id,category)')
+            db.execute('CREATE INDEX documents_visibility ON documents(category,deleted_at,published)')
+            db.execute('CREATE INDEX conversations_owner ON conversations(user_id,id)')
+            db.execute('CREATE INDEX sessions_expiry ON sessions(expires_at)')
+            if db.execute('PRAGMA foreign_key_check').fetchall():
+                raise RuntimeError('清理后外键校验失败，已回滚')
+            if db.execute('PRAGMA quick_check').fetchone()[0] != 'ok':
+                raise RuntimeError('清理后数据库完整性校验失败，已回滚')
+            db.commit()
+        except BaseException:
+            db.rollback()
+            raise

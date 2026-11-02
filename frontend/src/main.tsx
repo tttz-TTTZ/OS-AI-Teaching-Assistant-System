@@ -11,17 +11,12 @@ import {
 } from "react-router-dom";
 import "./style.css";
 import { AuthProvider, useAuth } from "./auth";
-import { courses } from "./api";
 import Home from "./pages/Home";
 import Materials from "./pages/Materials";
-import Practice from "./pages/Practice";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
 import PersonalLearning from "./pages/PersonalLearning";
 import LearningNotebook from "./pages/LearningNotebook";
-import LearningFeedback from "./pages/teacher/LearningFeedback";
-import TeacherQuestions from "./pages/teacher/Questions";
-import AIQuestions from "./pages/teacher/AIQuestions";
 import TeacherMaterials from "./pages/teacher/Materials";
 import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
@@ -30,12 +25,10 @@ const student = [
   ["dashboard", "学习首页"],
   ["materials", "课程资料"],
   ["ai-chat", "智能问答"],
-  ["practice", "章节练习"],
 ];
 const teacher = [
   ["dashboard", "教师工作台"],
   ["materials", "公共资料"],
-  ["questions", "练习题管理"],
   ["accounts", "账号管理"],
 ];
 function PersonalKnowledge() {
@@ -65,12 +58,6 @@ function Layout({ role }: { role: "student" | "teacher" }) {
   const notebook =
     role === "student" && location.pathname === "/student/ai-chat";
   const [error, setError] = useState("");
-  const [courseTitle, setCourseTitle] = useState("正在加载课程…");
-  useEffect(() => {
-    courses()
-      .then((data) => setCourseTitle(data[0]?.title || "暂无可用课程"))
-      .catch((e) => setError(e.message));
-  }, []);
   return (
     <div className={`layout ${role}${notebook ? " notebook-shell" : ""}`}>
       <aside>
@@ -106,7 +93,7 @@ function Layout({ role }: { role: "student" | "teacher" }) {
       </aside>
       <main>
         <div className="workspacebar">
-          <span>{courseTitle}</span>
+          <span>操作系统</span>
           <span>{role === "teacher" ? "教师工作区" : "学生工作区"}</span>
         </div>
         <Notice error={error} />
@@ -127,7 +114,7 @@ function Legacy() {
     "/knowledge": "dashboard",
     "/lab": "dashboard",
     "/chat": "ai-chat",
-    "/practice": "practice",
+    "/practice": "ai-practice",
   };
   return (
     <Navigate
@@ -155,18 +142,15 @@ function App() {
           path="basic-chat"
           element={<Navigate to="/student/ai-chat" replace />}
         />
-        <Route path="practice" element={<Practice />} />
+        <Route path="practice" element={<Navigate to="/student/ai-practice" replace />} />
         <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="/teacher" element={<Guard role="teacher" />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TeacherDashboard />} />
-        <Route path="learning-feedback" element={<LearningFeedback />} />
-        {["chapters/*", "sections/*", "knowledge/*", "experiments/*", "chapter-content/*", "ai-lessons"].map((path) => (
+        {["chapters/*", "sections/*", "knowledge/*", "experiments/*", "chapter-content/*", "ai-lessons", "questions", "ai-questions", "learning-feedback"].map((path) => (
           <Route key={path} path={path} element={<Navigate to="/teacher/dashboard" replace />} />
         ))}
-        <Route path="questions" element={<TeacherQuestions />} />
-        <Route path="ai-questions" element={<AIQuestions />} />
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="profile" element={<Profile />} />

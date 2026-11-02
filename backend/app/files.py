@@ -8,7 +8,7 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, Query
 from fastapi.responses import FileResponse
 from .auth import require_user
-from .access import read_document, visible_chapter, writable_document
+from .access import read_document, writable_document
 from .persistence import checked_file, storage_lock
 
 router = APIRouter(prefix="/api/materials")
@@ -39,8 +39,6 @@ def storage() -> Path:
 async def store_upload(
     file: UploadFile,
     user: dict,
-    chapter: str = "",
-    chapter_id: int | None = None,
     category: str = "personal",
     replace_id: int | None = None,
 ):
@@ -113,25 +111,10 @@ async def store_upload(
             content = content[:50000]
         name = (file.filename or "资料").replace("\\", "/").split("/")[-1][:200]
         with storage_lock(db_path()), database() as db:
-            selected = None
             if replace_id is not None:
                 # 暂存期间可能发生删除/撤回；提交时重新检查。
                 original = read_document(db, replace_id, user)
                 writable_document(original, user)
-            else:
-                row = (
-                    db.execute(
-                        "SELECT id FROM chapters WHERE id=?", (chapter_id,)
-                    ).fetchone()
-                    if chapter_id is not None
-                    else db.execute(
-                        "SELECT id FROM chapters WHERE title=? AND archived_at IS NULL ORDER BY id LIMIT 1",
-                        (chapter,),
-                    ).fetchone()
-                )
-                if (chapter or chapter_id is not None) and not row:
-                    raise HTTPException(422, "章节不存在")
-                selected = visible_chapter(db, row[0], user) if row else None
             # 范围内查重，不暴露其他用户的上传事实。
             duplicate = db.execute(
                 "SELECT id FROM documents WHERE sha256=? AND deleted_at IS NULL AND category=? AND (?='public' OR owner_id=?) AND (? IS NULL OR id<>?)",
@@ -178,19 +161,16 @@ async def store_upload(
                 document_id = replace_id
             else:
                 cur = db.execute(
-                    "INSERT INTO documents(title,content,chapter,category,original_name,stored_name,file_size,file_type,owner_id,chapter_id,course_id,sha256) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO documents(title,content,category,original_name,stored_name,file_size,file_type,owner_id,sha256) VALUES (?,?,?,?,?,?,?,?,?)",
                     (
                         name,
                         content,
-                        selected["title"] if selected else "",
                         category,
                         name,
                         target.name,
                         size,
                         suffix[1:],
                         user["id"],
-                        selected["id"] if selected else None,
-                        selected["course_id"] if selected else 1,
                         sha.hexdigest(),
                     ),
                 )
@@ -213,12 +193,10 @@ async def store_upload(
 @router.post("/upload", status_code=201)
 async def upload(
     file: UploadFile = File(...),
-    chapter: str = Form("", max_length=100),
-    chapter_id: int | None = Form(None),
     category: str = Form("personal"),
     user: dict = Depends(require_user),
 ):
-    return await store_upload(file, user, chapter, chapter_id, category)
+    return await store_upload(file, user, category)
 
 
 @router.post("/{material_id}/replace")

@@ -20,16 +20,12 @@ export interface Material {
   id: number;
   title: string;
   content: string;
-  chapter: string;
   category: string;
   file_type: string | null;
   file_size: number | null;
   original_name: string | null;
   owner_id: number | null;
-  chapter_id: number | null;
-  course_id: number;
   published: boolean;
-  knowledge_ids?: number[];
   summary: string;
   source_title: string;
   source_url: string;
@@ -147,14 +143,14 @@ export const api = {
     request<Material[]>(
       `/materials?limit=50&offset=${offset}${category === "all" ? "" : `&category=${category}`}`,
     ),
-  createMaterial: (body: Pick<Material, "title" | "content" | "chapter">) =>
+  createMaterial: (body: Pick<Material, "title" | "content">) =>
     request<Material>("/materials", {
       method: "POST",
       body: JSON.stringify(body),
     }),
   updateMaterial: (
     id: number,
-    body: Pick<Material, "title" | "content" | "chapter">,
+    body: Pick<Material, "title" | "content">,
   ) =>
     request<Material>(`/materials/${id}`, {
       method: "PUT",
@@ -169,26 +165,6 @@ export const api = {
     }),
 };
 
-export interface Chapter {
-  textbook_number?: number | null;
-  pdf_start?: number | null;
-  pdf_end?: number | null;
-  id: number;
-  title: string;
-  description: string;
-  course_id: number;
-  sort_order: number;
-  published: boolean;
-}
-export interface Knowledge {
-  id: number;
-  chapter_id: number;
-  title: string;
-  content: string;
-  lab_path: string | null;
-  published: boolean;
-  materials?: Material[];
-}
 export interface Health {
   status: string;
   database: string;
@@ -198,66 +174,17 @@ export interface Health {
   personal_ai_configured?: boolean;
   platform_revision?: string;
 }
-export interface Process {
-  pid: string;
-  arrival: number;
-  burst: number;
-}
-export interface Schedule {
-  results: (Process & {
-    start: number;
-    completion: number;
-    waiting: number;
-    turnaround: number;
-  })[];
-  timeline: { pid: string; start: number; end: number; idle: boolean }[];
-  average_waiting: number;
-  average_turnaround: number;
-}
-export interface Question {
-  id: number;
-  chapter_id: number;
-  prompt: string;
-  options: string[];
-}
-export interface Grade {
-  score: number;
-  total: number;
-  results: {
-    id: number;
-    selected: number;
-    correct: boolean;
-    answer: number;
-    explanation: string;
-  }[];
-}
 export const courseApi = {
-  chapters: () => request<Chapter[]>("/chapters"),
-  knowledge: (id: number) =>
-    request<Knowledge[]>(`/knowledge?chapter_id=${id}`),
-  detail: (id: number) => request<Knowledge>(`/knowledge/${id}`),
   health: () => request<Health>("/health"),
   upload: (
     file: File,
-    chapter: string,
     onProgress?: (percent: number) => void,
   ) => {
     const data = new FormData();
     data.append("file", file);
-    if (chapter) data.append("chapter_id", chapter);
     return uploadFile<Material>("/materials/upload", data, onProgress);
   },
-  fcfs: (processes: Process[]) =>
-    request<Schedule>("/labs/fcfs", {
-      method: "POST",
-      body: JSON.stringify({ processes }),
-    }),
-  questions: (id: number) => request<Question[]>(`/questions?chapter_id=${id}`),
-  submit: (answers: Record<number, number>) =>
-    request<Grade>("/practice/submit", {
-      method: "POST",
-      body: JSON.stringify({ answers }),
-    }),
+
 };
 
 export interface User {
@@ -294,33 +221,6 @@ export const authApi = {
   logout: () => request<void>("/auth/logout", { method: "POST" }),
 };
 
-export type ChapterInput = Pick<
-  Chapter,
-  | "title"
-  | "description"
-  | "sort_order"
-  | "published"
-  | "course_id"
-  | "textbook_number"
-  | "pdf_start"
-  | "pdf_end"
->;
-export type KnowledgeInput = Pick<
-  Knowledge,
-  "chapter_id" | "title" | "content" | "lab_path" | "published"
->;
-export interface ManagedQuestion extends Question {
-  answer: number;
-  explanation: string;
-  published: boolean;
-}
-export interface Course {
-  id: number;
-  title: string;
-  description: string;
-  published: boolean;
-  is_demo: boolean;
-}
 function save<T>(path: string, body: unknown, id?: number) {
   return request<T>(id ? `${path}/${id}` : path, {
     method: id ? "PUT" : "POST",
@@ -328,22 +228,12 @@ function save<T>(path: string, body: unknown, id?: number) {
   });
 }
 export const teacherApi = {
-  chapters: () => request<Chapter[]>("/teacher/chapters"),
-  saveChapter: (body: ChapterInput, id?: number) =>
-    save<Chapter>("/teacher/chapters", body, id),
-  deleteChapter: (id: number) =>
-    request<void>(`/teacher/chapters/${id}`, { method: "DELETE" }),
-  knowledge: () => request<Knowledge[]>("/teacher/knowledge"),
-  saveKnowledge: (body: KnowledgeInput, id?: number) =>
-    save<Knowledge>("/teacher/knowledge", body, id),
   documents: () => request<Material[]>("/teacher/documents"),
   saveDocument: (
     id: number,
     body: {
       title: string;
-      chapter_id: number | null;
-      knowledge_ids: number[];
-      published: boolean;
+          published: boolean;
       summary?: string;
       source_title?: string;
       source_url?: string;
@@ -351,20 +241,15 @@ export const teacherApi = {
   ) => save<Material>("/teacher/documents", body, id),
   uploadPublic: (
     file: File,
-    chapter_id: number | null,
     onProgress?: (percent: number) => void,
   ) => {
     const data = new FormData();
     data.append("file", file);
     data.append("category", "public");
-    if (chapter_id !== null) data.append("chapter_id", String(chapter_id));
     return uploadFile<Material>("/materials/upload", data, onProgress);
   },
-  questions: () => request<ManagedQuestion[]>("/teacher/questions"),
-  saveQuestion: (body: Omit<ManagedQuestion, "id">, id?: number) =>
-    save<ManagedQuestion>("/teacher/questions", body, id),
+
 };
-export const courses = () => request<Course[]>("/courses");
 
 export interface Account {
   id: number;
@@ -376,7 +261,6 @@ export interface Account {
 }
 export interface DocumentFilter {
   q?: string;
-  chapter_id?: number;
   trash?: boolean;
   published?: boolean;
   offset?: number;

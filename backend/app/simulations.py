@@ -1,13 +1,6 @@
-"""有边界的确定性教学状态机。不是实际操作系统、打印机或任意代码执行器。"""
-
-import json
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
-from .digital import Config, database, view_point, get
-from .auth import require_user
-
-router = APIRouter(prefix="/api")
-
+"""Pure compatibility renderer for saved personal learning animations."""
+from fastapi import HTTPException
+from .simulation_config import Config
 
 def simulate(config: Config):
     c = config
@@ -358,71 +351,3 @@ def simulate(config: Config):
         "frames": frames,
         "disclaimer": "教学简化模拟，不代表真实操作系统的完整实现。",
     }
-
-
-class Run(BaseModel):
-    block_id: str = Field(max_length=80)
-    revision_id: int = Field(ge=0)
-    config: Config
-
-
-@router.post("/learning-content/{ident}/run")
-def run(ident: int, body: Run, preview: bool = False, user=Depends(require_user)):
-    if preview and user["role"] != "teacher":
-        raise HTTPException(403, "仅教师可预览")
-    with database() as db:
-        data = view_point(db, get(db, "knowledge_points", ident), user, preview)
-        block = next(
-            (
-                b
-                for b in data["blocks"]
-                if b["id"] == body.block_id and b["kind"] == "interaction"
-            ),
-            None,
-        )
-        if not block or data["revision_id"] != body.revision_id:
-            raise HTTPException(409, "内容版本或交互块已改变")
-        if (
-            not block.get("config")
-            or body.config.template != block["config"]["template"]
-        ):
-            raise HTTPException(422, "不能改为未发布的组件模板")
-        trace = simulate(body.config)
-        # 学习探索不参与正式成绩；保存实际运行轨迹，不相信客户端直接上报“已掌握”。
-        db.execute(
-            "DELETE FROM interaction_runs WHERE user_id=? AND point_id=? AND completed=0 AND id NOT IN (SELECT id FROM interaction_runs WHERE user_id=? AND point_id=? ORDER BY id DESC LIMIT 20)",
-            (user["id"], ident, user["id"], ident),
-        )
-        rid = db.execute(
-            "INSERT INTO interaction_runs(user_id,point_id,revision_id,block_id,trace) VALUES (?,?,?,?,?)",
-            (
-                user["id"],
-                ident,
-                body.revision_id,
-                body.block_id,
-                json.dumps(trace, ensure_ascii=False),
-            ),
-        ).lastrowid
-        return {**trace, "id": rid}
-
-
-class Complete(BaseModel):
-    last_step: int = Field(ge=0, le=2000)
-
-
-@router.post("/interaction-runs/{ident}/complete")
-def complete(ident: int, body: Complete, user=Depends(require_user)):
-    with database() as db:
-        row = db.execute(
-            "SELECT * FROM interaction_runs WHERE id=? AND user_id=?",
-            (ident, user["id"]),
-        ).fetchone()
-        if not row:
-            raise HTTPException(404, "运行记录不存在")
-        data = view_point(db, get(db, "knowledge_points", row["point_id"]), user)
-        if row["revision_id"] != data["revision_id"]:
-            raise HTTPException(409, "教材已更新，请运行新版本")
-        if body.last_step != len(json.loads(row["trace"])["frames"]) - 1:
-            raise HTTPException(422, "请先观察完整事件序列")
-        db.execute("UPDATE interaction_runs SET completed=1 WHERE id=?", (ident,))
-        return {"ok": True, "meaning": "记录完成观察操作，不代表客观证明掌握"}

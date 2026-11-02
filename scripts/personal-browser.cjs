@@ -1,7 +1,7 @@
 const path = require("node:path");
 const fs = require("node:fs");
 const { execFileSync } = require("node:child_process");
-async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
+async function verifyPersonal({ t, s, b, base, studentName, apiCall }) {
   let generationRequests = 0;
   let lastGeneration;
   const countGeneration = request => {
@@ -18,7 +18,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
       body: JSON.stringify({
         configured: true,
         model: "mock-notebook-test",
-        daily_limit: 20,
+        daily_limit: 0,
       }),
     }),
   );
@@ -39,7 +39,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
     });
   });
   await s.route("**/api/student/personal/jobs", r => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({detail: "测试：历史暂时不可用"}) }));
-  await s.goto(base + `/student/ai-chat?chapter=${cid}`);
+  await s.goto(base + "/student/ai-chat");
   await s
     .getByRole("heading", { name: "操作系统 · 智能问答", exact: true })
     .waitFor();
@@ -75,7 +75,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await sourceCheckbox.uncheck();
   const beforeEmptySources = generationRequests;
   await s.getByRole("region", {name: "学习工具", exact: true}).getByRole("button", { name: "知识讲解", exact: true }).click();
-  await s.getByRole("alert").filter({hasText: "请先在左侧选择课程和至少一份资料"}).waitFor();
+  await s.getByRole("alert").filter({hasText: "请先在左侧选择至少一份资料"}).waitFor();
   if (generationRequests !== beforeEmptySources) throw Error("取消勾选后仍发起生成");
   await sourceCheckbox.check();
   await s.getByLabel("提问或创作学习内容", { exact: true }).fill("");
@@ -292,12 +292,8 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   await s.getByRole("button", { name: "展开来源", exact: true }).click();
   // End-to-end pilot: four actual PPTX uploads, automatic range validation,
   // map -> cached flashcards -> persisted evidence and downloadable report.
-  const sections = await (await apiCall(s, "get", base + `/api/sections?chapter_id=${cid}`)).json();
-  const selectedSection = sections.find(x => x.chapter_id === cid);
-  if (!selectedSection) throw Error("验收缺少已发布小节");
   const decks = JSON.parse(execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "pilot_fixture.py"), "--four"], { encoding: "utf8" }));
-  await s.goto(base + `/student/ai-chat?chapter=${cid}`);
-  await s.getByLabel("笔记本课程小节", { exact: true }).selectOption(String(selectedSection.id));
+  await s.goto(base + "/student/ai-chat");
   for (let i = 0; i < 4; i++) {
     const response = s.waitForResponse(r => r.url().includes("/api/materials/upload") && r.request().method() === "POST");
     await s.getByLabel("上传我的学习来源", { exact: true }).setInputFiles({name: `试点多课件${i}.pptx`, mimeType: "application/vnd.openxmlformats-officedocument.presentationml.presentation", buffer: Buffer.from(decks[i % decks.length], "base64")});
@@ -329,7 +325,7 @@ async function verifyPersonal({ t, s, b, base, studentName, cid, apiCall }) {
   s.off("request", countGeneration);
   await t.goto(base + "/teacher/dashboard");
   await t
-    .getByRole("heading", { name: "今天准备哪一部分课程？", exact: true })
+    .getByRole("heading", { name: "教师工作台", exact: true })
     .waitFor();
   console.log(
     "PASS Notebook学习工作台模拟联调：三栏来源/对话/Studio、个人上传、导图/代码/闪卡翻面、移除动画入口、笔记收藏刷新、自测作答与隔离、桌面与窄屏（未调用真实模型）",

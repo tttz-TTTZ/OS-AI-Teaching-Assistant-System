@@ -1,219 +1,49 @@
-# 操作系统课程 AI 助教系统 · V0.3（第三版本）
+# 操作系统课程 AI 助教系统 · V0.3
 
-移除学生端知识点学习、算法实验，以及教师端课程目录、知识点内容、算法实验管理。保留课程资料、智能问答、AI 自测、章节练习、题库、账号和已有记录。详见 [第三版本说明](docs/V0.3.md)。
+以资料和个人智能问答为核心。教师管理公共资料与账号；学生查看公共资料、上传个人资料、连续提问，并生成讲解、导图、闪卡和个人自测。
 
-以下为历史版本记录，其中已移除模块的入口不再适用于 V0.3。
+旧课程目录、知识点教材、算法实验、教师题库/AI出题和学生正式章节练习已移除，数据库存储也一并清理。个人 AI 自测和已有个人学习成果保留。
 
-> 导图/闪卡引用修复：[原文编号与耗时诊断](docs/DISTILLATION-EVIDENCE-FIX.md)。提炼时选择后端原文编号，减少重抄引文失败；保留引用校验和成功批次缓存，日志显示各阶段耗时。更新后须重启后端。
+**已有安装先阅读 [数据库清理与 Windows 更新说明](docs/DATABASE-CLEANUP.md)。** 首次启动自动备份现有数据库及上传文件，再进行 schema 10 迁移；不要删除整个 data 或 uploads 目录。
 
-> 学习记录：[第一次问答追踪与检索排查](docs/learning/01-question-trace.md)，含实际请求、Python实验、零分过滤结果和能力边界；[下一步检索升级设计](docs/learning/02-retrieval-upgrade-design.md)说明查询预处理、命中分析与评测，后续方案尚未实现。
+## 开发运行
 
-> 检索学习修复：[零分过滤与终端日志](docs/RETRIEVAL-FILTER-LOGS.md)。普通提问过滤0分片段；后端显示检索入口、过滤前后分数，以及未选资料/开关关闭/通用解释的原因。无需手工加print；更新前保留本地学习修改，见说明。
+后端使用 Python、FastAPI、SQLite；前端使用 React、TypeScript、Vite。依赖分别在 `backend/requirements.txt` 与 `frontend/package-lock.json`。
 
-> 最新位置修正：[第四章迁移与页表拆分](docs/CHAPTER04-LOCATION-FIX.md)。按用户确认，误放到同步/死锁章的存储管理内容迁往同课程正确目标，编号改为4.*；4.3.5反置页表、4.3.6多级页表独立，合计13单元。更新重启后唯一定位即备份修复；保留原ID、历史与笔记，精确归档旧死锁示例，重复启动不覆盖修改。教师入口改为“第四章存储管理”，原第三章报告与旧链接保留兼容。
-
-> 第三章已支持[一键应用并发布全部内容](docs/CHAPTER03-DIRECT-PUBLISH.md)：按最新授权无需逐项审核。教师从“第三章一键发布”选择实际目标章，直接发布12单元；已导入草稿也可一键发布。保留备份、事务校验和后续修改，重复操作不恢复撤回内容。
-
-> 第三章第一批已接入：[使用、数据保护、Windows启动与验收](docs/CHAPTER03-FIRST-BATCH.md)。教师进入“第三章一键发布”，明确选择真实课程/章后应用并发布；仍可选择只保存草稿。复用6幅关系图、9幅静态流程图和原阅读/笔记；保留28项待核实，不增加存储管理算法引擎或机制动画，不自动覆盖或在启动时发布。
-
-> 第3章《存储管理》报告已复核：[完整V1.1、PDF/Word/ZIP与Codex实施入口](docs/reports/chapter-03/README.md)。6份PPTX、118物理页，21条分析记录建议12学习单元；保留28项待核实/待定协议。本次只提交文档，未实现新算法、动画或课程导入。
-
-> 第二章旧示例清理：按用户要求移除“进程与线程”“先来先服务 FCFS”两个旧学习条目。已直接发布第二章的安装更新并重启后端自动处理；先备份、仅归档指定旧条目，保留新版12单元、3个实验、个人记录和其他章节。[说明](docs/CHAPTER02-FIRST-BATCH.md)。
-
-> 第二章第一批已接入：[使用、数据兼容、Windows启动与验收](docs/CHAPTER02-FIRST-BATCH.md)。教师从“第二章预填与审核”进入，选择目标目录后可**直接应用并发布**12个知识单元及3份FCFS/SJF/RR实验，无需逐项审核。发布前备份、实际校验；重复操作不覆盖后续修改。学生发布后沿用知识学习入口，无新迁移或运行依赖。
-
-> 第二章报告已整理：[网页阅读及PDF/Word/ZIP下载](docs/reports/chapter-02/README.md)，[交给Codex的实施指令](docs/reports/chapter-02/IMPLEMENTATION.md)。完整V1.1报告含质量复核、来源与边界；本次为文档交付，尚未修改第二章应用功能或课程数据。
-
-> 学生知识学习已优化：[阅读与交互说明](docs/KNOWLEDGE-READING-UX.md)。来源及编写待办仅保留在教师端；学生按路线阅读，可选择图示节点、逐条看分支、缩放，并进入实际关联实验。重启生效，无需再次导入。
-
-> 第一章现在按项目负责人授权**自动替换并发布**，无需逐项审核。更新并重启后端时执行一次：先成套备份，归档旧知识点，发布16项内容和RR实验；以后重启不覆盖人工修改。[更新说明与限制](docs/CHAPTER01-DIRECT-APPLY.md)。
-
-> 第一章内容已填写：[审核说明与完整正文](docs/CHAPTER01-CONTENT-REVIEW.md)。教师端 `/teacher/chapter-content` 直接阅读；选择目标章后一键保存16项内容及1个RR实验草稿，审核后再发布。仅依据四份PPT分析报告，不使用教材PDF；K012暂缓，原图和代码核验状态保留。
-
-# 操作系统课程 AI 助教系统 · V0.2 课程与算法实验平台
-
-**直接问答与复习修复：** 中间输入框可不选资料直接提问、连续追问并刷新保留；右侧用于制作学习材料。导图和闪卡默认完整文字提炼，无需开启试点开关，可整理本章多个相关课件。个人测验修复单选框/选项错位。[行为、更新与验收说明](docs/QUESTION-FIRST-REVIEW.md)。
-
-**小节知识提炼试点：** 智能问答新增“完整提炼试点（导图 / 闪卡）”，勾选资料并选好等级后点击导图或闪卡即可直接生成，范围校验自动完成；全部可提取正文分批提炼、去重合并、保留逐页依据，导图与闪卡复用知识。支持断点恢复及报告下载，无新增依赖/数据库迁移。[使用步骤、合成对比与验证边界](docs/SECTION-KNOWLEDGE-PILOT.md)。
-
-**智能问答调用修复：** 拆分DeepSeek错误原因、兼容服务地址及JSON围栏/文本块、按任务约定讲解/闪卡/测验结构；修复初始化依赖、资料概览和失败重试动线。智能问答动画生成已移除，独立算法实验保留。[更新与故障排查](docs/AI-LEARNING-RELIABILITY.md)。
-
-**当前入口已重新分工：** 「知识点学习」恢复教师编写、审核发布和学生按章/节阅读；三栏资料—对话—Studio工作台移到「智能问答」。讲解、导图、闪卡、代码、总结、AI自测全部保留，个人记录不删除。教师不再被限制为只上传资料，也可继续维护正式知识点内容。[本轮使用、兼容与验收说明](docs/KNOWLEDGE-AND-AI-WORKSPACES.md)。
-
-**导图与界面精简：** 智能问答顶部只保留标题与返回首页，新话题在对话区；导图以 SVG 绘制，支持 PNG/SVG 下载及 XMind 文件导出。[功能说明与后续 GitHub 调研待办](docs/MINDMAP-EXPORT.md)。
-
-**兼容与边界：** 重复的基础问答页面已移除；旧地址自动跳到智能问答；旧知识学习中的AI任务链接自动跳转到智能问答。原教师AI自动备课写接口仍停用，恢复的是人工内容编辑与发布。旧PPT提取继续供出题和学生学习使用。本轮无数据库迁移、无新增依赖，不修改已有资料、账号或学习记录。
-
-**DeepSeek辅助出题：** 教师选择公共资料或上传私有出题资料，预览摘录后生成候选题，自动填写题目编辑器，逐题审核为草稿后再发布。[配置与使用指南](docs/AI-QUESTION-GENERATION.md)。需配置后端DEEPSEEK_API_KEY、新增pypdf依赖并重启；首次追加V6表，迁移前备份。真实模型调用尚待密钥验证。
-
-**大课件升级：** 公共 PPT/PPTX 最高500 MiB，个人课件50 MiB；有上传进度，PPTX支持按页阅读文字，完整排版/动画下载原件查看。[安装、使用与边界](docs/PRESENTATION-MATERIALS.md)。需补装 `olefile` 并重启后端，无新增数据库迁移。
-
-**算法实验平台升级：** 教师分步配置、试运行和发布 FCFS/SJF/RR 教学实验；学生运行回放、记录观察并返回关联知识点。[更新、迁移与验收指南](docs/EXPERIMENT-PLATFORM.md)。本次有 V5 新增表迁移，重启后端前自动备份；无需新增依赖。
-
-**学生知识点界面已改版：** 独立课程目录 → 全宽逐模块阅读与动画 → 练习巩固；相关资料、笔记与反馈分别查看。参见 [学生学习与更新指南](docs/STUDENT-LEARNING-UX.md)。该界面改版本身无新依赖或迁移；最新实验升级迁移见上文。
-
-**正式课程知识点：** 已恢复教师内容编辑、预览发布与学生阅读入口。[历史教师操作指南](docs/TEACHER-AUTHORING-UX.md)。
-
-**知识点数字教材试用升级：** 已增加可修改章/节/编号/页码、内容块、草稿发布版本、受控图片、教学交互、多题型练习和账号学习记录。先看 [更新与验收步骤](docs/DIGITAL-TEXTBOOK-DELIVERY.md)。不自动导入尚未校对的12点正式内容，不删除旧数据；本轮需补装后端Pillow依赖。
-
-一个前端、一个 FastAPI 后端、一套 SQLite 数据库的本地课程平台。**现有实际技术栈为 React 19 + TypeScript + Vite，用户已确认继续沿用 React。** 教师和学生使用独立路由布局，复用组件；没有换框架或引入微服务。
-
-**当前进度与 VS Code 继续开发：先读 [docs/CODEX-HANDOFF.md](docs/CODEX-HANDOFF.md)。账号、独立标签登录、资料回收站与成套备份已增量实现，Windows/阿里云部署仍待实机验收；本页原V0.2细节以交接文档为准。**
-
-需求依据：[docs/requirements.md](docs/requirements.md)。设计与迁移：[docs/V02-DESIGN.md](docs/V02-DESIGN.md)。接口：[docs/API.md](docs/API.md)。测试及逐项验收：[docs/ACCEPTANCE.md](docs/ACCEPTANCE.md)。
-
-## 已实现范围
-
-| 模块 | 功能 |
-|---|---|
-| 账号 | Argon2id 密码哈希；登录、退出、当前用户；8 小时服务端会话、角色路由、CSRF、过期提示 |
-| 教师 | 章节增改删与顺序；知识点增改、章节/实验关联；公共 PDF/TXT 上传、知识点多选关联；发布/取消发布；多题型题库与知识点关联 |
-| 学生 | 已发布课程章节与知识点；分模块结构化教材、草稿发布版本、教学互动、基础 Markdown；公共资料；仅本人的个人文件上传/查看/下载/删除 |
-| 学习功能 | FCFS/SJF/RR 教学实验、版本与本人运行观察；原 FCFS API、AI 接口、人工章节练习与后端判分继续保留 |
-| 数据 | 兼容迁移、迁移前数据库/文件备份、旧数据隔离保留、可重复初始化 |
-
-课程为演示数据，不代表学校正式教学资料。首页“继续学习”只使用本浏览器会话中当前账号的实际知识点访问，不展示虚构进度或学习统计。
-
-## Windows 11 + VS Code + PowerShell
-
-要求 Python 3.12（建议）、Node.js 22+。VS Code 打开项目根目录。无需激活 venv，不需要修改 PowerShell 执行策略：
+Windows 在项目根目录：
 
 ```powershell
-# 1. 安装依赖
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
-npm.cmd --prefix frontend ci
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -r backend\requirements.txt
+npm --prefix frontend ci
+```
 
-# 2. 初始化/兼容迁移数据库，不会删除现有数据
+后端（单独终端）：
+
+```powershell
 cd backend
-..\.venv\Scripts\python.exe init_db.py
-
-# 3. 创建自己的本地测试账号，各命令都会安全提示输入并确认密码
-..\.venv\Scripts\python.exe manage.py --username myteacher --role teacher
-..\.venv\Scripts\python.exe manage.py --username mystudent --role student
-# 可再创建第二个学生，用于验证个人文件隔离
-..\.venv\Scripts\python.exe manage.py --username secondstudent --role student
-
-# 4. 启动后端；保持此终端运行
-..\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+..\.venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-密码至少 12 字、最多 128 字；**没有默认密码或默认生产账号；学生可在网页自行注册，教师账号由管理员分配**。脚本重复执行不会覆盖已有用户（同名会明确报错）。测试账号只用于自己的本地开发环境。
-
-新开第二个 PowerShell 终端，从项目根目录启动前端：
+前端（项目根目录另一终端）：
 
 ```powershell
-npm.cmd --prefix frontend run dev -- --strictPort
+npm --prefix frontend run dev
 ```
 
-本机浏览器地址栏输入 `http://127.0.0.1:5173/login`，选择学生端或教师端。学生可点击“注册学生账号”进入 `/register`，注册成功后返回学生入口登录；教师入口只有登录，不提供教师自注册。脚本创建学生账号是可选的本地测试方式。教师登录后进入 `/teacher/dashboard`，学生进入 `/student/dashboard`。接口文档地址输入 `http://127.0.0.1:8000/docs`。文件上传需登录及 CSRF；Swagger 中可先调用登录和 me 获取 csrf_token，再在需写入的请求中使用 `X-CSRF-Token`（常规操作建议用前端）。
+后端配置见 `backend/.env.example`，复制为 `backend/.env` 后在本机填写密钥。个人学习使用 `DEEPSEEK_*`；个人每日任务默认不限，已有 `PERSONAL_AI_DAILY_LIMIT=20` 请改为 `0` 并重启。资料大小、单任务并发及模型服务商限制仍然适用。密钥不得提交至 Git。
 
-要同时验收教师和学生，可自行新建浏览器标签页，打开 `/login` 分别登录。侧栏不展示额外的多账号入口。新前端用标签上下文选择不同HttpOnly会话Cookie，刷新保持各自账号，退出一个标签不会退出另一个账号。复制已登录标签时，新副本会进入登录页；原标签保持身份。登录页支持重新选择教师或学生账号。新请求不会接受旧身份延迟返回的数据或过期通知；文件查看/下载链接会携带非秘密的上下文选择器，真实登录令牌仍不存于JavaScript存储。
+首次安装学生可自行注册；教师/管理员账号在 backend 目录运行 `..\.venv\Scripts\python manage.py --username 教师用户名 --role teacher --admin` 创建（密码交互输入），不开放网页注册教师。已有账号和密码在本次迁移中保留。
 
-## Linux / macOS
+## 验证
 
-```bash
-bash scripts/install.sh
+```powershell
 cd backend
-../.venv/bin/python init_db.py
-../.venv/bin/python manage.py --username myteacher --role teacher
-../.venv/bin/python manage.py --username mystudent --role student
+..\.venv\Scripts\python -m pytest -q
 cd ..
-# 终端一
-bash scripts/backend.sh
-# 终端二
-npm --prefix frontend run dev -- --strictPort
+npm --prefix frontend run build
 ```
 
-默认只监听回环地址。Vite `/api` 代理后端，前端与 API 同源，不需要放开跨域。
+浏览器验收脚本为 `scripts/v03-browser.cjs`，仅对隔离验收服务使用；通过 `TEST_ACCOUNTS_FILE` 指定临时教师/学生账号文件。
 
-## AI 可选配置
-
-复制 `backend/.env.example` 为 `backend/.env`，只在后端安全填写：
-
-```dotenv
-LLM_MODE=openai
-LLM_API_KEY=请在本地安全填入自己的密钥
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
-DATABASE_PATH=data/assistant.db
-```
-
-修改后重启后端。无密钥时 AI 接口明确返回 503“尚未配置 AI 服务”，不影响课程、资料、算法和练习。OpenAI 兼容服务可修改 HTTPS 地址与模型。显式 `LLM_MODE=mock` 仅供演示测试，不代表真实模型调用。
-
-密钥不能加 `VITE_` 前缀、不能写入前端、不能提交 `.env`。后端进程环境变量优先于 `.env`。每次聊天为单问调用，不携带完整多轮历史；成功问答仅所属账号可查询。未实现 RAG 或可靠资料溯源。
-
-## 自动测试
-
-从根目录执行：
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
-npm.cmd --prefix frontend run build
-# 可选：准备 Playwright 浏览器（仅首次需要）
-cd frontend
-npx.cmd playwright install chromium
-cd ..
-# 使用独立临时数据库、随机账号和服务端口，不写个人数据库
-.\.venv\Scripts\python.exe scripts\verify_v02.py
-```
-
-Linux 使用 `.venv/bin/python`。如果已有系统 Chromium，验收脚本会自动使用 `/usr/bin/chromium`；也可设置 `BROWSER_EXECUTABLE` 为实际浏览器路径。
-
-`verify_v02.py` 自动在 8010/5174 启动隔离的后端/前端，创建临时随机密码并运行 HTTP + 浏览器验收，结束后停止自己启动的服务并删除临时目录；不读取你的真实 AI 密钥做收费调用。需要 Node、前端依赖与可用浏览器。该命令可能需要十余秒，端口占用时应先停止自己的冲突进程。
-
-对已运行的本地系统，仅做实际接口冒烟：
-
-```powershell
-.\.venv\Scripts\python.exe scripts\smoke.py --username mystudent
-```
-
-交互输入学生密码；会创建再删除一份临时个人资料，不修改课程。默认示例章节需存在。AI 未配置时检查 503，不主动调用收费模型。
-
-## 数据库与备份
-
-默认数据库 `backend/data/assistant.db`，上传目录 `backend/data/uploads`。均被 Git 忽略。迁移前自动在 `backend/data/backups/<UTC时间>/` 保存数据库一致性快照和 uploads 副本；失败时不会进入新结构迁移。升级前仍建议停止后端，额外备份整个 data 目录。
-
-V0.1 `materials`、`knowledge` 重命名为 `documents`、`knowledge_points`，保留 ID 和原有字段，并保留旧名称的只读视图；新增所有者、章节 ID、发布状态、用户、会话、课程和资料知识点关系。不要继续用旧表名写数据。初始化会自动补齐旧版本，重复运行不会重复插入演示内容。
-
-**旧的个人资料和问答没有可靠所有者，升级后保留在数据库和文件目录但对新账号不可见。** 不会自动归给第一个学生，也不会公开给教师。需要恢复归属时应另做经过明确确认的管理员数据迁移。本轮没有提供随意认领入口。旧公共资料保持公开演示属性，章节名称尽可能映射为 ID；知识点显式关联由教师维护。
-
-删除章节仅允许删除空章，有关联知识点、题目或资料时返回 409，不级联删除。取消发布优先于删除。恢复备份时应停止服务，保存当前目录后再整体恢复匹配的数据库及上传文件，不要混用两个时点的数据。
-
-## 结构与阅读顺序
-
-```text
-backend/app/
-  migrations.py    版本迁移、备份与 V0.1 兼容
-  auth.py          Argon2、Cookie 会话、CSRF、角色依赖
-  access.py        内容可见性与资料所有权
-  teaching.py      教师章节/知识点/资料元数据/题目接口
-  learning.py      已发布课程、章节、知识点、练习与 FCFS
-  files.py         上传、受控存储、授权下载
-  main.py          生命周期、资料 CRUD、现有 AI 与问答记录
-  algorithms.py    不依赖数据库和 AI 的 FCFS 纯函数
-frontend/src/
-  auth.tsx         登录状态恢复与上下文
-  main.tsx         双角色路由、守卫与布局、旧路由兼容跳转
-  api.ts           请求封装、CSRF、401 处理、类型
-  pages/teacher/   教师管理表格和表单
-  pages/           学生学习页面与 Login
-  Markdown.tsx     受控标签的基础正文排版，不执行 HTML
-scripts/           安装/启动、接口冒烟、隔离浏览器验收
-```
-
-先理解 `auth.py → access.py → teaching.py`：前端守卫负责界面，后端身份/角色/所有者检查负责实际权限。课程发布规则同时应用于列表、知识点详情、文件直链和问答资料上下文。
-
-## 常见问题与边界
-
-- `npm.ps1` 受执行策略限制：使用 `npm.cmd`，无需修改系统策略。
-- `No module named app`：启动后端、运行 init_db/manage 时先进入 backend；pytest 从根目录执行。
-- 401：未登录或 8 小时会话过期，重新登录；403：角色不足、CSRF 过期或请求来源错误。
-- 刷新后跳登录：检查后端是否运行，是否禁用 Cookie，是否混用了 localhost 与 127.0.0.1。Cookie 不存于 localStorage。
-- 看不到刚创建的内容：检查课程、章节和内容本身的发布状态；公共文件上传后默认草稿。
-- 上传：仅非空 PDF / UTF-8 TXT，教师公共PDF ≤150 MiB，TXT/个人文件 ≤10 MiB；请求解析前限制并磁盘暂存；随机存储名、编码/文件头检查、授权文件访问。不是杀毒或完整 PDF 格式审查；PDF 未抽取正文，TXT 最多提取 50000 字。
-- Vite 端口/代理改变：默认 API 在 8000、前端 5173。可用 `API_PROXY_TARGET` 覆盖代理目标，并同步后端 `APP_ORIGINS`（逗号分隔的准确前端 Origin）；不要添加任意公网来源。
-- 测试浏览器下载失败：本机执行 `npx playwright install chromium`；在云环境可用已有系统 Chromium。Windows 实机和真实 AI 仍需你本机验收。
-- 开发脚本不含密码重置；忘记密码应另做管理员恢复操作，不能直接删库。
-
-本轮没有公网部署、登录防暴力破解与完整审计/找回密码、生产 TLS、课程选课/授课分配、PPTX、SJF、完整 Markdown/RAG、AI 出题、主观题评分或正式学习记录。新增登录不代表已经达到生产安全标准；继续仅在可信本地开发运行。
+`docs` 中其他文档为历史设计和报告；已删除模块的旧入口、旧数据表及初始化流程不适用于当前版本。GitHub 推送、应用部署与编辑环境发布彼此独立。

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Chapter, courseApi, documentApi, Material } from "../api";
-import { digitalApi, Section } from "../digital";
+import { courseApi, documentApi, Material } from "../api";
 import { useAuth } from "../auth";
 import {
   Evidence,
@@ -56,10 +55,6 @@ export default function LearningNotebook() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const jobId = Number(params.get("job"));
-  const [chapters, setChapters] = useState<Chapter[]>([]),
-    [sections, setSections] = useState<Section[]>([]);
-  const [chapter, setChapter] = useState(Number(params.get("chapter")) || 0),
-    [section, setSection] = useState(0);
   const [documents, setDocuments] = useState<Material[]>([]),
     [chosen, setChosen] = useState<Record<number, Material>>({}),
     [sources, setSources] = useState<PersonalSource[]>([]);
@@ -131,19 +126,11 @@ export default function LearningNotebook() {
     let alive = true;
     // Optional data failures must not disable all AI tools.
     Promise.allSettled([
-      courseApi.chapters(),
-      digitalApi.sections(),
       personalApi.status(),
       personalApi.jobs(),
-    ]).then(([cs, ss, state, hs]) => {
+    ]).then(([state, hs]) => {
       if (!alive) return;
       const failures: string[] = [];
-      if (cs.status === "fulfilled") {
-        setChapters(cs.value);
-        setChapter((c) => c || cs.value[0]?.id || 0);
-      } else failures.push("课程目录加载失败：" + cs.reason.message);
-      if (ss.status === "fulfilled") setSections(ss.value);
-      else failures.push("小节目录加载失败：" + ss.reason.message);
       if (state.status === "fulfilled") setStatus(state.value);
       else
         failures.push(
@@ -192,7 +179,7 @@ export default function LearningNotebook() {
       const answer = immediateAnswer.current;
       immediateAnswer.current = null;
       setJob(answer);
-      setChapter(answer.chapter_id);
+
       setParents([]);
       setNote(answer.note);
       setBookmarked(!!answer.bookmarked);
@@ -215,8 +202,7 @@ export default function LearningNotebook() {
       .then(async (j) => {
         if (!alive) return;
         setJob(j);
-        setChapter(j.chapter_id);
-        setSection(j.config.section_id || 0);
+
         // Historical records keep their original range; new requests use the
         // whole documents selected in the single source checklist.
         setSources(j.config.sources.map(({ document_id }) => ({
@@ -274,16 +260,12 @@ export default function LearningNotebook() {
     invalidate();
   }
   const config = (mode: Mode | "practice"): PersonalConfig => ({
-    chapter_id: chapter,
-    section_id: section || null,
     analysis_mode:
       mode === "map" || mode === "flashcards" ? "section" : "quick",
     sources,
     topic:
       mode === "map" || mode === "flashcards"
         ? prompt.trim() ||
-          sections.find((s) => s.id === section)?.title ||
-          chapters.find((c) => c.id === chapter)?.title ||
           "课程知识复习"
         : job?.config.topic ||
           prompt.trim() ||
@@ -307,8 +289,8 @@ export default function LearningNotebook() {
     if (busy || uploading || loading) return;
     if (noteDirty && !window.confirm("笔记尚未保存，确定先生成新内容吗？"))
       return;
-    if (!chapter || !sources.length) {
-      setError("请先在左侧选择课程和至少一份资料。");
+    if (!sources.length) {
+      setError("请先在左侧选择至少一份资料。");
       return;
     }
     const body = config(mode);
@@ -376,7 +358,7 @@ export default function LearningNotebook() {
         { ...result, config_json: JSON.stringify(result.config) },
         ...old.filter((h) => h.id !== result.id),
       ]);
-      setParams({ chapter: String(chapter), job: String(result.id) });
+      setParams({ job: String(result.id) });
       setJob(result);
       setPrompt("");
       setTimeout(
@@ -412,7 +394,6 @@ export default function LearningNotebook() {
     try {
       const answer = await personalApi.ask(
         question,
-        chapter,
         job?.status === "ready" ? job.id : null,
         sources,
         useSources,
@@ -426,7 +407,7 @@ export default function LearningNotebook() {
         ...old.filter((h) => h.id !== answer.id),
       ]);
       immediateAnswer.current = answer;
-      setParams({ chapter: String(answer.chapter_id), job: String(answer.id) });
+      setParams({ job: String(answer.id) });
       setJob(answer);
       setPrompt("");
     } catch (e) {
@@ -449,7 +430,6 @@ export default function LearningNotebook() {
     try {
       const d = await courseApi.upload(
         file,
-        chapter ? String(chapter) : "",
         setProgress,
       );
       setChosen((old) => ({ ...old, [d.id]: d }));
@@ -479,13 +459,13 @@ export default function LearningNotebook() {
       return;
     }
     if (noteDirty && !window.confirm("笔记未保存，确定先离开吗？")) return;
-    setParams({ chapter: String(chapter), job: String(id) });
+    setParams({ job: String(id) });
     setMessage("");
   }
   function newTopic() {
     if (noteDirty && !window.confirm("笔记未保存，确定新建话题吗？")) return;
     epoch.current++;
-    setParams({ chapter: String(chapter) });
+    setParams({});
     setJob(undefined);
     setParents([]);
     setPrompt("");
@@ -520,9 +500,7 @@ export default function LearningNotebook() {
       setBusy(false);
     }
   }
-  const visibleDocs = documents.filter(
-    (d) => category === "personal" || !d.chapter_id || d.chapter_id === chapter,
-  );
+  const visibleDocs = documents;
   const current = job?.body.modules?.[moduleIndex];
   const selectedTitle = (id: number) =>
     chosen[id]?.title ||
@@ -564,48 +542,6 @@ export default function LearningNotebook() {
               <h2>来源</h2>
               <span>{sources.length}/5 已选</span>
             </div>
-            <label className="notebook-label">
-              课程章节
-              <select
-                aria-label="笔记本课程章节"
-                value={chapter}
-                disabled={busy}
-                onChange={(e) => {
-                  setChapter(Number(e.target.value));
-                  setSection(0);
-                  setSources([]);
-                  setParams({ chapter: e.target.value });
-                  invalidate();
-                }}
-              >
-                {!chapters.length && (
-                  <option value={0}>等待教师发布课程</option>
-                )}
-                {chapters.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <select
-              aria-label="笔记本课程小节"
-              value={section}
-              disabled={busy}
-              onChange={(e) => {
-                setSection(Number(e.target.value));
-                invalidate();
-              }}
-            >
-              <option value={0}>全部小节 / 自选主题</option>
-              {sections
-                .filter((s) => s.chapter_id === chapter)
-                .map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.code} {s.title}
-                  </option>
-                ))}
-            </select>
             <input
               ref={fileInput}
               type="file"
@@ -669,7 +605,7 @@ export default function LearningNotebook() {
               ) : (
                 <p className="notebook-empty-small">
                   {category === "public"
-                    ? "本章暂无匹配的公共资料，请等待教师发布，或选择其他章节。"
+                    ? "暂无匹配的公共资料，可调整搜索或上传个人资料。"
                     : "还没有匹配的个人资料，可以直接上传。"}
                 </p>
               )}
@@ -962,7 +898,7 @@ export default function LearningNotebook() {
                   ))}
                 </div>
                 <p>
-                  教师负责资料与目录；学习内容由你选择。教学视频、音频不在本次范围。
+                  教师提供公共资料；学习内容由你选择。教学视频、音频不在本次范围。
                 </p>
               </div>
             )}

@@ -13,18 +13,12 @@ from pilot_fixture import GOLD, decks, model_output
 
 
 def setup(t, a):
-    section = t.post(
-        "/api/teacher/sections",
-        json={"chapter_id": 1, "title": "基本服务和用户接口", "published": True},
-    ).json()["id"]
     docs = []
     for i, data in enumerate(decks()):
         r = a.post("/api/materials/upload", files={"file": (f"小节补充{i}.pptx", data)})
         assert r.status_code == 201, r.text
         docs.append(r.json()["id"])
     return {
-        "chapter_id": 1,
-        "section_id": section,
         "topic": "基本服务和用户接口",
         "sources": [{"document_id": d, "start_page": 1} for d in docs],
         "analysis_mode": "section",

@@ -1,5 +1,5 @@
 import { request } from "./api";
-import { SimConfig, Trace } from "./digital";
+import { SimConfig, Trace } from "./simulation";
 export const modeNames = {
   explain: "通俗讲解",
   deep: "深入分析",
@@ -45,8 +45,6 @@ export interface Evidence {
   };
 }
 export interface PersonalConfig {
-  chapter_id: number;
-  section_id: number | null;
   sources: PersonalSource[];
   topic: string;
   source_overview?: boolean;
@@ -120,7 +118,6 @@ export interface PilotAnalysis {
 }
 export interface PersonalJob {
   id: number;
-  chapter_id: number;
   kind: string;
   status: string;
   error: string;
@@ -168,7 +165,6 @@ export interface PersonalGrade {
 export const personalApi = {
   ask: (
     question: string,
-    chapter_id: number,
     parent_id: number | null,
     sources: PersonalSource[],
     use_sources: boolean,
@@ -178,7 +174,6 @@ export const personalApi = {
       method: "POST",
       body: JSON.stringify({
         question,
-        chapter_id: chapter_id || null,
         parent_id,
         sources,
         use_sources,

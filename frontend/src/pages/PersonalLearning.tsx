@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Chapter, courseApi, documentApi, Material } from "../api";
-import { digitalApi, Section } from "../digital";
+import { documentApi, Material } from "../api";
 import { useAuth } from "../auth";
 import { Notice } from "../components";
 import {
@@ -26,14 +25,10 @@ export default function PersonalLearning({
   const navigate = useNavigate();
   const jobId = Number(params.get("job"));
   const { user } = useAuth();
-  const [chapters, setChapters] = useState<Chapter[]>([]),
-    [sections, setSections] = useState<Section[]>([]),
-    [docs, setDocs] = useState<Material[]>([]);
+  const [docs, setDocs] = useState<Material[]>([]);
   const [category, setCategory] = useState("public"),
     [q, setQ] = useState("");
   const [config, setConfig] = useState<PersonalConfig>({
-    chapter_id: Number(params.get("chapter")) || 0,
-    section_id: null,
     sources: [],
     topic: "",
     weakness: "",
@@ -69,21 +64,13 @@ export default function PersonalLearning({
   useEffect(() => {
     let alive = true;
     Promise.all([
-      courseApi.chapters(),
-      digitalApi.sections(),
       personalApi.status(),
       personalApi.jobs(),
     ])
-      .then(([cs, ss, state, hs]) => {
+      .then(([state, hs]) => {
         if (!alive) return;
-        setChapters(cs);
-        setSections(ss);
         setStatus(state);
         setHistory(hs);
-        setConfig((c) => ({
-          ...c,
-          chapter_id: c.chapter_id || cs[0]?.id || 0,
-        }));
       })
       .catch((e) => {
         if (alive) setError(e.message);
@@ -301,9 +288,6 @@ export default function PersonalLearning({
         >
           智能问答学习
         </Link>
-        <Link className="button secondary" to="/student/practice">
-          教师正式练习
-        </Link>
         <Link
           className={practice ? "button" : "button secondary"}
           to="/student/ai-practice"
@@ -323,49 +307,11 @@ export default function PersonalLearning({
       ) : !jobId ? (
         <>
           <section className="authoring-card authoring-form">
-            <h2>1 选择课程范围与资料</h2>
+            <h2>1 选择学习资料</h2>
             <p>
-              每章小节数量由教师设定；无需等待教师编写教案。课件支持文字PPT/PPTX、PDF、TXT，图片文字暂需OCR。
+              直接选择学习资料和主题。课件支持文字PPT/PPTX、PDF、TXT，图片文字暂需OCR。
             </p>
             <fieldset disabled={busy}>
-              <label>
-                课程大章
-                <select
-                  aria-label="课程大章"
-                  value={config.chapter_id}
-                  onChange={(e) =>
-                    change({
-                      chapter_id: Number(e.target.value),
-                      section_id: null,
-                    })
-                  }
-                >
-                  {chapters.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                课程小节
-                <select
-                  aria-label="课程小节"
-                  value={config.section_id || 0}
-                  onChange={(e) =>
-                    change({ section_id: Number(e.target.value) || null })
-                  }
-                >
-                  <option value={0}>自行确定本章主题</option>
-                  {sections
-                    .filter((s) => s.chapter_id === config.chapter_id)
-                    .map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.code} {s.title}
-                      </option>
-                    ))}
-                </select>
-              </label>
               <div className="row-actions">
                 <button
                   className={category === "public" ? "" : "secondary"}
@@ -420,11 +366,7 @@ export default function PersonalLearning({
                     />
                     <span>
                       {d.title} · {d.file_type || "文字"}
-                      {d.chapter_id === config.chapter_id
-                        ? " · 当前章节"
-                        : d.chapter_id
-                          ? " · 其他章节资料"
-                          : " · 全课程资料"}
+
                     </span>
                   </label>
                 ))}
@@ -580,7 +522,7 @@ export default function PersonalLearning({
               ) : (
                 <>
                   <p>
-                    个人AI练习与教师题库分开保存，不写入正式成绩。简答仅给参考答案。
+                    个人 AI 自测仅保存到本人账号，不作为正式成绩；简答提供参考答案。
                   </p>
                   <label>
                     题目数量
@@ -637,7 +579,6 @@ export default function PersonalLearning({
                 <button
                   disabled={
                     !status?.configured ||
-                    !config.chapter_id ||
                     !config.topic.trim() ||
                     !config.sources.length ||
                     (config.kind === "learning"

@@ -11,8 +11,8 @@ from typing import Literal
 
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
-from .access import read_document, visible_chapter
-from .digital import database
+from .access import read_document
+from .main import database
 
 VERSION = "section-pilot-1"
 MAX_BATCHES = 12
@@ -136,19 +136,6 @@ def prepare(body, user):
         os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com").strip().rstrip("/")
     )
     model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat").strip()
-    if not body.chapter_id:
-        raise HTTPException(422, "请先选择已发布课程章节，再检查各课件页码范围")
-    with database() as db:
-        chapter = visible_chapter(db, body.chapter_id, user)
-        if body.section_id:
-            section = db.execute(
-                "SELECT title FROM sections WHERE id=? AND chapter_id=? AND published=1",
-                (body.section_id, body.chapter_id),
-            ).fetchone()
-            if not section:
-                raise HTTPException(404, "小节不存在或未发布")
-        else:
-            section = {"title": chapter["title"]}
     chunks, signatures, missing, pages, excluded = [], [], [], 0, []
     seen_docs = set()
     for selected in body.sources:
@@ -157,8 +144,6 @@ def prepare(body, user):
         seen_docs.add(selected.document_id)
         with database() as db:
             doc = read_document(db, selected.document_id, user)
-        if doc["course_id"] != chapter["course_id"]:
-            raise HTTPException(422, "请选本课程资料")
         index = index_document(doc, user)
         end = selected.end_page or index["total_pages"]
         if selected.start_page > end or end > index["total_pages"]:
@@ -221,8 +206,6 @@ def prepare(body, user):
                 VERSION,
                 user["id"],
                 signatures,
-                body.chapter_id,
-                body.section_id,
                 body.topic,
                 base,
                 model,
@@ -244,7 +227,7 @@ def prepare(body, user):
         + 1,
         "excluded": excluded,
         "unreadable_pages": missing,
-        "scope": section["title"],
+        "scope": body.topic,
     }
     return {
         "chunks": chunks,

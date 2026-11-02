@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
-    "test:browser": "node ../scripts/browser-check.cjs"
+    "test:browser": "node ../scripts/v03-browser.cjs"
   },
   "dependencies": {
     "react": "19.1.0",

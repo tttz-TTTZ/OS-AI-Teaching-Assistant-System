@@ -9,7 +9,7 @@ import re
 from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 from fastapi import HTTPException
-from .digital import database
+from .main import database
 from .access import read_document
 from .files import storage
 from .persistence import checked_file
@@ -37,8 +37,6 @@ class Retrieval(BaseModel):
     weakness: str = Field(default="", max_length=2000)
     source_overview: bool = False
     analysis_mode: Literal["quick", "section"] = "quick"
-    chapter_id: int | None = None
-    section_id: int | None = None
 
 
 def index_document(document, user):

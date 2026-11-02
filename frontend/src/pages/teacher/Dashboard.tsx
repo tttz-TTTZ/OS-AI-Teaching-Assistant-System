@@ -4,13 +4,12 @@ export default function Dashboard() {
   return (
     <AuthoringPage
       title="教师工作台"
-      description="管理公共资料、练习题和学生账号。"
+      description="管理公共资料和学生账号。"
     >
       <div className="teacher-start">
         {[
           ["01", "materials", "公共课程资料", "上传、整理和发布公共资料。", "管理资料 →"],
-          ["02", "questions", "章节练习题库", "维护正式练习题，使用 AI 准备候选题。", "管理练习 →"],
-          ["03", "accounts", "学生账号", "管理学生账号与访问权限。", "管理账号 →"],
+          ["02", "accounts", "学生账号", "管理学生账号与访问权限。", "管理账号 →"],
         ].map(([number, path, title, description, action]) => (
           <section className="authoring-card start-task" key={number}>
             <span className="task-number">{number}</span>
@@ -26,9 +25,6 @@ export default function Dashboard() {
         <h2>其他常用工作</h2>
         <div className="support-links">
           <Link to="/teacher/materials">上传公共资料 →</Link>
-          <Link to="/teacher/ai-questions">用AI准备候选题 →</Link>
-          <Link to="/teacher/questions">维护练习题库 →</Link>
-          <Link to="/teacher/learning-feedback">查看学习反馈 →</Link>
           <Link to="/teacher/accounts">管理学生账号 →</Link>
         </div>
       </section>
