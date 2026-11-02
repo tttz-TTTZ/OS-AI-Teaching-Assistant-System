@@ -26,9 +26,6 @@ export default function Home() {
           <Link className="button" to="/student/ai-chat">
             进入智能问答工作台
           </Link>
-          <Link className="button secondary" to="/student/ai-practice">
-            生成我的薄弱点练习
-          </Link>
         </div>
       </section>
       <section className="coursebrief">
@@ -69,13 +66,6 @@ export default function Home() {
             ))}
             {!materials.length && <p>暂无已发布公共资料</p>}
           </section>
-          <div className="grid spaced">
-            <Link className="panel card" to="/student/ai-practice">
-              <h2>个人 AI 自测</h2>
-              <p>根据所选资料与薄弱点生成自测题。</p>
-              <span>巩固知识 →</span>
-            </Link>
-          </div>
         </div>
       </div>
     </Page>

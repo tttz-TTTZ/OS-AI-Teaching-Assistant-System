@@ -15,7 +15,6 @@ import Home from "./pages/Home";
 import Materials from "./pages/Materials";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
-import PersonalLearning from "./pages/PersonalLearning";
 import LearningNotebook from "./pages/LearningNotebook";
 import TeacherMaterials from "./pages/teacher/Materials";
 import Accounts from "./pages/teacher/Accounts";
@@ -38,6 +37,10 @@ function PersonalKnowledge() {
   ) : (
     <Navigate to="/student/dashboard" replace />
   );
+}
+function LegacyPracticeRedirect() {
+  const location = useLocation();
+  return <Navigate to={`/student/ai-chat${location.search}`} replace />;
 }
 function Guard({ role }: { role: "student" | "teacher" }) {
   const { user, loading } = useAuth();
@@ -114,7 +117,7 @@ function Legacy() {
     "/knowledge": "dashboard",
     "/lab": "dashboard",
     "/chat": "ai-chat",
-    "/practice": "ai-practice",
+    "/practice": "ai-chat",
   };
   return (
     <Navigate
@@ -134,7 +137,7 @@ function App() {
         <Route path="materials" element={<Materials />} />
         <Route path="knowledge" element={<PersonalKnowledge />} />
         <Route path="course-reading" element={<Navigate to="/student/dashboard" replace />} />
-        <Route path="ai-practice" element={<PersonalLearning practice />} />
+        <Route path="ai-practice" element={<LegacyPracticeRedirect />} />
         <Route path="experiments/*" element={<Navigate to="/student/dashboard" replace />} />
         <Route path="experiment-runs/*" element={<Navigate to="/student/dashboard" replace />} />
         <Route path="ai-chat" element={<LearningNotebook />} />
@@ -142,7 +145,7 @@ function App() {
           path="basic-chat"
           element={<Navigate to="/student/ai-chat" replace />}
         />
-        <Route path="practice" element={<Navigate to="/student/ai-practice" replace />} />
+        <Route path="practice" element={<LegacyPracticeRedirect />} />
         <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="/teacher" element={<Guard role="teacher" />}>

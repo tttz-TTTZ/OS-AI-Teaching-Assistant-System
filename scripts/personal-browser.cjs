@@ -241,12 +241,7 @@ async function verifyPersonal({ t, s, b, base, studentName, apiCall }) {
   )
     throw Error("笔记本笔记刷新丢失");
   await studio.getByRole("button", { name: "测验", exact: true }).click();
-  await s
-    .getByRole("link", { name: "开始作答 / 查看解析", exact: true })
-    .click();
-  await s
-    .getByRole("heading", { name: "个人薄弱点自测", exact: true })
-    .waitFor();
+  await s.getByRole("heading", { name: "测验", exact: true }).waitFor();
   const option = s.locator(".quiz-option").first();
   const inputRect = await option.locator("input").boundingBox();
   const textRect = await option.locator(".quiz-option-content").boundingBox();
@@ -265,10 +260,7 @@ async function verifyPersonal({ t, s, b, base, studentName, apiCall }) {
     ).status() !== 404
   )
     throw Error("个人自测成绩泄露");
-  await s.getByLabel("我还不理解的地方").fill("请再解释互斥的条件");
-  await s.getByRole("button", { name: "带着疑问继续学习", exact: true }).click();
-  await s.waitForURL("**/student/ai-chat?job=" + quiz);
-  await s.waitForFunction(() => document.querySelector('[aria-label="提问或创作学习内容"]')?.value === "请再解释互斥的条件");
+  await s.getByLabel("提问或创作学习内容", { exact: true }).fill("请再解释互斥的条件");
   await s.goto(base + `/student/knowledge?job=${flashId}`);
   await s.waitForURL("**/student/ai-chat?job=" + flashId);
   await s.getByRole("button", { name: "闪卡问题", exact: true }).waitFor();

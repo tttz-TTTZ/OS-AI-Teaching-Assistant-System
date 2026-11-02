@@ -13,6 +13,7 @@ import {
   PersonalSummary,
 } from "../personal";
 import PersonalModule from "../learning/PersonalModule";
+import NotebookQuiz from "../learning/NotebookQuiz";
 import Markdown from "../Markdown";
 import { materialAccept, materialFileError } from "../materialFiles";
 
@@ -791,19 +792,9 @@ export default function LearningNotebook() {
                     )}
                   </section>
                 ) : job.kind === "practice" ? (
-                  <div>
-                    <h3>{job.body.title}</h3>
-                    <p>
-                      已生成{job.body.questions?.length || 0}
-                      道个人自测，独立保存，不计入教师成绩。
-                    </p>
-                    <Link
-                      className="button"
-                      to={`/student/ai-practice?job=${job.id}`}
-                    >
-                      开始作答 / 查看解析
-                    </Link>
-                  </div>
+                  job.status === "ready" ? (
+                    <NotebookQuiz key={`${user?.id}:${job.id}`} job={job} userId={user!.id} />
+                  ) : null
                 ) : (
                   current && (
                     <>
@@ -1086,7 +1077,6 @@ export default function LearningNotebook() {
               >
                 ＋ 个人笔记
               </button>
-              <Link to="/student/ai-practice">全部个人练习</Link>
             </div>
           </section>
         )}
