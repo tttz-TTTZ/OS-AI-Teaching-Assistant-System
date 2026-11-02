@@ -36,7 +36,6 @@ def run(
     chapter02_only=False,
     chapter03_only=False,
     correction_only=False,
-    foundation_only=False,
 ) -> None:
     # 先拒绝端口冲突，避免误连已经运行的个人开发实例。
     for port in (8010, 5174):
@@ -141,12 +140,6 @@ def run(
                     cwd=ROOT,
                     check=True,
                 )
-                if foundation_only:
-                    subprocess.run(
-                        ["node", str(ROOT / "scripts/foundation-browser.cjs")],
-                        env=env, cwd=ROOT, check=True,
-                    )
-                    return
                 if (
                     not chapter_only
                     and not chapter02_only
@@ -225,12 +218,10 @@ if __name__ == "__main__":
         action="store_true",
         help="仅运行第四章迁移/目录修正验收",
     )
-    parser.add_argument("--foundation-only", action="store_true", help="首页与保留功能隔离回归")
     args = parser.parse_args()
     if (
         sum(
             (
-                args.foundation_only,
                 args.chapter_content_only,
                 args.chapter02_only,
                 args.chapter03_only,
@@ -241,9 +232,8 @@ if __name__ == "__main__":
     ):
         parser.error("只能选择一个专项验收范围")
     run(
-        chapter_only=args.chapter_content_only,
-        foundation_only=args.foundation_only,
-        chapter02_only=args.chapter02_only,
-        chapter03_only=args.chapter03_only,
-        correction_only=args.chapter04_correction_only,
+        args.chapter_content_only,
+        args.chapter02_only,
+        args.chapter03_only,
+        args.chapter04_correction_only,
     )
