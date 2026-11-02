@@ -416,3 +416,54 @@ def test_verified_quote_recovers_bad_optional_id():
         resolve_evidence(
             fact, ref, [{"ref": ref, "text": text}], evidence_choices(text, ref)
         )
+
+
+def test_omitted_zero_evidence_id_resolves_original_excerpt():
+    from app.knowledge_pilot import Claim, resolve_evidence
+
+    ref = "d22-p21-b20-0"
+    text = "系统调用通过寄存器传递参数并进入内核处理。" * 40
+    choices = evidence_choices(text, ref)
+    fact = Claim(title="系统调用", statement=text[:24], evidence_id="d22-p21-b20-e2")
+    quote, method = resolve_evidence(fact, ref, [{"ref": ref, "text": text}], choices)
+    assert (quote, method) == (choices[1]["text"], "omitted_zero_id")
+
+
+@pytest.mark.parametrize("evidence_id,ref,extra_refs", [
+    ("d22-p21-b20-e999", "d22-p21-b20-0", []),
+    ("d23-p21-b20-e1", "d22-p21-b20-0", []),
+    ("d22-p22-b20-e1", "d22-p21-b20-0", []),
+    ("d22-p21-b21-e1", "d22-p21-b20-0", []),
+    ("d22-p21-b20-e1", "d22-p21-b20-1", []),
+    ("d22-p21-b20-e1", "d22-p21-b20-0", ["d22-p21-b20"]),
+])
+def test_omitted_zero_rejects_invalid_or_ambiguous_evidence(evidence_id, ref, extra_refs):
+    from app.knowledge_pilot import Claim, resolve_evidence
+
+    text = "系统调用通过寄存器传递参数并进入内核处理。" * 40
+    chunks = [{"ref": r, "text": text} for r in [ref, *extra_refs]]
+    fact = Claim(title="系统调用", statement=text[:24], evidence_id=evidence_id)
+    with pytest.raises(HTTPException):
+        resolve_evidence(fact, ref, chunks, evidence_choices(text, ref))
+
+
+def test_pipeline_accepts_omitted_zero_evidence_ids(clients, monkeypatch):
+    t, a, _ = clients
+    config = setup(t, a)
+    preview(a, config)
+    changed = []
+
+    def mutation(task, result):
+        if task == "pilot_extract":
+            for block in result["blocks"]:
+                for fact in block["facts"]:
+                    original = fact["evidence_id"]
+                    fact["evidence_id"] = original.replace("-0-e", "-e")
+                    if original != fact["evidence_id"]:
+                        changed.append(original)
+
+    mock_model(monkeypatch, [], mutation=mutation)
+    response = a.post(BASE + "/generate", json=config)
+    assert changed
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "ready"

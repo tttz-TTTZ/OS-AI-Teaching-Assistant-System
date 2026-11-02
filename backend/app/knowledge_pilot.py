@@ -51,6 +51,21 @@ def resolve_evidence(fact, ref, chunks, choices):
         selected = next((e for e in choices if e["id"] == f"{ref}-e{short[1]}"), None)
         if selected:
             return selected["text"], "local_id"
+    # Recover only an omitted trailing '-0' for an unsplit block. Never
+    # collapse split-block suffixes or accept an alias shared by another block.
+    omitted_zero = re.fullmatch(r"(d\d+-p\d+-b\d+)-e([1-9][0-9]*)", evidence_id)
+    if omitted_zero and ref == f"{omitted_zero[1]}-0":
+        candidates = [
+            c["ref"] for c in chunks
+            if c["ref"] in (omitted_zero[1], ref)
+        ]
+        if candidates == [ref]:
+            selected = next(
+                (e for e in choices if e["id"] == f"{ref}-e{omitted_zero[2]}"),
+                None,
+            )
+            if selected:
+                return selected["text"], "omitted_zero_id"
     # An explicitly different block must not be repaired using this page.
     if (
         re.match(r"^d\d+-p\d+", evidence_id)
@@ -464,7 +479,7 @@ async def distill(body, source, user, ident, call):
                         fact, b.ref, chunks, choices[b.ref]
                     )
                     citation(b.ref, fact.quote, {"chunks": chunks})
-                    if method in ("local_id", "whole_block"):
+                    if method in ("local_id", "whole_block", "omitted_zero_id"):
                         LOG.info(
                             "[知识提炼] 任务=%s 批次=%s 引用定位=%s",
                             ident,
