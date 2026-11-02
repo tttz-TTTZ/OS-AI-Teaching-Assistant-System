@@ -1,0 +1,21 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    ".venv": true,
+    "frontend/node_modules": true,
+    "frontend/dist": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.venv/**": true,
+    "**/__pycache__/**": true
+  },
+  "search.exclude": {
+    "frontend/node_modules": true,
+    "frontend/dist": true,
+    "backend/data": true,
+    "docs/reports": true
+  }
+}

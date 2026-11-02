@@ -1,6 +1,4 @@
 import json
-import sys
-from pathlib import Path
 from datetime import datetime, timezone
 import pytest
 from fastapi import HTTPException
@@ -8,8 +6,7 @@ from app import main, personal_learning as ai
 from app.knowledge_pilot import stale_jobs, evidence_choices
 from test_personal_learning import clients, BASE
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
-from pilot_fixture import GOLD, decks, model_output
+from fixtures.pilot_fixture import GOLD, decks, model_output
 
 
 def setup(t, a):
@@ -238,7 +235,7 @@ def test_confirmation_limits_and_versions(clients, monkeypatch):
 
 
 def test_directory_only_and_scope_limits_do_not_call_model(clients, monkeypatch):
-    from pilot_fixture import pptx_bytes
+    from fixtures.pilot_fixture import pptx_bytes
 
     t, a, _ = clients
     config = setup(t, a)

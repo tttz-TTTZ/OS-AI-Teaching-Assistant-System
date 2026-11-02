@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { courseApi, documentApi, Material } from "../api";
+import { documentApi, Material } from "../api";
 import { useAuth } from "../auth";
 import {
   Evidence,
@@ -427,7 +427,7 @@ export default function LearningNotebook() {
     setError("");
     setProgress(0);
     try {
-      const d = await courseApi.upload(
+      const d = await documentApi.upload(
         file,
         setProgress,
       );

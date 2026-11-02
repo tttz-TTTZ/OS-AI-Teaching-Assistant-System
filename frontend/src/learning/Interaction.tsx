@@ -1,4 +1,4 @@
-import { SimConfig, templates } from "../simulation";
+import { SimConfig } from "../simulation";
 
 export function ConfigFields({
   value,

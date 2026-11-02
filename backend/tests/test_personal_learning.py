@@ -1,7 +1,6 @@
 import copy
 import json
 import sqlite3
-import runpy
 from pathlib import Path
 from io import BytesIO
 from zipfile import ZipFile
@@ -223,10 +222,9 @@ def test_private_practice_grading_followup_and_formal_separation(clients, monkey
 
 def test_ppt_retrieval_later_pages_cache_and_withdrawal(clients):
     t, a, b = clients
-    fixture = runpy.run_path(
-        str(Path(__file__).resolve().parents[2] / "scripts/presentation_fixture.py")
-    )
-    raw = fixture["pptx_bytes"](400)
+    from fixtures.presentation_fixture import pptx_bytes
+
+    raw = pptx_bytes(400)
     out = BytesIO()
     with ZipFile(BytesIO(raw)) as old, ZipFile(out, "w") as new:
         for part in old.namelist():

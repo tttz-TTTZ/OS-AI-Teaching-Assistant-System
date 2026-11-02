@@ -44,7 +44,6 @@ from .auth import require_user
 from .access import (
     read_document,
     writable_document,
-    document_visible,
     list_documents,
 )
 

@@ -1,7 +1,6 @@
 import hashlib
 from io import BytesIO
 from pathlib import Path
-import runpy
 from zipfile import ZipFile
 import pytest
 from fastapi.testclient import TestClient
@@ -9,10 +8,7 @@ from app import main, files
 from app.auth import create_user
 from app.persistence import backup_data, restore_data
 
-fixtures = runpy.run_path(
-    str(Path(__file__).resolve().parents[2] / "scripts/presentation_fixture.py")
-)
-pptx_bytes, ppt_bytes = fixtures["pptx_bytes"], fixtures["ppt_bytes"]
+from fixtures.presentation_fixture import pptx_bytes, ppt_bytes
 
 
 @pytest.fixture

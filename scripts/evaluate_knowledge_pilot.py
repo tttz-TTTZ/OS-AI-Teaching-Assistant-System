@@ -11,7 +11,8 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
-from pilot_fixture import GOLD, decks, model_output
+sys.path.insert(0, str(ROOT / "backend" / "tests"))
+from fixtures.pilot_fixture import GOLD, decks, model_output
 
 
 def run():

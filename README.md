@@ -8,6 +8,8 @@
 
 ## 开发运行
 
+人工开发先看 [代码地图、Windows 运行和 VS Code 断点调试](docs/DEVELOPMENT.md)。
+
 后端使用 Python、FastAPI、SQLite；前端使用 React、TypeScript、Vite。依赖分别在 `backend/requirements.txt` 与 `frontend/package-lock.json`。
 
 Windows 在项目根目录：
@@ -46,4 +48,4 @@ npm --prefix frontend run build
 
 浏览器验收脚本为 `scripts/v03-browser.cjs`，仅对隔离验收服务使用；通过 `TEST_ACCOUNTS_FILE` 指定临时教师/学生账号文件。
 
-`docs` 中其他文档为历史设计和报告；已删除模块的旧入口、旧数据表及初始化流程不适用于当前版本。GitHub 推送、应用部署与编辑环境发布彼此独立。
+`docs/reports` 和 `docs/learning` 保留课程研究及学习记录，不参与程序运行。旧模块说明已从当前目录清理，可在 Git 历史中查阅。GitHub 推送、应用部署与编辑环境发布彼此独立。

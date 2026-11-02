@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Health, courseApi, api, Material } from "../api";
+import { Health, getHealth, documentApi, Material } from "../api";
 import { Page, Notice } from "../components";
 export default function Home() {
   const [health, setHealth] = useState<Health>();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [failure, setFailure] = useState("");
   useEffect(() => {
-    Promise.all([courseApi.health(), api.materials(0, "public")])
+    Promise.all([getHealth(), documentApi.list(false, { category: "public" })])
       .then(([h, m]) => {
         setHealth(h);
         setMaterials(m.slice(0, 5));

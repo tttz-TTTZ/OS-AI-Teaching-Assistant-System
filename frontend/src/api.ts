@@ -33,12 +33,6 @@ export interface Material {
   sha256: string | null;
   published_at: string | null;
 }
-export interface ChatResult {
-  id: number;
-  answer: string;
-  model: string;
-  mode: string;
-}
 export async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -137,34 +131,6 @@ export async function uploadFile<T>(
     xhr.send(body);
   });
 }
-export const api = {
-  material: (id: number) => request<Material>(`/materials/${id}`),
-  materials: (offset = 0, category = "all") =>
-    request<Material[]>(
-      `/materials?limit=50&offset=${offset}${category === "all" ? "" : `&category=${category}`}`,
-    ),
-  createMaterial: (body: Pick<Material, "title" | "content">) =>
-    request<Material>("/materials", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  updateMaterial: (
-    id: number,
-    body: Pick<Material, "title" | "content">,
-  ) =>
-    request<Material>(`/materials/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    }),
-  deleteMaterial: (id: number) =>
-    request<void>(`/materials/${id}`, { method: "DELETE" }),
-  chat: (question: string, material_id?: number) =>
-    request<ChatResult>("/chat", {
-      method: "POST",
-      body: JSON.stringify({ question, material_id }),
-    }),
-};
-
 export interface Health {
   status: string;
   database: string;
@@ -174,18 +140,7 @@ export interface Health {
   personal_ai_configured?: boolean;
   platform_revision?: string;
 }
-export const courseApi = {
-  health: () => request<Health>("/health"),
-  upload: (
-    file: File,
-    onProgress?: (percent: number) => void,
-  ) => {
-    const data = new FormData();
-    data.append("file", file);
-    return uploadFile<Material>("/materials/upload", data, onProgress);
-  },
-
-};
+export const getHealth = () => request<Health>("/health");
 
 export interface User {
   id: number;
@@ -228,7 +183,6 @@ function save<T>(path: string, body: unknown, id?: number) {
   });
 }
 export const teacherApi = {
-  documents: () => request<Material[]>("/teacher/documents"),
   saveDocument: (
     id: number,
     body: {
@@ -274,6 +228,13 @@ function filters(options: DocumentFilter) {
   return params.toString();
 }
 export const documentApi = {
+  detail: (id: number) => request<Material>(`/materials/${id}`),
+  remove: (id: number) => request<void>(`/materials/${id}`, { method: "DELETE" }),
+  upload: (file: File, onProgress?: (percent: number) => void) => {
+    const data = new FormData();
+    data.append("file", file);
+    return uploadFile<Material>("/materials/upload", data, onProgress);
+  },
   list: (teacher: boolean, options: DocumentFilter = {}) =>
     request<Material[]>(
       `${teacher ? "/teacher/documents" : "/materials"}?${filters(options)}`,
@@ -314,24 +275,5 @@ export const accountApi = {
     request<void>("/auth/password", {
       method: "POST",
       body: JSON.stringify({ current_password, new_password }),
-    }),
-};
-export interface TextbookPlan {
-  fingerprint: string;
-  note: string;
-  changes: {
-    number: number;
-    title: string;
-    source_titles: string[];
-    pdf_start: number;
-    pdf_end: number;
-  }[];
-}
-export const textbookApi = {
-  plan: () => request<TextbookPlan>("/teacher/textbook/plan"),
-  apply: (fingerprint: string) =>
-    request<{ backup: string }>("/teacher/textbook/apply", {
-      method: "POST",
-      body: JSON.stringify({ fingerprint }),
     }),
 };

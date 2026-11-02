@@ -4,18 +4,17 @@ import {
   personalFileHint,
 } from "../materialFiles";
 import PresentationPreview from "../learning/PresentationPreview";
-import { fileUrl } from "../api";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
-import { api, courseApi, Material, documentApi } from "../api";
+import { fileUrl, Material, documentApi } from "../api";
 import { Page, Notice } from "../components";
 export default function Materials() {
   const [params] = useSearchParams();
   const documentId = Number(params.get("document"));
   useEffect(() => {
     if (documentId)
-      api
-        .material(documentId)
+      documentApi
+        .detail(documentId)
         .then(setView)
         .catch((e) => setError(e.message));
   }, [documentId]);
@@ -64,7 +63,7 @@ export default function Materials() {
     setBusy(true);
     const form = e.currentTarget;
     try {
-      await courseApi.upload(file, setUploadProgress);
+      await documentApi.upload(file, setUploadProgress);
       setFile(undefined);
       form.reset();
       await refresh();
@@ -79,7 +78,7 @@ export default function Materials() {
     if (!confirm(`移入回收站“${m.title}”？原文件保留，可恢复。`)) return;
     setBusy(true);
     try {
-      await api.deleteMaterial(m.id);
+      await documentApi.remove(m.id);
       if (view?.id === m.id) setView(undefined);
       await refresh();
     } catch (e) {
@@ -213,8 +212,7 @@ export default function Materials() {
                             disabled={!!m.deleted_at}
                             className="secondary"
                             onClick={() => {
-                              api
-                                .material(m.id)
+                              documentApi.detail(m.id)
                                 .then(setView)
                                 .catch((e) => setError(e.message));
                             }}

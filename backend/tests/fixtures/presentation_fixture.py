@@ -67,10 +67,3 @@ def ppt_bytes():
         + b"\x0f\0\xe8\x03"
         + b"\0" * 4092
     )
-
-
-if __name__ == "__main__":
-    import sys
-    from pathlib import Path
-
-    Path(sys.argv[1]).write_bytes(pptx_bytes())

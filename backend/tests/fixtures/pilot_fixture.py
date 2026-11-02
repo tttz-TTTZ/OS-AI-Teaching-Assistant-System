@@ -3,7 +3,7 @@
 from io import BytesIO
 from zipfile import ZipFile
 from xml.sax.saxutils import escape
-from presentation_fixture import pptx_bytes
+from .presentation_fixture import pptx_bytes
 
 GOLD = [
     ("用户接口", "用户接口让使用者通过命令行或图形界面操作计算机系统。"),
@@ -111,20 +111,3 @@ def model_output(payload):
             ]
         }
     raise ValueError("Unsupported fixture task")
-
-
-if __name__ == "__main__":
-    import base64, json
-
-    import sys
-
-    data = list(decks())
-    if "--four" in sys.argv:
-        variants = []
-        for i in range(4):
-            output = BytesIO(data[i % len(data)])
-            with ZipFile(output, "a") as book:
-                book.comment = f"synthetic-course-file-{i}".encode()
-            variants.append(output.getvalue())
-        data = variants
-    print(json.dumps([base64.b64encode(item).decode() for item in data]))

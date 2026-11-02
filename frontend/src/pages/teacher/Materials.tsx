@@ -1,7 +1,6 @@
 import { useEffect, useState, FormEvent } from "react";
 import {
   teacherApi,
-  api,
   documentApi,
   Material,
   fileUrl,
@@ -119,7 +118,7 @@ export default function Materials() {
       return;
     setBusy(true);
     try {
-      await api.deleteMaterial(m.id);
+      await documentApi.remove(m.id);
       setSelected(undefined);
       await finish("已移入回收站，原文件仍保留");
     } catch (e) {

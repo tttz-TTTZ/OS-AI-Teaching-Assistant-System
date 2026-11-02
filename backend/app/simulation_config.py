@@ -1,5 +1,5 @@
 from typing import Literal
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict
 
 class Config(BaseModel):
     model_config = ConfigDict(extra="forbid")
