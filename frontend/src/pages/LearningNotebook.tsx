@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { courseApi, documentApi, Material } from "../api";
 import { useAuth } from "../auth";
 import {
@@ -87,8 +87,6 @@ export default function LearningNotebook() {
     [view, setView] = useState<"learn" | "notes">("learn");
   const [note, setNote] = useState(""),
     [bookmarked, setBookmarked] = useState(false);
-  const [leftOpen, setLeftOpen] = useState(true),
-    [rightOpen, setRightOpen] = useState(true);
   const epoch = useRef(0),
     requestKey = useRef(""),
     fileInput = useRef<HTMLInputElement>(null),
@@ -509,32 +507,8 @@ export default function LearningNotebook() {
     `资料 #${id}`;
   return (
     <div className="learning-notebook">
-      <header className="notebook-topbar">
-        <h1>操作系统 · 智能问答</h1>
-        <Link className="notebook-return" to="/student/dashboard">
-          ← 返回首页
-        </Link>
-      </header>
-      <div className="notebook-panel-switches">
-        <button
-          className="secondary"
-          aria-expanded={leftOpen}
-          onClick={() => setLeftOpen(!leftOpen)}
-        >
-          {leftOpen ? "收起来源" : "展开来源"}
-        </button>
-        <button
-          className="secondary"
-          aria-expanded={rightOpen}
-          onClick={() => setRightOpen(!rightOpen)}
-        >
-          {rightOpen ? "收起学习工具" : "展开学习工具"}
-        </button>
-      </div>
-      <div
-        className={`notebook-grid ${leftOpen ? "" : "sources-collapsed"} ${rightOpen ? "" : "studio-collapsed"}`}
-      >
-        {leftOpen && (
+      <h1 className="visually-hidden">智慧学习</h1>
+      <div className="notebook-grid">
           <section
             className="notebook-pane notebook-sources"
             aria-label="学习来源"
@@ -633,7 +607,6 @@ export default function LearningNotebook() {
               </p>
             </details>
           </section>
-        )}
         <section
           className="notebook-pane notebook-conversation"
           aria-label="学习对话"
@@ -980,7 +953,6 @@ export default function LearningNotebook() {
             )}
           </div>
         </section>
-        {rightOpen && (
           <section
             className="notebook-pane notebook-studio"
             aria-label="学习工具"
@@ -1079,7 +1051,6 @@ export default function LearningNotebook() {
               </button>
             </div>
           </section>
-        )}
       </div>
     </div>
   );

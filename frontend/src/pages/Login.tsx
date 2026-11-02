@@ -41,7 +41,7 @@ export default function Login({ register = false }: { register?: boolean }) {
   return (
     <div className="login">
       <section className="panel">
-        <span className="badge">OS / ASSISTANT · V0.2</span>
+        <span className="badge">操作系统 · 智慧学习</span>
         {!register && <nav className="login-portals" aria-label="选择登录入口">
           <Link to="/login?role=student" aria-current={role === "student" ? "page" : undefined}>学生端</Link>
           <Link to="/login?role=teacher" aria-current={role === "teacher" ? "page" : undefined}>教师端</Link>

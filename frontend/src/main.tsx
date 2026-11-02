@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -21,12 +21,12 @@ import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
 import { Page, Notice } from "./components";
 const student = [
-  ["dashboard", "学习首页"],
+  ["dashboard", "首页"],
   ["materials", "课程资料"],
-  ["ai-chat", "智能问答"],
+  ["ai-chat", "智慧学习"],
 ];
 const teacher = [
-  ["dashboard", "教师工作台"],
+  ["dashboard", "首页"],
   ["materials", "公共资料"],
   ["accounts", "账号管理"],
 ];
@@ -63,42 +63,35 @@ function Layout({ role }: { role: "student" | "teacher" }) {
   const [error, setError] = useState("");
   return (
     <div className={`layout ${role}${notebook ? " notebook-shell" : ""}`}>
-      <aside>
-        <div className="brand">
-          OS<span> / ASSISTANT</span>
-        </div>
-        <p className="caption">
-          {role === "teacher" ? "教师 · 课程内容管理" : "学生 · 学习与探索"}
-        </p>
-        <nav>
+      <header className="app-topbar">
+        <NavLink className="app-brand" to={`/${role}/dashboard`} aria-label="操作系统首页">
+          <span className="app-brand-mark" aria-hidden="true">OS</span>
+          <strong>操作系统</strong>
+        </NavLink>
+        <nav className="app-nav" aria-label="主导航">
           {(role === "teacher" ? teacher : student).map(([path, title]) => (
             <NavLink key={path} to={`/${role}/${path}`}>
               {title}
             </NavLink>
           ))}
         </nav>
-        <footer>
-          <strong>当前标签：{user?.username}</strong>
-          <p>
-            <NavLink to={`/${role}/profile`}>个人账号 / 修改密码</NavLink>
-          </p>
-          <p>V0.3 · 课程与 AI 学习平台</p>
+        <div className="app-account">
+          <NavLink className="app-account-link" to={`/${role}/profile`}>
+            <span>个人账户</span>
+            <small>{user?.username}</small>
+          </NavLink>
           <button
-            className="secondary"
+            className="app-logout"
             onClick={() => {
               setError("");
               logout().catch((e) => setError(e.message));
             }}
           >
-            退出登录
+            退出
           </button>
-        </footer>
-      </aside>
-      <main>
-        <div className="workspacebar">
-          <span>操作系统</span>
-          <span>{role === "teacher" ? "教师工作区" : "学生工作区"}</span>
         </div>
+      </header>
+      <main>
         <Notice error={error} />
         <Outlet />
       </main>

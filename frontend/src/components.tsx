@@ -8,10 +8,8 @@ export function Page({
 }) {
   return (
     <>
-      <header>
-        <span>OPERATING SYSTEMS / LEARNING SPACE</span>
+      <header className="page-heading">
         <h1>{title}</h1>
-        <p>操作系统课程 AI 助教 · V0.3 资料与智能问答平台</p>
       </header>
       {children}
     </>

@@ -33,9 +33,9 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       }
       const retained = teacher
         ? [["materials", "公共资料"], ["accounts", "账号管理"]]
-        : [["materials", "课程资料"], ["ai-chat", "智能问答"]];
+        : [["materials", "课程资料"], ["ai-chat", "智慧学习"]];
       for (const [, name] of retained) {
-        assert.equal(await page.locator("aside").getByRole("link", { name, exact: true }).count(), 1);
+        assert.equal(await page.getByRole("navigation", { name: "主导航" }).getByRole("link", { name, exact: true }).count(), 1);
       }
       for (const [route, name] of retained) {
         await page.goto(`${base}/${account.role}/${route}`);

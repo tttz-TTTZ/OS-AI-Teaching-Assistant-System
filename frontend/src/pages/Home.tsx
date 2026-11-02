@@ -20,11 +20,11 @@ export default function Home() {
       <section className="authoring-card">
         <h2>按自己的需求学习</h2>
         <p>
-          教师发布公共课程资料；在智能问答中，你选择讲解、导图、代码或复习，也可描述薄弱点生成个人练习。
+          教师发布公共课程资料；在智慧学习中，你选择讲解、导图、代码或复习，也可描述薄弱点生成个人练习。
         </p>
         <div className="row-actions">
           <Link className="button" to="/student/ai-chat">
-            进入智能问答工作台
+            进入智慧学习
           </Link>
         </div>
       </section>
@@ -38,14 +38,13 @@ export default function Home() {
       <Notice error={failure} />
       <div className="statusbar">
         {health
-          ? `后端正常 · 数据库 ${health.database} · ${health.personal_ai_configured === undefined ? "后端版本较旧，请更新并重启后端以启用自主学习" : `智能问答工作台 / AI自测：${health.personal_ai_configured ? "已配置DeepSeek" : "尚未配置DeepSeek"}`}`
+          ? `后端正常 · 数据库 ${health.database} · ${health.personal_ai_configured === undefined ? "后端版本较旧，请更新并重启后端以启用自主学习" : `智慧学习 / AI自测：${health.personal_ai_configured ? "已配置DeepSeek" : "尚未配置DeepSeek"}`}`
           : "正在检查服务…"}
       </div>
       <p className="caption">
         不同AI功能独立配置；如提示未配置，请联系平台管理员。“已配置”不代表服务已连接成功，可用性以实际调用为准。
       </p>
-      <div className="grid">
-        <div>
+      <div className="home-resources">
           <section className="panel">
             <div className="toolbar">
               <h2>公共课程资料</h2>
@@ -66,7 +65,6 @@ export default function Home() {
             ))}
             {!materials.length && <p>暂无已发布公共资料</p>}
           </section>
-        </div>
       </div>
     </Page>
   );

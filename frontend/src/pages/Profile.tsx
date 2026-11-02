@@ -32,7 +32,7 @@ export default function Profile() {
     }
   }
   return (
-    <Page title="个人账号">
+    <Page title="个人账户">
       <section className="panel accountform">
         <p>
           账号：{user?.username} · {user?.role === "teacher" ? "教师" : "学生"}

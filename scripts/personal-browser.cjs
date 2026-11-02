@@ -41,7 +41,7 @@ async function verifyPersonal({ t, s, b, base, studentName, apiCall }) {
   await s.route("**/api/student/personal/jobs", r => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({detail: "测试：历史暂时不可用"}) }));
   await s.goto(base + "/student/ai-chat");
   await s
-    .getByRole("heading", { name: "操作系统 · 智能问答", exact: true })
+    .getByRole("heading", { name: "智慧学习", exact: true })
     .waitFor();
   for (const region of ["学习来源", "学习对话", "学习工具"])
     await s.getByRole("region", { name: region, exact: true }).waitFor();
@@ -280,8 +280,7 @@ async function verifyPersonal({ t, s, b, base, studentName, apiCall }) {
   )
     throw Error("笔记本窄屏横向溢出");
   await s.setViewportSize({ width: 1366, height: 768 });
-  await s.getByRole("button", { name: "收起来源", exact: true }).click();
-  await s.getByRole("button", { name: "展开来源", exact: true }).click();
+  if (await s.getByRole("button", { name: "收起来源", exact: true }).count()) throw Error("来源收起按钮仍然存在");
   // End-to-end pilot: four actual PPTX uploads, automatic range validation,
   // map -> cached flashcards -> persisted evidence and downloadable report.
   const decks = JSON.parse(execFileSync(process.env.TEST_PYTHON, [path.join(__dirname, "pilot_fixture.py"), "--four"], { encoding: "utf8" }));
