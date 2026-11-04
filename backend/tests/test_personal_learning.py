@@ -1,3 +1,4 @@
+from app import database as db_config
 import copy
 import json
 import sqlite3
@@ -17,7 +18,7 @@ BASE = "/api/student/personal"
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, "DB_PATH", tmp_path / "data" / "test.db")
+    monkeypatch.setattr(db_config, "DB_PATH", tmp_path / "data" / "test.db")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "test-only")
     with TestClient(main.app) as t, TestClient(main.app) as a, TestClient(
         main.app
@@ -46,7 +47,7 @@ def prepared(a, kind="learning", data=TEXT):
         "weakness": "分不清资源共享",
         "sources": [{"document_id": d.json()["id"]}],
         "kind": kind,
-        "modes": ["explain", "deep", "map", "code", "animation", "summary"],
+        "modes": ["explain", "deep", "map", "code", "summary"],
         "count": 5,
         "question_kinds": ["single", "multiple", "boolean", "short", "matching"],
         "request_key": "personal-request-000001",
@@ -114,8 +115,6 @@ def generated(body, source):
             ]
         if mode == "code":
             m.update(code="def example():\n    return 1", language="python")
-        if mode == "animation":
-            m["simulation"] = {"template": "memory"}
         modules.append(m)
     return {"title": "个人学习进程与线程", "modules": modules}
 
@@ -128,19 +127,19 @@ def fake_model(monkeypatch, calls):
     monkeypatch.setattr(ai, "call_deepseek", fake)
 
 
-def test_all_modes_private_notes_simulation_and_no_course_mutation(
+def test_learning_private_notes_and_backup(
     clients, monkeypatch, tmp_path
 ):
     t, a, b = clients
     body, p = prepared(a)
     calls = []
     fake_model(monkeypatch, calls)
-    before = t.get("/api/teacher/learning-content").json()
+    assert t.get("/api/teacher/learning-content").status_code == 404
     r = a.post(BASE + "/generate", json=body)
     assert r.status_code == 200, r.text
     job = r.json()
     ident = job["id"]
-    assert len(job["body"]["modules"]) == 6
+    assert len(job["body"]["modules"]) == 5
     assert job["body"]["modules"][3]["code"] == "def example():\n    return 1"
     assert (
         a.post(BASE + "/generate", json=body).json()["id"] == ident and len(calls) == 1
@@ -149,24 +148,12 @@ def test_all_modes_private_notes_simulation_and_no_course_mutation(
     assert b.get(BASE + f"/jobs/{ident}").status_code == 404
     assert b.post(BASE + "/sources/preview", json=body).status_code == 404
     assert not b.get(BASE + "/jobs").json()
-    assert t.get("/api/teacher/learning-content").json() == before
+    assert t.get("/api/teacher/learning-content").status_code == 404
     note = {"note": "我的个人笔记", "bookmarked": True, "expected_version": 0}
     assert a.put(BASE + f"/jobs/{ident}/note", json=note).status_code == 200
     assert a.get(BASE + f"/jobs/{ident}").json()["note"] == note["note"]
     assert a.put(BASE + f"/jobs/{ident}/note", json=note).status_code == 409
-    replay = a.post(
-        BASE + f"/jobs/{ident}/simulate",
-        json={"module": 4, "config": {"template": "memory"}},
-    )
-    assert replay.status_code == 200 and len(replay.json()["frames"]) > 1
-    assert (
-        b.post(
-            BASE + f"/jobs/{ident}/simulate",
-            json={"module": 4, "config": {"template": "memory"}},
-        ).status_code
-        == 404
-    )
-    backup_data(main.DB_PATH, tmp_path / "backup")
+    backup_data(db_config.DB_PATH, tmp_path / "backup")
     restored = restore_data(tmp_path / "backup", tmp_path / "restored")
     with sqlite3.connect(restored) as db:
         assert (
@@ -485,3 +472,39 @@ def test_student_features_through_real_http_adapter(clients, monkeypatch, mode, 
         assert len(job["body"]["modules"][0]["cards"]) == 3
     else:
         assert job["body"]["modules"][0]["text"]
+
+
+def test_removed_animation_cannot_generate_or_invoke_model(clients, monkeypatch):
+    _, student, _ = clients
+    body, _ = prepared(student)
+    calls = []
+    fake_model(monkeypatch, calls)
+    response = student.post(BASE + "/generate", json={**body, "modes":["animation"]})
+    assert response.status_code == 422
+    assert calls == []
+
+
+def test_retired_history_is_read_only_and_original_data_is_preserved(clients, monkeypatch):
+    _, student, other = clients
+    body, _ = prepared(student)
+    fake_model(monkeypatch, [])
+    created = student.post(BASE + "/generate", json=body)
+    assert created.status_code == 200, created.text
+    ident = created.json()["id"]
+    original = {"title":"历史演示", "modules":[{
+        "mode":"animation", "title":"旧演示", "text":"保留已生成的说明文字。",
+        "simulation":{"template":"memory"}, "frames":[{"label":"旧画面"}],
+    }]}
+    with main.database() as db:
+        db.execute("UPDATE personal_ai_jobs SET body_json=? WHERE id=?", (json.dumps(original),ident))
+    loaded = student.get(BASE + f"/jobs/{ident}")
+    assert loaded.status_code == 200
+    module = loaded.json()["body"]["modules"][0]
+    assert module["text"] == original["modules"][0]["text"]
+    assert module["mode"] == "summary" and module["retired"] is True
+    assert "simulation" not in module and "frames" not in module
+    assert student.post(BASE + f"/jobs/{ident}/simulate",json={}).status_code == 404
+    assert other.get(BASE + f"/jobs/{ident}").status_code == 404
+    with main.database() as db:
+        saved = db.execute("SELECT body_json FROM personal_ai_jobs WHERE id=?", (ident,)).fetchone()[0]
+    assert json.loads(saved) == original

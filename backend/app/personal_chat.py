@@ -10,8 +10,8 @@ from .personal_learning import student, own, result, citation, daily_limit
 from .personal_sources import PersonalSource, Retrieval, retrieve
 from .ai_provider import provider_settings, call_deepseek
 from .access import read_document
-from .main import database
-from .knowledge_pilot import stale_jobs
+from .database import database
+from .distillation import stale_jobs
 
 LOG = logging.getLogger("uvicorn.error.learning")
 

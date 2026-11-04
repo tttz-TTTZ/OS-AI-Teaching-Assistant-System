@@ -2,7 +2,7 @@
 
 import argparse
 from pathlib import Path
-from app.main import DB_PATH
+from app.database import DB_PATH
 from app.persistence import backup_data, validate_backup, restore_data
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import re
 from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 from fastapi import HTTPException
-from .main import database
+from .database import database
 from .access import read_document
 from .files import storage
 from .persistence import checked_file
@@ -166,7 +166,7 @@ def retrieve(body: Retrieval, user):
         len(body.sources),
     )
     if body.analysis_mode == "section":
-        from .knowledge_pilot import prepare
+        from .distillation import prepare
 
         LOG.info("[学习检索] 转入完整小节提炼，不走快速关键词过滤")
         return prepare(body, user)

@@ -30,15 +30,7 @@ const teacher = [
   ["materials", "公共资料"],
   ["accounts", "账号管理"],
 ];
-function PersonalKnowledge() {
-  const location = useLocation();
-  return new URLSearchParams(location.search).has("job") ? (
-    <Navigate to={`/student/ai-chat${location.search}`} replace />
-  ) : (
-    <Navigate to="/student/dashboard" replace />
-  );
-}
-function LegacyPracticeRedirect() {
+function SavedQuizLink() {
   const location = useLocation();
   return <Navigate to={`/student/ai-chat${location.search}`} replace />;
 }
@@ -98,26 +90,10 @@ function Layout({ role }: { role: "student" | "teacher" }) {
     </div>
   );
 }
-function Legacy() {
+function Landing() {
   const { user, loading } = useAuth();
-  const location = useLocation();
   if (loading) return <p>加载中…</p>;
-  if (!user) return <Navigate to="/login" replace />;
-  const path = location.pathname;
-  const map: Record<string, string> = {
-    "/": "dashboard",
-    "/materials": "materials",
-    "/knowledge": "dashboard",
-    "/lab": "dashboard",
-    "/chat": "ai-chat",
-    "/practice": "ai-chat",
-  };
-  return (
-    <Navigate
-      replace
-      to={`/${user.role}/${user.role === "teacher" ? "dashboard" : map[path] || "dashboard"}${location.search}`}
-    />
-  );
+  return <Navigate to={user ? `/${user.role}/dashboard` : "/login"} replace />;
 }
 function App() {
   return (
@@ -128,34 +104,19 @@ function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Home />} />
         <Route path="materials" element={<Materials />} />
-        <Route path="knowledge" element={<PersonalKnowledge />} />
-        <Route path="course-reading" element={<Navigate to="/student/dashboard" replace />} />
-        <Route path="ai-practice" element={<LegacyPracticeRedirect />} />
-        <Route path="experiments/*" element={<Navigate to="/student/dashboard" replace />} />
-        <Route path="experiment-runs/*" element={<Navigate to="/student/dashboard" replace />} />
+        <Route path="ai-practice" element={<SavedQuizLink />} />
         <Route path="ai-chat" element={<LearningNotebook />} />
-        <Route
-          path="basic-chat"
-          element={<Navigate to="/student/ai-chat" replace />}
-        />
-        <Route path="practice" element={<LegacyPracticeRedirect />} />
+        <Route path="practice" element={<SavedQuizLink />} />
         <Route path="profile" element={<Profile />} />
       </Route>
       <Route path="/teacher" element={<Guard role="teacher" />}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<TeacherDashboard />} />
-        {["chapters/*", "sections/*", "knowledge/*", "experiments/*", "chapter-content/*", "ai-lessons", "questions", "ai-questions", "learning-feedback"].map((path) => (
-          <Route key={path} path={path} element={<Navigate to="/teacher/dashboard" replace />} />
-        ))}
         <Route path="materials" element={<TeacherMaterials />} />
         <Route path="accounts" element={<Accounts />} />
         <Route path="profile" element={<Profile />} />
       </Route>
-      {["/", "/materials", "/knowledge", "/lab", "/chat", "/practice"].map(
-        (p) => (
-          <Route key={p} path={p} element={<Legacy />} />
-        ),
-      )}
+      <Route path="/" element={<Landing />} />
       <Route
         path="*"
         element={

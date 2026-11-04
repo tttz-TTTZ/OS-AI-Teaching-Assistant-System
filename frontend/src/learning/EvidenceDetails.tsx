@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { Evidence, PilotAnalysis } from "../personal";
-export default function PilotEvidence({
+import { Evidence, LearningAnalysis } from "../personal";
+export default function EvidenceDetails({
   analysis,
   evidence,
   ids,
 }: {
-  analysis: PilotAnalysis;
+  analysis: LearningAnalysis;
   evidence: Evidence;
   ids?: string[];
 }) {
@@ -36,7 +36,7 @@ export default function PilotEvidence({
     </details>
   );
 }
-export function PilotSummary({ analysis }: { analysis: PilotAnalysis }) {
+export function AnalysisSummary({ analysis }: { analysis: LearningAnalysis }) {
   const m = analysis.metrics;
   function download() {
     const url = URL.createObjectURL(
@@ -46,12 +46,12 @@ export function PilotSummary({ analysis }: { analysis: PilotAnalysis }) {
     );
     const a = document.createElement("a");
     a.href = url;
-    a.download = "小节提炼报告.json";
+    a.download = "资料提炼报告.json";
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   return (
-    <section className="pilot-summary" aria-label="小节提炼报告">
+    <section className="pilot-summary" aria-label="资料提炼报告">
       <h3>本次知识提炼</h3>
       <p>
         正文块处理 {m.processed_chunks}/{m.selected_chunks}；{m.concepts}
@@ -67,7 +67,7 @@ export function PilotSummary({ analysis }: { analysis: PilotAnalysis }) {
         处理比例和引用比例不能证明知识正确或已覆盖全部考点，仍需核对原课件。
       </p>
       <button className="secondary" onClick={download}>
-        下载试点报告
+        下载提炼报告
       </button>
     </section>
   );

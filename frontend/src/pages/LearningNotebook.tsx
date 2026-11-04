@@ -781,7 +781,7 @@ export default function LearningNotebook() {
                             className={i === moduleIndex ? "selected" : ""}
                             onClick={() => setModuleIndex(i)}
                           >
-                            {modeNames[m.mode]}
+                            {m.retired ? "历史文字" : modeNames[m.mode]}
                           </button>
                         ))}
                       </div>
@@ -982,7 +982,7 @@ export default function LearningNotebook() {
               ))}
             </div>
             <p className="notebook-cost">
-              AI调用可能计费，{status ? (status.daily_limit > 0 ? `每日最多${status.daily_limit}个任务` : "个人每日任务数量不限") : "正在读取任务额度"}；导图和闪卡可能包含多次模型调用，不自动重试。
+              AI调用可能计费，{status ? (status.daily_limit > 0 ? `每日最多${status.daily_limit}个任务` : "个人每日任务数量不限") : "正在读取任务额度"}；导图和闪卡的完整提炼每日最多60次模型调用，不自动重试。
             </p>
             <div className="notebook-pane-title notebook-results-title">
               <h3>我的学习成果</h3>
@@ -1026,7 +1026,7 @@ export default function LearningNotebook() {
                           : h.kind === "practice"
                             ? "个人自测"
                             : modes
-                                .map((m) => modeNames[m] || m)
+                                .map((m) => modeNames[m] || "已停用内容")
                                 .join(" / ")}{" "}
                         ·{" "}
                         {h.status === "ready"

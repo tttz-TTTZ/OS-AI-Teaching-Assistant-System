@@ -48,7 +48,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
         ? ["chapters", "chapters/1/edit", "sections/new", "knowledge", "knowledge/1/content", "experiments", "experiments/1/edit", "chapter-content/chapter02", "ai-lessons", "questions", "ai-questions", "learning-feedback"]
         : ["knowledge", "course-reading", "experiments", "experiments/1", "experiment-runs/1"]) {
         await page.goto(`${base}/${account.role}/${route}`);
-        await page.waitForURL(`**/${account.role}/dashboard`);
+        await page.getByRole("heading", { name: "页面不存在", exact: true }).waitFor();
         checks++;
       }
       await context.close();

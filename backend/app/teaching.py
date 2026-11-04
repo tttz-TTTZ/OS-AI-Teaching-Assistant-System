@@ -3,12 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from .auth import teacher
 from .access import list_documents
+from .database import database
 
 router = APIRouter(prefix="/api/teacher", dependencies=[Depends(teacher)])
-
-def database():
-    from .main import database
-    return database()
 
 class DocumentInput(BaseModel):
     title: str = Field(min_length=1, max_length=200)

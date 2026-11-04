@@ -17,15 +17,6 @@ a {
   display: flex;
   min-height: 100vh;
 }
-.brand {
-  font-size: 24px;
-  font-weight: 800;
-  color: #24665d;
-}
-.brand span {
-  font-size: 12px;
-  letter-spacing: 1px;
-}
 .caption {
   font-size: 12px;
   color: #708095;
@@ -73,23 +64,11 @@ h2 {
   letter-spacing: 1px;
   color: #24665d;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
 .panel {
   padding: 26px;
   background: #fff;
   border: 1px solid #e2e7ed;
   border-radius: 10px;
-}
-.card:hover {
-  border-color: #468a7a;
-}
-.card span {
-  color: #24665d;
-  font-size: 13px;
 }
 button,
 .button {
@@ -139,9 +118,6 @@ article {
   }
   main {
     padding: 24px;
-  }
-  .grid {
-    grid-template-columns: 1fr;
   }
 }
 main {
@@ -330,9 +306,6 @@ button:hover {
 .login button {
   width: 100%;
 }
-.teacher .brand {
-  color: #805d38;
-}
 .teacher nav a.active {
   background: #f1ece4;
   color: #805d38;
@@ -422,14 +395,6 @@ header h1 {
   grid-template-columns: 210px minmax(280px, 1fr) 200px;
   gap: 16px;
   align-items: start;
-}
-.chapter {
-  background: transparent;
-  color: #40596c;
-  width: 100%;
-  text-align: left;
-  padding: 9px;
-  margin: 3px 0;
 }
 .selected {
   background: #e5f0eb;
@@ -538,28 +503,6 @@ header h1 {
   color: #245d50;
   font-weight: 600;
 }
-.sim-config {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 14px 0;
-}
-.sim-config label {
-  font-size: 13px;
-  flex: 1 1 110px;
-  max-width: 190px;
-}
-.sim-config input[type="number"] {
-  width: 100%;
-  margin-top: 6px;
-}
-.text-button {
-  background: none;
-  color: #25685f;
-  padding: 4px;
-  font-size: 14px;
-  text-align: left;
-}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -575,30 +518,6 @@ header h1 {
 .teacher main {
   max-width: none;
   padding: 28px 40px;
-}
-.authoring-page {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding-bottom: 40px;
-}
-.authoring-heading {
-  margin: 20px 0 26px;
-}
-.authoring-heading h1 {
-  font-size: 28px;
-  line-height: 1.4;
-  margin: 8px 0;
-  overflow-wrap: anywhere;
-}
-.authoring-heading p {
-  max-width: 780px;
-  margin: 8px 0;
-  color: #607383;
-}
-.authoring-back {
-  display: inline-block;
-  color: #4b7066;
-  padding: 8px 0;
 }
 .authoring-card {
   background: white;
@@ -702,16 +621,6 @@ header h1 {
     padding: 22px;
   }
 }
-.teacher .text-button:not(.secondary):not(.danger) {
-  background: transparent;
-  color: #286c60;
-}
-.authoring-heading {
-  margin: 14px 0 12px;
-}
-.authoring-heading h1 {
-  font-size: 26px;
-}
 
 /* 实验教学沿用整页分步工作区，输入、回放、观察分开。 */
 .upload-progress {
@@ -765,8 +674,6 @@ header h1 {
   color: #24665d;
   padding: 12px 0;
 }
-.personal-frame { display: flex; flex-wrap: wrap; gap: 16px; padding: 24px; background: #eff6f5; min-height: 140px; }
-.personal-frame span { padding: 16px; border: 1px solid #b5d4cc; border-radius: 8px; background: white; transition: background .25s; }
 .personal-code { white-space: pre; overflow: auto; padding: 20px; background: #142c3b; color: #e8f2f2; border-radius: 8px; }
 .notebook-shell { background: #f5f6f8; }
 .notebook-shell > main { padding: 0; max-width: none; width: 100%; min-width: 0; }
@@ -943,7 +850,6 @@ header h1 {
 .app-account-link small { color: #7a8996; font-size: 11px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
 .app-logout { background: transparent; color: #6b7e86; border: 1px solid #dce5e7; padding: 7px 12px; font-size: 12px; }
 .layout > main { max-width: none; width: 100%; padding: 24px 32px 32px; }
-.layout .authoring-page { max-width: none; }
 .page-heading { margin: 0 0 22px; }
 .page-heading h1 { margin: 0; font-size: 26px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

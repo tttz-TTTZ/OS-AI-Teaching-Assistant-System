@@ -1,11 +1,9 @@
 import { request } from "./api";
-import { SimConfig, Trace } from "./simulation";
 export const modeNames = {
   explain: "通俗讲解",
   deep: "深入分析",
   map: "思维导图",
   code: "代码讲解",
-  animation: "动画理解",
   summary: "复习总结",
   flashcards: "知识闪卡",
 };
@@ -59,6 +57,7 @@ export interface PersonalConfig {
   parent_id: number | null;
 }
 export interface LearningModule {
+  retired?: boolean;
   mode: Mode;
   title: string;
   text: string;
@@ -72,8 +71,6 @@ export interface LearningModule {
   }[];
   code: string;
   language: string;
-  simulation: SimConfig | null;
-  frames: { label: string; explanation: string; nodes: string[] }[];
   cards?: { front: string; back: string; fact_ids?: string[] }[];
 }
 export interface PersonalQuestion {
@@ -84,7 +81,7 @@ export interface PersonalQuestion {
   source_ref: string;
   source_quote: string;
 }
-export interface PilotAnalysis {
+export interface LearningAnalysis {
   diagnostic?: {
     stage: string;
     batch: number;
@@ -131,7 +128,7 @@ export interface PersonalJob {
     modules?: LearningModule[];
     questions?: PersonalQuestion[];
     requested_count?: number;
-    pilot?: PilotAnalysis;
+    pilot?: LearningAnalysis;
     answer?: string;
     basis?: "general" | "selected_sources";
     conversation?: { role: "user" | "assistant"; content: string }[];
@@ -211,11 +208,6 @@ export const personalApi = {
     request<PersonalJob>(`/student/personal/jobs/${job.id}/note`, {
       method: "PUT",
       body: JSON.stringify({ note, bookmarked, expected_version: job.version }),
-    }),
-  simulate: (id: number, module: number, config: SimConfig) =>
-    request<Trace>(`/student/personal/jobs/${id}/simulate`, {
-      method: "POST",
-      body: JSON.stringify({ module, config }),
     }),
   submit: (id: number, answers: Record<number, unknown>, request_key: string) =>
     request<PersonalGrade>(`/student/personal/jobs/${id}/submit`, {

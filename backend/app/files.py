@@ -10,24 +10,13 @@ from fastapi.responses import FileResponse
 from .auth import require_user
 from .access import read_document, writable_document
 from .persistence import checked_file, storage_lock
+from .database import database, db_path
 
 router = APIRouter(prefix="/api/materials")
 MAX_SIZE = 10 * 1024 * 1024
 PUBLIC_MAX_SIZE = 150 * 1024 * 1024
 PUBLIC_PRESENTATION_MAX_SIZE = 500 * 1024 * 1024
 PERSONAL_PRESENTATION_MAX_SIZE = 50 * 1024 * 1024
-
-
-def db_path():
-    from .main import DB_PATH
-
-    return DB_PATH
-
-
-def database():
-    from .main import database as context
-
-    return context()
 
 
 def storage() -> Path:

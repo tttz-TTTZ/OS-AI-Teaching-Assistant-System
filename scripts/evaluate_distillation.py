@@ -12,7 +12,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 sys.path.insert(0, str(ROOT / "backend" / "tests"))
-from fixtures.pilot_fixture import GOLD, decks, model_output
+from fixtures.distillation_fixture import GOLD, decks, model_output
 
 
 def run():

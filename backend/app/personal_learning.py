@@ -1,26 +1,24 @@
-"""学生个人生成学习与薄弱点自测；不写教师课程树或正式题库。"""
+"""个人 AI 学习材料、自测、笔记与账号隔离，不依赖课程目录。"""
 
 import hashlib
 import json
 import os
 from io import BytesIO
 from zipfile import ZipFile, ZIP_DEFLATED
-from typing import Literal, Any
+from typing import Literal, Any, get_args
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field, ConfigDict, ValidationError, model_validator
 from starlette.concurrency import run_in_threadpool
 from .auth import require_user
 from .access import read_document
-from .main import database
-from .simulation_config import Config
-from .simulations import simulate
+from .database import database
 from .self_test import Question
 from .ai_provider import provider_settings, call_deepseek
 from .personal_sources import Retrieval, retrieve
 
 router = APIRouter(prefix="/api/student/personal")
-Mode = Literal["explain", "deep", "map", "code", "animation", "summary", "flashcards"]
+Mode = Literal["explain", "deep", "map", "code", "summary", "flashcards"]
 
 
 def student(user=Depends(require_user)):
@@ -35,19 +33,6 @@ class Node(BaseModel):
     label: str = Field(min_length=1, max_length=300)
     parent: str | None = None
     fact_ids: list[str] = Field(default_factory=list, max_length=80)
-
-
-class Frame(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    label: str = Field(min_length=1, max_length=200)
-    explanation: str = Field(min_length=1, max_length=2000)
-    nodes: list[str] = Field(min_length=1, max_length=16)
-
-    @model_validator(mode="after")
-    def valid(self):
-        if any(len(n) > 200 for n in self.nodes):
-            raise ValueError("演示节点最多200字")
-        return self
 
 
 class Flashcard(BaseModel):
@@ -73,8 +58,6 @@ class Module(BaseModel):
     nodes: list[Node] = Field(default_factory=list, max_length=120)
     code: str = Field(default="", max_length=16000)
     language: str = Field(default="text", max_length=40)
-    simulation: Config | None = None
-    frames: list[Frame] = Field(default_factory=list, max_length=30)
     cards: list[Flashcard] = Field(default_factory=list, max_length=20)
 
     @model_validator(mode="after")
@@ -102,11 +85,6 @@ class Module(BaseModel):
                     parent = mapping[parent]
         if self.mode == "code" and not self.code.strip():
             raise ValueError("代码讲解需保留代码或明确的教学伪代码")
-        if self.mode == "animation":
-            if self.simulation:
-                simulate(self.simulation)
-            elif len(self.frames) < 2:
-                raise ValueError("概念演示需至少两个分步画面")
         return self
 
 
@@ -114,7 +92,7 @@ class Generation(Retrieval):
     analysis_confirmed: bool = False
     kind: Literal["learning", "practice"] = "learning"
     modes: list[Mode] = Field(
-        default_factory=lambda: ["explain"], min_length=1, max_length=7
+        default_factory=lambda: ["explain"], min_length=1, max_length=6
     )
     level: Literal["basic", "intermediate", "advanced"] = "basic"
     count: int = Field(default=5, ge=1, le=10)
@@ -127,7 +105,7 @@ class Generation(Retrieval):
 
 
 def own(db, ident, user):
-    from .knowledge_pilot import stale_jobs
+    from .distillation import stale_jobs
 
     stale_jobs(db, user["id"])
     row = db.execute(
@@ -155,6 +133,13 @@ def result(row):
         )
     }
     body = json.loads(row["body_json"])
+    # Keep historical text readable without retaining retired feature schemas.
+    current_fields = Module.model_fields.keys() | {"retired"}
+    for index, module in enumerate(body.get("modules", [])):
+        current = {key: value for key, value in module.items() if key in current_fields}
+        if current.get("mode") not in get_args(Mode):
+            current.update(mode="summary", retired=True)
+        body["modules"][index] = current
     if row["kind"] == "practice":
         body = {
             **body,
@@ -206,7 +191,7 @@ def preview(body: Retrieval, user=Depends(student)):
 @router.get("/jobs")
 def jobs(user=Depends(student)):
     with database() as db:
-        from .knowledge_pilot import stale_jobs
+        from .distillation import stale_jobs
 
         stale_jobs(db, user["id"])
         return [
@@ -315,8 +300,6 @@ def generation_instructions(body):
         "flashcards": "知识闪卡：必须额外返回cards:[{front:回忆问题字符串,back:答案与解释字符串}]，3至8张，不要用question/answer字段代替front/back。text写复习引导，答案不得写在front中。",
         "map": "思维导图：按XMind中心主题—分支—子主题组织，额外返回nodes:[{id:英文唯一ID,label:简洁主题,parent:null或父ID}]。唯一根、父ID存在、无环，最多60节点，建议2至4层且label不超过24字；长解释写text。不返回XML或二进制，平台转换SVG/PNG和XMind文件。",
         "code": "代码讲解：额外返回code字符串和language字符串，保留换行缩进；text逐段解释。没有原代码时可提供标注的教学伪代码，不能声称已运行。",
-        # Compatibility for stored/legacy clients, absent from current student workspace tools.
-        "animation": "旧版演示：返回2至15个frames:[{label,explanation,nodes:[状态字符串]}]，标注为概念演示，不作为算法准确性证明。",
     }
     return (
         common
@@ -334,10 +317,10 @@ async def generate(body: Generation, user=Depends(student)):
         or len(body.modes) != 1
         or body.modes[0] not in ("map", "flashcards")
     ):
-        raise HTTPException(422, "小节完整提炼试点仅支持单项思维导图或知识闪卡")
+        raise HTTPException(422, "资料完整提炼仅支持单项思维导图或知识闪卡")
     if body.analysis_mode == "section" and not body.analysis_confirmed:
         raise HTTPException(
-            422, "请先预览本小节的页码范围与预计调用次数，再确认开始提炼"
+            422, "请先预览所选资料的页码范围与预计调用次数，再确认开始提炼"
         )
     parent = None
     previous_attempt = None
@@ -385,7 +368,7 @@ async def generate(body: Generation, user=Depends(student)):
             if old["request_hash"] != digest:
                 raise HTTPException(409, "请求标识已用于其他内容")
             return result(own(db, old["id"], user))
-        from .knowledge_pilot import stale_jobs
+        from .distillation import stale_jobs
 
         stale_jobs(db, user["id"])
         if db.execute(
@@ -416,7 +399,7 @@ async def generate(body: Generation, user=Depends(student)):
     system = generation_instructions(body)
     try:
         if body.analysis_mode == "section":
-            from .knowledge_pilot import distill
+            from .distillation import distill
 
             output = await distill(body, source, user, ident, call_deepseek)
         else:
@@ -542,27 +525,6 @@ def save_note(ident: int, body: SaveNote, user=Depends(student)):
             (body.note, body.bookmarked, ident),
         )
         return result(own(db, ident, user))
-
-
-class Replay(BaseModel):
-    module: int = Field(ge=0, le=6)
-    config: Config
-
-
-@router.post("/jobs/{ident}/simulate")
-def replay(ident: int, body: Replay, user=Depends(student)):
-    with database() as db:
-        row = own(db, ident, user)
-    modules = json.loads(row["body_json"]).get("modules", [])
-    if (
-        row["status"] != "ready"
-        or body.module >= len(modules)
-        or not modules[body.module].get("simulation")
-    ):
-        raise HTTPException(422, "该模块没有可计算演示")
-    if body.config.template != modules[body.module]["simulation"]["template"]:
-        raise HTTPException(422, "请保持本模块演示模板")
-    return simulate(body.config)
 
 
 class Submission(BaseModel):

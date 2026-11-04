@@ -1,3 +1,4 @@
+from app import database as db_config
 import hashlib
 from io import BytesIO
 from pathlib import Path
@@ -13,7 +14,7 @@ from fixtures.presentation_fixture import pptx_bytes, ppt_bytes
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, "DB_PATH", tmp_path / "data" / "test.db")
+    monkeypatch.setattr(db_config, "DB_PATH", tmp_path / "data" / "test.db")
     with TestClient(main.app) as teacher, TestClient(main.app) as student, TestClient(
         main.app
     ) as other:
@@ -83,7 +84,7 @@ def test_400_slides_public_private_and_backup(clients, tmp_path):
         assert viewer.get(f"/api/materials/{private}/slides").status_code == 404
         assert viewer.get(f"/api/materials/{private}/file").status_code == 404
     assert s.get(f"/api/materials/{private}/slides").json()["total"] == 3
-    snapshot = backup_data(main.DB_PATH, tmp_path / "snapshot")
+    snapshot = backup_data(db_config.DB_PATH, tmp_path / "snapshot")
     restored = restore_data(snapshot, tmp_path / "restored")
     assert (restored.parent / "uploads" / d["stored_name"]).read_bytes() == content
 
@@ -130,7 +131,7 @@ def test_bad_presentations_leave_no_files(clients, name, content):
     assert r.status_code == 415, r.text
     with main.database() as db:
         assert db.execute("SELECT count(*) FROM documents").fetchone()[0] == count
-    assert not list((main.DB_PATH.parent / ".incoming").glob("*"))
+    assert not list((db_config.DB_PATH.parent / ".incoming").glob("*"))
 
 
 def test_legacy_ppt_download_and_explicit_preview_limit(clients):

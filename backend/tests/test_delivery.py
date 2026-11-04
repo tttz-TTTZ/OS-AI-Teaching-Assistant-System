@@ -1,3 +1,4 @@
+from app import database as db_config
 import hashlib
 from pathlib import Path
 import pytest
@@ -9,7 +10,7 @@ from app.persistence import backup_data, restore_data, validate_backup
 
 @pytest.fixture
 def users(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, "DB_PATH", tmp_path / "live" / "assistant.db")
+    monkeypatch.setattr(db_config, "DB_PATH", tmp_path / "live" / "assistant.db")
     with TestClient(main.app) as client:
         for name, role in [
             ("teacher", "teacher"),
@@ -212,7 +213,7 @@ def test_document_version_recycle_and_scoped_dedup(users):
     assert not c.get(f"/api/materials/{did}").json()["published"]
     assert c.get(f"/api/materials/{did}/file").text == "new version"
     assert len(c.get(f"/api/materials/{did}/versions").json()) == 1
-    assert len(list((main.DB_PATH.parent / "uploads").iterdir())) == 2
+    assert len(list((db_config.DB_PATH.parent / "uploads").iterdir())) == 2
     assert c.delete(f"/api/materials/{did}").status_code == 204
     assert c.get(f"/api/materials/{did}/file").status_code == 404
     assert c.get("/api/teacher/documents?trash=true").json()[0]["id"] == did
@@ -260,7 +261,7 @@ def test_backup_restart_restore_and_tamper(users, tmp_path, monkeypatch):
     )
     assert r.status_code == 201
     did = r.json()["id"]
-    old_path = main.DB_PATH
+    old_path = db_config.DB_PATH
     with TestClient(main.app) as restart:
         login(restart, "alice")
         assert (
@@ -270,7 +271,7 @@ def test_backup_restart_restore_and_tamper(users, tmp_path, monkeypatch):
     folder = backup_data(old_path, tmp_path / "backup")
     validate_backup(folder)
     restored = restore_data(folder, tmp_path / "restored")
-    monkeypatch.setattr(main, "DB_PATH", restored)
+    monkeypatch.setattr(db_config, "DB_PATH", restored)
     with TestClient(main.app) as rebuilt:
         assert rebuilt.get("/api/auth/me").status_code == 401
         login(rebuilt, "alice")

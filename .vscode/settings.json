@@ -17,5 +17,9 @@
     "frontend/dist": true,
     "backend/data": true,
     "docs/reports": true
-  }
+  },
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/backend",
+    "${workspaceFolder}/backend/tests"
+  ]
 }

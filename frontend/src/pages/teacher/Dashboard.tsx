@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
-import { AuthoringPage } from "./Authoring";
+import { Page } from "../../components";
 export default function Dashboard() {
   return (
-    <AuthoringPage
-      title="教师工作台"
-      description="管理公共资料和学生账号。"
-    >
+    <Page title="教师工作台">
+      <p>管理公共资料和学生账号。</p>
       <div className="teacher-start">
         {[
           ["01", "materials", "公共课程资料", "上传、整理和发布公共资料。", "管理资料 →"],
@@ -28,6 +26,6 @@ export default function Dashboard() {
           <Link to="/teacher/accounts">管理学生账号 →</Link>
         </div>
       </section>
-    </AuthoringPage>
+    </Page>
   );
 }

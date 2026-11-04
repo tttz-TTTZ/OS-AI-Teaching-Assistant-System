@@ -67,10 +67,21 @@ const job = {
     await quiz.getByRole("button", { name: "查看本次解析", exact: true }).click();
     await quiz.getByRole("status").filter({ hasText: "4 / 4" }).waitFor();
     assert.equal(await page.locator('a[href*="ai-practice"]').count(), 0);
+    job.kind = "learning";
+    job.config.kind = "learning";
+    job.config.modes = ["summary"];
+    job.body = { title: "旧记录文字", modules: [{
+      mode: "summary", retired: true, title: "旧记录文字", text: "历史说明仍然可读。",
+      source_ref: "", source_quote: "", nodes: [], code: "", language: "text", cards: [],
+    }] };
+    await page.goto(`${base}/student/ai-chat?job=${job.id}`);
+    await page.getByText("此历史内容所属功能已停用，仅保留已保存的文字。", { exact: true }).waitFor();
+    await page.getByText("历史说明仍然可读。", { exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: /运行演示|播放|上一步|重置/ }).count(), 0);
     await page.goto(base + "/student/ai-practice");
     await page.waitForURL("**/student/ai-chat");
     assert.deepEqual(errors, []);
-    console.log("PASS: legacy routes redirect; five question types, draft reload, submit and saved answers work inside notebook; no standalone practice links or runtime errors");
+    console.log("PASS: five question types, drafts, saved answers and read-only retired content; no retired controls or runtime errors");
   } finally {
     await browser.close();
   }

@@ -134,10 +134,7 @@ export async function uploadFile<T>(
 export interface Health {
   status: string;
   database: string;
-  llm_mode: string;
-  ai_configured: boolean;
-  chat_ai_configured?: boolean;
-  personal_ai_configured?: boolean;
+  personal_ai_configured: boolean;
   platform_revision?: string;
 }
 export const getHealth = () => request<Health>("/health");

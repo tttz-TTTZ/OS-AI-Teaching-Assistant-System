@@ -7,6 +7,7 @@ import secrets
 import time
 import re
 from typing import Literal
+from .database import database
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError, InvalidHashError
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, Header
@@ -16,12 +17,6 @@ router = APIRouter(prefix="/api/auth")
 password_hasher = PasswordHasher()
 DUMMY_HASH = password_hasher.hash(secrets.token_urlsafe(32))
 COOKIE = "os_session"
-
-
-def database():
-    from .main import database as context
-
-    return context()
 
 
 def create_user(

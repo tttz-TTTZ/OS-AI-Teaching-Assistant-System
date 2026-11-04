@@ -1,4 +1,4 @@
-"""Bounded section-wide distillation; durable checkpoints live in existing private job JSON."""
+"""Document distillation with durable, per-user extraction checkpoints."""
 
 import hashlib
 import json
@@ -12,7 +12,7 @@ from typing import Literal
 from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 from .access import read_document
-from .main import database
+from .database import database
 
 VERSION = "section-pilot-1"
 MAX_BATCHES = 12
@@ -234,7 +234,7 @@ def prepare(body, user):
         "fingerprint": fingerprint,
         "characters": sum(len(c["text"]) for c in chunks),
         "indexed_chunks": len(chunks),
-        "method": "小节完整文字分批提炼试点",
+        "method": "已选资料完整文字分批提炼",
         "warnings": ["覆盖所有已选可提取正文，不等于已理解图片或已通过教师审核。"]
         + ([f"有{len(missing)}页无可提取文字，未识别其内容。"] if missing else []),
         "pilot_plan": plan,

@@ -1,3 +1,4 @@
+from app import database as db_config
 import hashlib
 import time
 import pytest
@@ -8,7 +9,7 @@ from app.auth import create_user
 
 @pytest.fixture
 def clients(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, "DB_PATH", tmp_path / "auth.db")
+    monkeypatch.setattr(db_config, "DB_PATH", tmp_path / "auth.db")
     with TestClient(main.app) as admin, TestClient(main.app) as alice, TestClient(
         main.app
     ) as bob:
@@ -37,7 +38,7 @@ def test_sessions_and_csrf(clients):
         assert user["password_hash"].startswith("$argon2id$")
         assert db.execute("SELECT count(*) FROM sessions").fetchone()[0] == 3
     csrf = alice.headers.pop("X-CSRF-Token")
-    assert alice.post("/api/materials", json={"title": "x"}).status_code == 403
+    assert alice.post("/api/materials/upload", files={"file": ("x.txt", b"test")}).status_code == 403
     alice.headers["X-CSRF-Token"] = csrf
     token = alice.cookies.get("os_session")
     assert alice.post("/api/auth/logout").status_code == 204
@@ -49,9 +50,8 @@ def test_sessions_and_csrf(clients):
     assert bob.get("/api/auth/me").status_code == 401
 
 
-def test_personal_access_all_paths(clients, monkeypatch):
+def test_personal_access_all_paths(clients):
     admin, alice, bob = clients
-    monkeypatch.setenv("LLM_MODE", "mock")
     r = alice.post("/api/materials/upload", files={"file": ("mine.txt", b"private")})
     assert r.status_code == 201, r.text
     mid = r.json()["id"]
@@ -60,25 +60,8 @@ def test_personal_access_all_paths(clients, monkeypatch):
         assert all(d["id"] != mid for d in other.get("/api/materials").json())
         assert other.get(f"/api/materials/{mid}").status_code == 404
         assert other.get(f"/api/materials/{mid}/file").status_code == 404
-        assert (
-            other.put(f"/api/materials/{mid}", json={"title": "hack"}).status_code
-            == 404
-        )
         assert other.delete(f"/api/materials/{mid}").status_code == 404
-        assert (
-            other.post(
-                "/api/chat", json={"question": "read", "material_id": mid}
-            ).status_code
-            == 404
-        )
-    assert (
-        alice.post(
-            "/api/chat", json={"question": "read", "material_id": mid}
-        ).status_code
-        == 200
-    )
-    assert alice.get("/api/conversations").json()
-    assert bob.get("/api/conversations").json() == []
+        assert other.post(f"/api/materials/{mid}/replace", files={"file": ("x.txt", b"hack")}).status_code == 404
 
 
 def test_wrong_login_and_origin(clients):
@@ -120,7 +103,7 @@ def test_wrong_login_and_origin(clients):
 
 
 def test_registration_cannot_create_teacher_or_invalid_account(tmp_path, monkeypatch):
-    monkeypatch.setattr(main, "DB_PATH", tmp_path / "invalid-registration.db")
+    monkeypatch.setattr(db_config, "DB_PATH", tmp_path / "invalid-registration.db")
     with TestClient(main.app) as client:
         body = {"username": "student", "password": "registration-test-password"}
         for extra in [{"role": "teacher"}, {"is_admin": True}, {"active": True}]:

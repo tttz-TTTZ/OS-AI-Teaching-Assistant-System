@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 import pytest
 from fastapi import HTTPException
 from app import main, personal_learning as ai
-from app.knowledge_pilot import stale_jobs, evidence_choices
+from app.distillation import stale_jobs, evidence_choices
 from test_personal_learning import clients, BASE
 
-from fixtures.pilot_fixture import GOLD, decks, model_output
+from fixtures.distillation_fixture import GOLD, decks, model_output
 
 
 def setup(t, a):
@@ -235,7 +235,7 @@ def test_confirmation_limits_and_versions(clients, monkeypatch):
 
 
 def test_directory_only_and_scope_limits_do_not_call_model(clients, monkeypatch):
-    from fixtures.pilot_fixture import pptx_bytes
+    from fixtures.distillation_fixture import pptx_bytes
 
     t, a, _ = clients
     config = setup(t, a)
@@ -280,7 +280,7 @@ def test_pilot_call_budget_keeps_completed_analysis(clients, monkeypatch):
 
 
 def test_exact_dedup_preserves_operators_and_case():
-    from app.knowledge_pilot import facts_from
+    from app.distillation import facts_from
 
     statements = [
         "条件x=0时允许当前请求继续执行。",
@@ -309,7 +309,7 @@ def test_exact_dedup_preserves_operators_and_case():
 
 
 def test_directory_concept_is_not_mistaken_for_navigation_metadata():
-    from app.knowledge_pilot import metadata_label
+    from app.distillation import metadata_label
 
     assert not metadata_label("目录结构")
     assert not metadata_label("文件目录结构")
@@ -373,7 +373,7 @@ def test_local_evidence_id_response_completes_without_retry(clients, monkeypatch
 
 
 def test_short_page_does_not_require_model_to_choose_an_id():
-    from app.knowledge_pilot import Claim, resolve_evidence
+    from app.distillation import Claim, resolve_evidence
 
     text = "批处理接口使用作业控制语言来描述作业的运行要求。"
     ref = "d22-p20-b19-0"
@@ -390,7 +390,7 @@ def test_short_page_does_not_require_model_to_choose_an_id():
 
 
 def test_verified_quote_recovers_bad_optional_id():
-    from app.knowledge_pilot import Claim, resolve_evidence
+    from app.distillation import Claim, resolve_evidence
 
     text = "程序接口通过约定的方式让应用请求操作系统服务。" * 30
     ref = "d1-p1-c0"
@@ -410,7 +410,7 @@ def test_verified_quote_recovers_bad_optional_id():
 
 
 def test_omitted_zero_evidence_id_resolves_original_excerpt():
-    from app.knowledge_pilot import Claim, resolve_evidence
+    from app.distillation import Claim, resolve_evidence
 
     ref = "d22-p21-b20-0"
     text = "系统调用通过寄存器传递参数并进入内核处理。" * 40
@@ -429,7 +429,7 @@ def test_omitted_zero_evidence_id_resolves_original_excerpt():
     ("d22-p21-b20-e1", "d22-p21-b20-0", ["d22-p21-b20"]),
 ])
 def test_omitted_zero_rejects_invalid_or_ambiguous_evidence(evidence_id, ref, extra_refs):
-    from app.knowledge_pilot import Claim, resolve_evidence
+    from app.distillation import Claim, resolve_evidence
 
     text = "系统调用通过寄存器传递参数并进入内核处理。" * 40
     chunks = [{"ref": r, "text": text} for r in [ref, *extra_refs]]

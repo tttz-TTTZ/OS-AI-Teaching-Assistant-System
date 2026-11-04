@@ -3,7 +3,7 @@
 import argparse
 import getpass
 import sqlite3
-from app.main import DB_PATH
+from app.database import DB_PATH
 from app.migrations import migrate
 from app.auth import create_user
 

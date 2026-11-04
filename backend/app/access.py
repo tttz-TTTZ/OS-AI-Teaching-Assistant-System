@@ -41,7 +41,7 @@ def list_documents(
     trash: bool = False,
     published: bool | None = None,
 ):
-    from .main import database
+    from .database import database
 
     if not 1 <= limit <= 100 or offset < 0 or len(q) > 200:
         raise HTTPException(422, "分页或搜索条件无效")
