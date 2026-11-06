@@ -15,7 +15,7 @@ import Home from "./pages/Home";
 import Materials from "./pages/Materials";
 import Login from "./pages/Login";
 import TeacherDashboard from "./pages/teacher/Dashboard";
-import LearningNotebook from "./pages/LearningNotebook";
+import StudyWorkspace from "./pages/StudyWorkspace";
 import TeacherMaterials from "./pages/teacher/Materials";
 import Accounts from "./pages/teacher/Accounts";
 import Profile from "./pages/Profile";
@@ -105,7 +105,7 @@ function App() {
         <Route path="dashboard" element={<Home />} />
         <Route path="materials" element={<Materials />} />
         <Route path="ai-practice" element={<SavedQuizLink />} />
-        <Route path="ai-chat" element={<LearningNotebook />} />
+        <Route path="ai-chat" element={<StudyWorkspace />} />
         <Route path="practice" element={<SavedQuizLink />} />
         <Route path="profile" element={<Profile />} />
       </Route>

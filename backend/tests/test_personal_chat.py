@@ -1,7 +1,7 @@
 import json
 import httpx
 import pytest
-from test_personal_learning import clients, BASE, TEXT, prepared
+from test_study_tools import clients, BASE, TEXT, prepared
 from app import personal_chat as chat, ai_provider
 
 
@@ -28,7 +28,7 @@ def stub(monkeypatch, calls):
 
 @pytest.mark.parametrize("setting", [None, "0"])
 def test_unlimited_chat_and_learning_after_twenty_jobs(clients, monkeypatch, setting):
-    from test_personal_learning import fake_model
+    from test_study_tools import fake_model
 
     _, a, _ = clients
     if setting is None:
@@ -182,7 +182,7 @@ def test_chat_through_http_provider_is_answer_contract_not_modules(
 
 
 def test_followup_can_reference_existing_learning_artifact(clients, monkeypatch):
-    from test_personal_learning import fake_model
+    from test_study_tools import fake_model
 
     _, a, _ = clients
     config, _ = prepared(a)

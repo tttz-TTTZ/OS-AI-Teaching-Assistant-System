@@ -33,7 +33,7 @@ def evidence_choices(text, ref):
 
 def resolve_evidence(fact, ref, chunks, choices):
     """Resolve only against this known block; never fuzzy-match or invent a quote."""
-    from .personal_learning import citation
+    from .study_tools import citation
 
     source = {"chunks": chunks}
     evidence_id = fact.evidence_id.strip()
@@ -409,7 +409,7 @@ async def distill(body, source, user, ident, call):
         chars += len(c["text"])
     if batch:
         batches.append(batch)
-    from .personal_learning import citation
+    from .study_tools import citation
 
     for i, chunks in enumerate(batches):
         if str(i) in state["batches"]:

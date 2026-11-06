@@ -54,7 +54,7 @@ const base = process.env.APP_TEST_BASE_URL || "http://127.0.0.1:5173";
       await context.close();
     }
     assert.deepEqual(errors, []);
-    console.log(`V0.3 browser checks passed: ${checks}; no runtime or server errors`);
+    console.log(`Page checks passed: ${checks}; no runtime or server errors`);
   } finally {
     await browser.close();
   }

@@ -12,7 +12,7 @@ import {
   materialFileError,
   publicFileHint,
 } from "../../materialFiles";
-import PresentationPreview from "../../learning/PresentationPreview";
+import PresentationPreview from "../../components/PresentationPreview";
 export default function Materials() {
   const [q, setQ] = useState("");
   const [mode, setMode] = useState("active");

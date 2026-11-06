@@ -10,7 +10,7 @@ import pytest
 
 @pytest.mark.parametrize(
     "module",
-    ["app.distillation", "app.personal_sources", "app.personal_learning", "app.personal_chat", "app.auth"],
+    ["app.distillation", "app.personal_sources", "app.study_tools", "app.personal_chat", "app.auth"],
 )
 def test_module_import_does_not_bootstrap_web_app(module, tmp_path):
     backend = Path(__file__).resolve().parents[1]

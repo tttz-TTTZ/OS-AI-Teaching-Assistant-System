@@ -2,7 +2,7 @@
 
 import logging
 import pytest
-from test_personal_learning import clients, BASE
+from test_study_tools import clients, BASE
 from test_personal_chat import stub
 
 LOGGER = "uvicorn.error.learning"

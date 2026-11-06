@@ -20,7 +20,7 @@ def run():
         os.environ["DATABASE_PATH"] = str(Path(folder) / "test.db")
         os.environ["DEEPSEEK_API_KEY"] = "test-only-no-network"
         from fastapi.testclient import TestClient
-        from app import main, personal_learning as ai
+        from app import main, study_tools as ai
         from app.auth import create_user
 
         calls = []

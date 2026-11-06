@@ -12,8 +12,8 @@ import {
   PersonalSource,
   PersonalSummary,
 } from "../personal";
-import PersonalModule from "../learning/PersonalModule";
-import NotebookQuiz from "../learning/NotebookQuiz";
+import PersonalModule from "../workspace/PersonalModule";
+import NotebookQuiz from "../workspace/NotebookQuiz";
 import Markdown from "../Markdown";
 import { materialAccept, materialFileError } from "../materialFiles";
 
@@ -52,7 +52,7 @@ const studio: {
   { mode: "deep", symbol: "析", label: "深入分析", hint: "进一步解释原理" },
 ];
 
-export default function LearningNotebook() {
+export default function StudyWorkspace() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const jobId = Number(params.get("job"));

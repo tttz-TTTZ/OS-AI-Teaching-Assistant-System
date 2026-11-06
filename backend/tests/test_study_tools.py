@@ -7,7 +7,7 @@ from io import BytesIO
 from zipfile import ZipFile
 import pytest
 from fastapi.testclient import TestClient
-from app import main, personal_learning as ai
+from app import main, study_tools as ai
 from app.auth import create_user
 from app.migrations import migrate
 from app.persistence import backup_data, restore_data

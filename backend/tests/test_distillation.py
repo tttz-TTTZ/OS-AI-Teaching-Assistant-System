@@ -2,9 +2,9 @@ import json
 from datetime import datetime, timezone
 import pytest
 from fastapi import HTTPException
-from app import main, personal_learning as ai
+from app import main, study_tools as ai
 from app.distillation import stale_jobs, evidence_choices
-from test_personal_learning import clients, BASE
+from test_study_tools import clients, BASE
 
 from fixtures.distillation_fixture import GOLD, decks, model_output
 

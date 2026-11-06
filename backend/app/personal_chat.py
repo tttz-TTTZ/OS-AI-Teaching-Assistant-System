@@ -6,7 +6,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
-from .personal_learning import student, own, result, citation, daily_limit
+from .study_tools import student, own, result, citation, daily_limit
 from .personal_sources import PersonalSource, Retrieval, retrieve
 from .ai_provider import provider_settings, call_deepseek
 from .access import read_document

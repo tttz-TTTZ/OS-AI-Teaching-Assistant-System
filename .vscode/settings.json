@@ -15,8 +15,7 @@
   "search.exclude": {
     "frontend/node_modules": true,
     "frontend/dist": true,
-    "backend/data": true,
-    "docs/reports": true
+    "backend/data": true
   },
   "python.analysis.extraPaths": [
     "${workspaceFolder}/backend",

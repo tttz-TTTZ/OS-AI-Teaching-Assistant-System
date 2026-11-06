@@ -3,7 +3,7 @@ import {
   materialFileError,
   personalFileHint,
 } from "../materialFiles";
-import PresentationPreview from "../learning/PresentationPreview";
+import PresentationPreview from "../components/PresentationPreview";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, FormEvent } from "react";
 import { fileUrl, Material, documentApi } from "../api";

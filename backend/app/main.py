@@ -91,9 +91,9 @@ from .auth import router as auth_router
 
 app.include_router(auth_router)
 
-from .teaching import router as teaching_router
+from .public_materials import router as public_materials_router
 
-app.include_router(teaching_router)
+app.include_router(public_materials_router)
 
 
 @app.middleware("http")
@@ -129,9 +129,9 @@ from .accounts import router as accounts_router
 app.include_router(accounts_router)
 
 
-from .personal_learning import router as personal_learning_router
+from .study_tools import router as study_tools_router
 
-app.include_router(personal_learning_router)
+app.include_router(study_tools_router)
 
 from .personal_chat import router as personal_chat_router
 
